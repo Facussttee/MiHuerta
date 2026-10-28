@@ -45,16 +45,25 @@ export function renderAdminView(container) {
               }">
                 ${isConnected ? "Cloud Online" : "Modo Local"}
               </span>
-              <button 
-                id="btn-toggle-cloud"
-                class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition tap-feedback ${
-                  isConnected
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                }"
-              >
-                ${showCloudSettings ? "Cerrar Config" : "Config Cloud"}
-              </button>
+              <div class="flex items-center gap-1.5">
+                <button 
+                  id="btn-toggle-cloud"
+                  class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition tap-feedback ${
+                    isConnected
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }"
+                >
+                  ${showCloudSettings ? "Cerrar Config" : "Config Cloud"}
+                </button>
+                <button 
+                  id="btn-admin-logout" 
+                  title="Salir y bloquear panel" 
+                  class="text-[11px] font-bold px-2 py-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition tap-feedback"
+                >
+                  Salir
+                </button>
+              </div>
             </div>
           </div>
 
@@ -271,6 +280,11 @@ export function renderAdminView(container) {
     container.querySelector("#btn-admin-clear-search")?.addEventListener("click", () => {
       searchQuery = "";
       update();
+    });
+
+    container.querySelector("#btn-admin-logout")?.addEventListener("click", () => {
+      store.lockStaff();
+      window.location.href = "?view=cliente";
     });
 
     const btnToggleCloud = container.querySelector("#btn-toggle-cloud");

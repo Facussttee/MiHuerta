@@ -8,7 +8,7 @@
 
   // ==========================================
 
-// CatÃ¡logo inicial de productos para la verdulerÃ­a (sin emojis, enfocado en tipografÃ­a moderna)
+// Catálogo inicial de productos para la verdulería (sin emojis, enfocado en tipografía moderna)
 const INITIAL_PRODUCTS = [
   // Frutas
   {
@@ -29,7 +29,7 @@ const INITIAL_PRODUCTS = [
     precio: 2200,
     disponible: true,
     paso: 0.5,
-    detalle: "Alto Valle, RÃ­o Negro"
+    detalle: "Alto Valle, Río Negro"
   },
   {
     id: "prod-3",
@@ -43,7 +43,7 @@ const INITIAL_PRODUCTS = [
   },
   {
     id: "prod-4",
-    nombre: "LimÃ³n Comercial",
+    nombre: "Limón Comercial",
     categoria: "Frutas",
     unidad_medida: "KG",
     precio: 1600,
@@ -85,7 +85,7 @@ const INITIAL_PRODUCTS = [
   },
   {
     id: "prod-8",
-    nombre: "Cebolla SelecciÃ³n",
+    nombre: "Cebolla Selección",
     categoria: "Verduras",
     unidad_medida: "KG",
     precio: 1100,
@@ -143,7 +143,7 @@ const INITIAL_PRODUCTS = [
     precio: 900,
     disponible: true,
     paso: 1,
-    detalle: "Atado fresco del dÃ­a"
+    detalle: "Atado fresco del día"
   },
   {
     id: "prod-14",
@@ -166,21 +166,21 @@ const INITIAL_PRODUCTS = [
     detalle: "Atado grande seleccionado"
   },
 
-  // AlmacÃ©n / Granja
+  // Almacén / Granja
   {
     id: "prod-16",
     nombre: "Huevos de Campo (Maple x 30)",
-    categoria: "AlmacÃ©n",
+    categoria: "Almacén",
     unidad_medida: "UNIDAD",
     precio: 5200,
     disponible: true,
     paso: 1,
-    detalle: "CastaÃ±os de gallinas libres"
+    detalle: "Castaños de gallinas libres"
   },
   {
     id: "prod-17",
     nombre: "Huevos de Campo (Docena)",
-    categoria: "AlmacÃ©n",
+    categoria: "Almacén",
     unidad_medida: "UNIDAD",
     precio: 2300,
     disponible: true,
@@ -189,7 +189,7 @@ const INITIAL_PRODUCTS = [
   }
 ];
 
-const CATEGORIAS = ["Todos", "Frutas", "Verduras", "Hojas Verdes", "AlmacÃ©n"];
+const CATEGORIAS = ["Todos", "Frutas", "Verduras", "Hojas Verdes", "Almacén"];
 
 
   // ==========================================
@@ -200,7 +200,7 @@ const CATEGORIAS = ["Todos", "Frutas", "Verduras", "Hojas Verdes", "AlmacÃ©n"]
 
 
 
-// Claves de almacenamiento local (versiÃ³n 3 sin emojis)
+// Claves de almacenamiento local (versión 3 sin emojis)
 const STORAGE_KEYS = {
   PRODUCTS: "mihuerta_products_v3",
   ORDERS: "mihuerta_orders_v3",
@@ -242,7 +242,7 @@ class Store {
     this.listeners = new Set();
     this.init();
 
-    // SincronizaciÃ³n en tiempo real entre pestaÃ±as
+    // Sincronización en tiempo real entre pestañas
     if (typeof window !== "undefined") {
       window.addEventListener("storage", (e) => {
         if (Object.values(STORAGE_KEYS).includes(e.key)) {
@@ -263,25 +263,25 @@ class Store {
       const defaultCustomers = {
         "1123456789": {
           telefono: "1123456789",
-          nombre: "Facundo GÃ³mez",
+          nombre: "Facundo Gómez",
           direccion: "Av. Rivadavia 4520, Piso 3 B"
         },
         "1198765432": {
           telefono: "1198765432",
-          nombre: "MarÃ­a Elena",
-          direccion: "San MartÃ­n 1230"
+          nombre: "María Elena",
+          direccion: "San Martín 1230"
         }
       };
       safeSet(STORAGE_KEYS.CUSTOMERS, defaultCustomers);
     }
 
-    // 3. Pedidos iniciales de demostraciÃ³n
+    // 3. Pedidos iniciales de demostración
     if (!safeGet(STORAGE_KEYS.ORDERS, null)) {
       const sampleOrders = [
         {
           id: 101,
           cliente: {
-            nombre: "Facundo GÃ³mez",
+            nombre: "Facundo Gómez",
             telefono: "1123456789",
             direccion: "Av. Rivadavia 4520, Piso 3 B"
           },
@@ -337,7 +337,7 @@ class Store {
         {
           id: 102,
           cliente: {
-            nombre: "MarÃ­a Elena",
+            nombre: "María Elena",
             telefono: "1198765432",
             direccion: "Retiro en Local"
           },
@@ -384,7 +384,7 @@ class Store {
       safeSet(STORAGE_KEYS.ORDERS, sampleOrders);
     }
 
-    // 4. ConfiguraciÃ³n inicial de PIN y Cloud (conectado por defecto al proyecto Supabase del local)
+    // 4. Configuración inicial de PIN y Cloud (conectado por defecto al proyecto Supabase del local)
     if (!safeGet(STORAGE_KEYS.CLOUD_CONFIG, null)) {
       safeSet(STORAGE_KEYS.CLOUD_CONFIG, {
         supabaseUrl: "https://afrvwqghnvblgjbdndnt.supabase.co",
@@ -393,7 +393,7 @@ class Store {
       });
     }
 
-    // 5. Detectar parÃ¡metro ?tel= en el link enviado por el Bot de WhatsApp
+    // 5. Detectar parámetro ?tel= en el link enviado por el Bot de WhatsApp
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const urlPhone = urlParams.get("tel");
@@ -408,13 +408,13 @@ class Store {
       }
     } catch {}
 
-    // 6. Inicializar conexiÃ³n con Supabase Cloud si estÃ¡ configurada
+    // 6. Inicializar conexión con Supabase Cloud si está configurada
     this.supabase = null;
     this.realtimeChannel = null;
     this.initSupabaseConnection();
   }
 
-  // --- ConfiguraciÃ³n Cloud (Supabase) y PIN de Seguridad ---
+  // --- Configuración Cloud (Supabase) y PIN de Seguridad ---
   getCloudConfig() {
     const DEFAULT_CONFIG = {
       supabaseUrl: "https://afrvwqghnvblgjbdndnt.supabase.co",
@@ -945,7 +945,7 @@ class Store {
     this.notify("orders_changed");
   }
 
-  // Quitar un producto especÃ­fico del pedido
+  // Quitar un producto específico del pedido
   removeItemFromOrder(orderId, itemIndex) {
     let targetOrder = null;
     const orders = this.getOrders().map((order) => {
@@ -962,7 +962,7 @@ class Store {
     this.notify("orders_changed");
   }
 
-  // Agregar un producto al pedido en preparaciÃ³n
+  // Agregar un producto al pedido en preparación
   addProductToOrder(orderId, productId, cantidad) {
     const product = this.getProducts().find((p) => p.id === productId);
     if (!product) return;
@@ -1061,7 +1061,7 @@ function renderClientView(container) {
   let deliveryMode = "RETIRO"; // RETIRO | DELIVERY
   let deliveryAddress = "";
 
-  // Determinar si debemos mostrar el seguimiento de pedido automÃ¡ticamente al iniciar
+  // Determinar si debemos mostrar el seguimiento de pedido automáticamente al iniciar
   const initialActive = store.getActiveOrder();
   if (initialActive && initialActive.estado !== "ENTREGADO") {
     viewingActiveOrder = true;
@@ -1097,18 +1097,18 @@ function renderClientView(container) {
           
           <div class="mb-6">
             <span class="inline-block text-[11px] font-bold tracking-widest uppercase px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 mb-3">
-              VerdulerÃ­a Digital
+              Verdulería Digital
             </span>
             <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Mi Huerta</h1>
             <p class="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
-              CatÃ¡logo fresco del dÃ­a, pedidos directos desde tu celular y pesaje transparente en balanza.
+              Catálogo fresco del día, pedidos directos desde tu celular y pesaje transparente en balanza.
             </p>
           </div>
 
           <form id="phone-form" class="space-y-4">
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                NÃºmero de WhatsApp
+                Número de WhatsApp
               </label>
               <div class="relative flex items-center">
                 <span class="absolute left-4 text-slate-400 font-semibold text-base select-none pointer-events-none">
@@ -1125,7 +1125,7 @@ function renderClientView(container) {
                 />
               </div>
               <p class="text-[11px] text-slate-400 mt-1.5">
-                Usamos tu telÃ©fono para enviarte el comprobante de pesaje real por WhatsApp.
+                Usamos tu teléfono para enviarte el comprobante de pesaje real por WhatsApp.
               </p>
             </div>
 
@@ -1137,14 +1137,14 @@ function renderClientView(container) {
                 <input 
                   type="text" 
                   id="name-input" 
-                  placeholder="Ej: Facundo GÃ³mez" 
+                  placeholder="Ej: Facundo Gómez" 
                   class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 text-base font-medium outline-none transition"
                 />
               </div>
 
               <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  DirecciÃ³n de entrega (opcional)
+                  Dirección de entrega (opcional)
                 </label>
                 <input 
                   type="text" 
@@ -1159,25 +1159,25 @@ function renderClientView(container) {
               type="submit" 
               class="w-full mt-2 min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-slate-950/15 transition tap-feedback text-sm flex items-center justify-center gap-2"
             >
-              <span>Ingresar al CatÃ¡logo</span>
+              <span>Ingresar al Catálogo</span>
             </button>
           </form>
 
-          <!-- Acceso rÃ¡pido demo -->
+          <!-- Acceso rápido demo -->
           <div class="mt-4 pt-3 border-t border-slate-100">
             <button 
               id="btn-quick-demo-user"
               type="button"
               class="w-full min-h-[44px] bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-3 rounded-xl transition tap-feedback text-center"
             >
-              Probar como Facundo GÃ³mez (Cliente demo)
+              Probar como Facundo Gómez (Cliente demo)
             </button>
           </div>
 
           <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
             <span class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-              Precios del dÃ­a
+              Precios del día
             </span>
             <span>Pesaje transparente</span>
           </div>
@@ -1210,7 +1210,7 @@ function renderClientView(container) {
     btnQuickDemo?.addEventListener("click", () => {
       const demoUser = store.saveCustomer({
         telefono: "1123456789",
-        nombre: "Facundo GÃ³mez",
+        nombre: "Facundo Gómez",
         direccion: "Av. Rivadavia 4520, Piso 3 B"
       });
       store.setCurrentUser(demoUser);
@@ -1256,7 +1256,7 @@ function renderClientView(container) {
       return matchesCategory && matchesSearch;
     });
 
-    // Conteo por categorÃ­a
+    // Conteo por categoría
     const categoryCounts = {};
     CATEGORIAS.forEach((cat) => {
       categoryCounts[cat] =
@@ -1292,7 +1292,7 @@ function renderClientView(container) {
                   </span>
                 </div>
                 <p class="text-xs text-emerald-900 font-semibold mt-0.5">
-                  TocÃ¡ aquÃ­ para ver el pesaje en balanza en tiempo real
+                  Tocá aquí para ver el pesaje en balanza en tiempo real
                 </p>
               </div>
               <span class="text-xs font-bold text-emerald-800 bg-white px-2.5 py-1 rounded-lg border border-emerald-200">
@@ -1304,12 +1304,12 @@ function renderClientView(container) {
             : ""
         }
 
-        <!-- Header MÃ³vil del CatÃ¡logo (Coordinado con clase sticky-header-offset) -->
+        <!-- Header Móvil del Catálogo (Coordinado con clase sticky-header-offset) -->
         <header class="sticky sticky-header-offset z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 pt-3 pb-2.5 shadow-xs">
           <div class="flex items-center justify-between gap-2">
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-sm font-black text-slate-900 tracking-tight uppercase">CatÃ¡logo del DÃ­a</span>
+                <span class="text-sm font-black text-slate-900 tracking-tight uppercase">Catálogo del Día</span>
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span class="text-[11px] font-bold text-emerald-700">Abierto</span>
               </div>
@@ -1330,7 +1330,7 @@ function renderClientView(container) {
             </button>
           </div>
 
-          <!-- Buscador con tamaÃ±o de fuente accesible para evitar zoom iOS -->
+          <!-- Buscador con tamaño de fuente accesible para evitar zoom iOS -->
           <div class="mt-2.5 relative">
             <input 
               type="text" 
@@ -1346,7 +1346,7 @@ function renderClientView(container) {
             }
           </div>
 
-          <!-- PÃ­ldoras de CategorÃ­as con conteo (Horizontal Scroll TÃ¡ctil) -->
+          <!-- Píldoras de Categorías con conteo (Horizontal Scroll Táctil) -->
           <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar py-1">
             ${CATEGORIAS.map(
               (cat) => `
@@ -1375,6 +1375,14 @@ function renderClientView(container) {
           ${renderProductCardsHTML(filteredProducts, cart)}
         </main>
 
+        <!-- Footer discreto para acceso a personal del local -->
+        <footer class="mt-8 mb-16 text-center text-xs text-slate-400">
+          <p>Verdulería Mi Huerta • Catálogo y Pesaje en Balanza</p>
+          <a href="?view=operario" class="inline-block mt-2 text-[11px] text-slate-400 hover:text-slate-600 underline">
+            Acceso Personal del Local
+          </a>
+        </footer>
+
         <!-- Barra Flotante Inferior de Pedido (Safe Area Adaptable) -->
         ${
           totalItems > 0
@@ -1386,7 +1394,7 @@ function renderClientView(container) {
             >
               <div class="flex items-center gap-3">
                 <span class="bg-emerald-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded-full">
-                  ${totalItems} ${totalItems === 1 ? "Ã­tem" : "Ã­tems"}
+                  ${totalItems} ${totalItems === 1 ? "ítem" : "ítems"}
                 </span>
                 <div class="text-left">
                   <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Total Estimado</span>
@@ -1407,7 +1415,7 @@ function renderClientView(container) {
       </div>
     `;
 
-    // Restaurar posiciÃ³n de scroll del drawer
+    // Restaurar posición de scroll del drawer
     if (isCartOpen) {
       const newScrollEl = container.querySelector("#cart-drawer-items-list");
       if (newScrollEl && savedDrawerScroll > 0) {
@@ -1430,7 +1438,7 @@ function renderClientView(container) {
           <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin coincidencias</span>
           <p class="text-sm font-semibold text-slate-700">No encontramos productos con ese nombre</p>
           <button id="btn-reset-filter" class="mt-3 min-h-[44px] px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200 tap-feedback">
-            Limpiar bÃºsqueda
+            Limpiar búsqueda
           </button>
         </div>
       `;
@@ -1458,7 +1466,7 @@ function renderClientView(container) {
                   <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">
                     ${product.categoria}
                   </span>
-                  <span class="text-[10px] text-slate-300">Â·</span>
+                  <span class="text-[10px] text-slate-300">·</span>
                   <span class="text-[10px] font-semibold text-slate-400">
                     ${unitSubtitle}
                   </span>
@@ -1491,7 +1499,7 @@ function renderClientView(container) {
                 }
               </div>
 
-              <!-- Selector de Cantidad / BotÃ³n TÃ¡ctil -->
+              <!-- Selector de Cantidad / Botón Táctil -->
               <div class="shrink-0 flex flex-col items-end">
                 ${
                   product.disponible
@@ -1514,7 +1522,7 @@ function renderClientView(container) {
                           class="btn-qty-dec w-9 h-9 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-sm font-black transition tap-feedback"
                           title="Restar"
                         >
-                          âˆ’
+                          −
                         </button>
                         <span class="px-2 text-xs font-black min-w-[46px] text-center tracking-tight select-none">
                           ${currentQty} ${unitLabel}
@@ -1534,12 +1542,12 @@ function renderClientView(container) {
               </div>
             </div>
 
-            <!-- Accesos rÃ¡pidos de peso para productos pesables (Disponibles en todo momento) -->
+            <!-- Accesos rápidos de peso para productos pesables (Disponibles en todo momento) -->
             ${
               product.disponible && isKg
                 ? `
               <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ajuste rÃ¡pido:</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ajuste rápido:</span>
                 <div class="flex items-center gap-1.5">
                   <button 
                     data-quick-weight-id="${product.id}" 
@@ -1599,7 +1607,7 @@ function renderClientView(container) {
       }
     });
 
-    // BÃºsqueda en tiempo real sin recargar todo el header
+    // Búsqueda en tiempo real sin recargar todo el header
     const searchInput = container.querySelector("#search-input");
     searchInput?.addEventListener("input", (e) => {
       searchQuery = e.target.value;
@@ -1688,14 +1696,14 @@ function renderClientView(container) {
           isDrawerFirstOpen ? "animate-slide-up" : ""
         } border-t border-slate-200">
           
-          <!-- Handle bar tÃ¡ctil -->
+          <!-- Handle bar táctil -->
           <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mt-3"></div>
 
-          <!-- Header Carrito con botÃ³n de cierre accesible (44x44px) -->
+          <!-- Header Carrito con botón de cierre accesible (44x44px) -->
           <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
             <div>
               <h2 class="font-black text-slate-900 text-lg tracking-tight">Tu Pedido</h2>
-              <p class="text-[11px] text-slate-400 font-medium">RevisÃ¡ las cantidades antes de confirmar</p>
+              <p class="text-[11px] text-slate-400 font-medium">Revisá las cantidades antes de confirmar</p>
             </div>
             <button 
               id="btn-close-cart" 
@@ -1706,21 +1714,21 @@ function renderClientView(container) {
             </button>
           </div>
 
-          <!-- Lista de Ãtems en Carrito con Controles Directos -->
+          <!-- Lista de Ítems en Carrito con Controles Directos -->
           <div id="cart-drawer-items-list" class="p-5 overflow-y-auto space-y-3 flex-1 overscroll-contain">
             ${
               isEmpty
                 ? `
                 <div class="text-center py-12 px-4">
-                  <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 mb-2">Pedido VacÃ­o</span>
+                  <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 mb-2">Pedido Vacío</span>
                   <h4 class="font-extrabold text-slate-800 text-sm">Tu pedido no tiene productos</h4>
-                  <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">SeleccionÃ¡ frutas y verduras del catÃ¡logo para coordinar el pesaje en balanza.</p>
+                  <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Seleccioná frutas y verduras del catálogo para coordinar el pesaje en balanza.</p>
                   <button 
                     id="btn-drawer-empty-back" 
                     type="button"
                     class="mt-4 min-h-[44px] px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl transition tap-feedback"
                   >
-                    Volver al CatÃ¡logo
+                    Volver al Catálogo
                   </button>
                 </div>
               `
@@ -1738,7 +1746,7 @@ function renderClientView(container) {
                     </p>
                   </div>
 
-                  <!-- Stepper en Carrito con botones cÃ³modos (36px) y botÃ³n eliminar -->
+                  <!-- Stepper en Carrito con botones cómodos (36px) y botón eliminar -->
                   <div class="flex items-center gap-2">
                     <div class="flex items-center bg-white border border-slate-200 rounded-xl p-0.5 shadow-xs">
                       <button 
@@ -1746,7 +1754,7 @@ function renderClientView(container) {
                         class="w-8 h-8 flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-95 rounded-lg font-black text-sm tap-feedback"
                         title="Restar"
                       >
-                        âˆ’
+                        −
                       </button>
                       <span class="px-2 text-xs font-black min-w-[38px] text-center text-slate-900 select-none">
                         ${item.cantidad}
@@ -1784,7 +1792,7 @@ function renderClientView(container) {
             <!-- Selector de Forma de Entrega Segmentado -->
             <div class="pt-3">
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                MÃ©todo de Entrega
+                Método de Entrega
               </label>
               <div class="grid grid-cols-2 gap-2">
                 <label id="delivery-card-retiro" class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
@@ -1794,14 +1802,14 @@ function renderClientView(container) {
                     <span class="text-xs font-black">Retiro en Local</span>
                     <input type="radio" name="delivery-mode" value="RETIRO" ${!isDelivery ? "checked" : ""} class="accent-emerald-500" />
                   </div>
-                  <span class="text-[10px] opacity-75 mt-1">Listo en 20-30 min Â· Sin costo</span>
+                  <span class="text-[10px] opacity-75 mt-1">Listo en 20-30 min · Sin costo</span>
                 </label>
 
                 <label id="delivery-card-delivery" class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
                   isDelivery ? "border-slate-900 bg-slate-900 text-white shadow-xs" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
                 }">
                   <div class="flex items-center justify-between">
-                    <span class="text-xs font-black">EnvÃ­o a Domicilio</span>
+                    <span class="text-xs font-black">Envío a Domicilio</span>
                     <input type="radio" name="delivery-mode" value="DELIVERY" ${isDelivery ? "checked" : ""} class="accent-emerald-500" />
                   </div>
                   <span class="text-[10px] opacity-75 mt-1">Cadete a tu puerta</span>
@@ -1809,28 +1817,28 @@ function renderClientView(container) {
               </div>
             </div>
 
-            <!-- Campo DirecciÃ³n de EnvÃ­o -->
+            <!-- Campo Dirección de Envío -->
             <div id="delivery-address-container" class="${isDelivery ? "" : "hidden"} pt-1">
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                DirecciÃ³n exacta de entrega
+                Dirección exacta de entrega
               </label>
               <input 
                 type="text" 
                 id="delivery-address-input" 
                 value="${deliveryAddress}" 
-                placeholder="Calle, nÃºmero, piso y departamento"
+                placeholder="Calle, número, piso y departamento"
                 class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base font-medium outline-none focus:bg-white focus:ring-2 focus:ring-slate-900 transition"
               />
             </div>
 
-            <!-- ExplicaciÃ³n de Pesaje Real Transparente -->
+            <!-- Explicación de Pesaje Real Transparente -->
             <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-950 mt-2">
               <div class="flex items-center gap-1.5 mb-1">
                 <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                 <span class="font-bold text-[11px] uppercase tracking-wider text-amber-900">Pesaje en Balanza</span>
               </div>
               <p class="text-[11px] leading-relaxed opacity-90">
-                El total indicado es una estimaciÃ³n. En el mostrador se pesan las unidades reales y te notificaremos el comprobante con los gramos exactos y el importe final.
+                El total indicado es una estimación. En el mostrador se pesan las unidades reales y te notificaremos el comprobante con los gramos exactos y el importe final.
               </p>
             </div>
             `
@@ -1838,7 +1846,7 @@ function renderClientView(container) {
             }
           </div>
 
-          <!-- Footer con ConfirmaciÃ³n y Safe Area Pad -->
+          <!-- Footer con Confirmación y Safe Area Pad -->
           <div class="p-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl space-y-3 safe-pb">
             <div class="flex items-center justify-between">
               <div>
@@ -1856,7 +1864,7 @@ function renderClientView(container) {
                 disabled
                 class="w-full min-h-[50px] bg-slate-200 text-slate-400 font-black py-4 rounded-2xl text-sm cursor-not-allowed opacity-60 text-center"
               >
-                Pedido VacÃ­o
+                Pedido Vacío
               </button>
             `
                 : `
@@ -1969,7 +1977,7 @@ function renderClientView(container) {
       const finalAddress = mode === "DELIVERY" ? deliveryAddress.trim() : "Retiro en Mostrador";
 
       if (mode === "DELIVERY" && !finalAddress) {
-        alert("Por favor ingresÃ¡ tu direcciÃ³n para coordinar el envÃ­o a domicilio.");
+        alert("Por favor ingresá tu dirección para coordinar el envío a domicilio.");
         addressInput?.focus();
         return;
       }
@@ -2001,23 +2009,23 @@ function renderClientView(container) {
 
     let stepNumber = 1;
     let stepTitle = "Pedido Recibido";
-    let stepDesc = "El pedido ingresÃ³ en la cola del mostrador.";
+    let stepDesc = "El pedido ingresó en la cola del mostrador.";
 
     if (isWeighing) {
       stepNumber = 2;
       stepTitle = "En Balanza";
-      stepDesc = "El operario estÃ¡ pesando cada uno de tus productos.";
+      stepDesc = "El operario está pesando cada uno de tus productos.";
     } else if (isReady && !isDelivered) {
       stepNumber = 3;
       stepTitle = "Listo para Entrega";
       stepDesc =
         currentOrder.tipo_entrega === "DELIVERY"
-          ? "El pedido fue pesado y el cadete estÃ¡ listo para despachar."
-          : "El pedido fue pesado y podÃ©s pasar a retirarlo por el local.";
+          ? "El pedido fue pesado y el cadete está listo para despachar."
+          : "El pedido fue pesado y podés pasar a retirarlo por el local.";
     } else if (isDelivered) {
       stepNumber = 4;
       stepTitle = "Entregado y Cobrado";
-      stepDesc = "Pedido finalizado exitosamente. Â¡Muchas gracias por tu compra!";
+      stepDesc = "Pedido finalizado exitosamente. ¡Muchas gracias por tu compra!";
     }
 
     const waHelpText = encodeURIComponent(
@@ -2028,13 +2036,13 @@ function renderClientView(container) {
     container.innerHTML = `
       <div class="max-w-md mx-auto p-4 pt-4 pb-28">
         
-        <!-- BotÃ³n para volver a ver catÃ¡logo sin perder el pedido -->
+        <!-- Botón para volver a ver catálogo sin perder el pedido -->
         <div class="mb-3">
           <button 
             id="btn-back-to-catalog" 
             class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
           >
-            <span>Volver al CatÃ¡logo</span>
+            <span>Volver al Catálogo</span>
           </button>
         </div>
 
@@ -2059,7 +2067,7 @@ function renderClientView(container) {
             </span>
           </div>
 
-          <!-- LÃ­nea de Progreso (Timeline Minimalista de 4 Pasos) -->
+          <!-- Línea de Progreso (Timeline Minimalista de 4 Pasos) -->
           <div class="my-5">
             <div class="grid grid-cols-4 gap-1.5 text-center">
               <div class="h-1.5 rounded-full ${stepNumber >= 1 ? "bg-slate-900" : "bg-slate-200"}"></div>
@@ -2085,7 +2093,7 @@ function renderClientView(container) {
             <div class="flex justify-between text-xs text-slate-500">
               <span>Entrega:</span>
               <strong class="text-slate-800 font-semibold">
-                ${currentOrder.tipo_entrega === "DELIVERY" ? "EnvÃ­o a Domicilio" : "Retiro en Mostrador"}
+                ${currentOrder.tipo_entrega === "DELIVERY" ? "Envío a Domicilio" : "Retiro en Mostrador"}
               </strong>
             </div>
 
@@ -2123,7 +2131,7 @@ function renderClientView(container) {
             }
           </div>
 
-          <!-- Desglose Ãtems Pesados -->
+          <!-- Desglose Ítems Pesados -->
           <div class="mt-5">
             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Detalle de Productos</h4>
             <div class="divide-y divide-slate-100 text-xs">
@@ -2152,7 +2160,7 @@ function renderClientView(container) {
             </div>
           </div>
 
-          <!-- BotÃ³n de consulta al local por WhatsApp -->
+          <!-- Botón de consulta al local por WhatsApp -->
           <div class="mt-5 pt-3 border-t border-slate-100">
             <a 
               href="${waHelpLink}"
@@ -2188,7 +2196,7 @@ function renderClientView(container) {
     });
   }
 
-  // SuscripciÃ³n reactiva al store
+  // Suscripción reactiva al store
   const unsubscribe = store.subscribe((event) => {
     if (
       event === "cart_changed" ||
@@ -2217,8 +2225,8 @@ function renderClientView(container) {
 
 function renderOperatorView(container) {
   let activeTab = "PENDIENTE"; // PENDIENTE | EN_PREPARACION | LISTO | ENTREGADO
-  let editingOrderId = null; // ID del pedido que se estÃ¡ editando en modal
-  let addingProductOrderId = null; // ID del pedido que tiene abierto el desplegable de agregar Ã­tem
+  let editingOrderId = null; // ID del pedido que se está editando en modal
+  let addingProductOrderId = null; // ID del pedido que tiene abierto el desplegable de agregar ítem
 
   function update() {
     container.innerHTML = "";
@@ -2241,21 +2249,30 @@ function renderOperatorView(container) {
               <h1 class="font-extrabold text-sm leading-tight text-white">Mostrador & Balanza</h1>
               <p class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                RecepciÃ³n en vivo activa
+                Recepción en vivo activa
               </p>
             </div>
 
-            <!-- BotÃ³n para probar sonido de alerta -->
-            <button 
-              id="btn-test-sound" 
-              title="Probar timbre de pedido" 
-              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
-            >
-              <span>Probar timbre</span>
-            </button>
+            <!-- Botones de Acción de Cabecera -->
+            <div class="flex items-center gap-1.5">
+              <button 
+                id="btn-test-sound" 
+                title="Probar timbre de pedido" 
+                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
+              >
+                <span>Timbre</span>
+              </button>
+              <button 
+                id="btn-operator-logout" 
+                title="Salir y bloquear" 
+                class="px-2.5 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-semibold border border-rose-800/60 transition tap-feedback"
+              >
+                Salir
+              </button>
+            </div>
           </div>
 
-          <!-- PestaÃ±as del Kanban (Mobile-First) -->
+          <!-- Pestañas del Kanban (Mobile-First) -->
           <div class="grid grid-cols-4 gap-1.5 mt-3 bg-slate-800/80 p-1 rounded-xl text-center">
             <button 
               data-tab="PENDIENTE" 
@@ -2305,12 +2322,12 @@ function renderOperatorView(container) {
           </div>
         </header>
 
-        <!-- Contenido segÃºn la pestaÃ±a activa -->
+        <!-- Contenido según la pestaña activa -->
         <main class="p-4">
           ${renderTabContent(orders)}
         </main>
 
-        <!-- Modal de EdiciÃ³n de Pedido -->
+        <!-- Modal de Edición de Pedido -->
         ${editingOrderId ? renderEditModal(orders.find((o) => o.id === editingOrderId)) : ""}
       </div>
     `;
@@ -2318,6 +2335,11 @@ function renderOperatorView(container) {
     // Listeners del header
     container.querySelector("#btn-test-sound")?.addEventListener("click", () => {
       store.playAudioAlert();
+    });
+
+    container.querySelector("#btn-operator-logout")?.addEventListener("click", () => {
+      store.lockStaff();
+      window.location.href = "?view=cliente";
     });
 
     container.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -2331,21 +2353,21 @@ function renderOperatorView(container) {
     attachActions(orders);
   }
 
-  // --- Render segÃºn PestaÃ±a ---
+  // --- Render según Pestaña ---
   function renderTabContent(orders) {
     const tabOrders = orders.filter((o) => o.estado === activeTab);
 
     if (tabOrders.length === 0) {
       return `
         <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 p-6">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin Ã³rdenes</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin órdenes</span>
           <h3 class="font-bold text-slate-700 text-sm">No hay pedidos en esta columna</h3>
-          <p class="text-xs text-slate-400 mt-1">Los nuevos pedidos ingresarÃ¡n automÃ¡ticamente aquÃ­ en tiempo real.</p>
+          <p class="text-xs text-slate-400 mt-1">Los nuevos pedidos ingresarán automáticamente aquí en tiempo real.</p>
         </div>
       `;
     }
 
-    // 1. PestaÃ±a PENDIENTES
+    // 1. Pestaña PENDIENTES
     if (activeTab === "PENDIENTE") {
       return `
         <div class="space-y-3">
@@ -2353,7 +2375,7 @@ function renderOperatorView(container) {
             .map((order) => {
               const itemsList = order.items
                 .map((i) => `${i.cantidad_solicitada}${i.unidad_medida === "KG" ? "kg" : "u"} ${i.nombre}`)
-                .join(" Â· ");
+                .join(" · ");
 
               return `
               <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs transition">
@@ -2366,11 +2388,11 @@ function renderOperatorView(container) {
                           ? "bg-slate-900 text-white"
                           : "bg-slate-100 text-slate-700"
                       }">
-                        ${order.tipo_entrega === "DELIVERY" ? "EnvÃ­o a Domicilio" : "Retiro en Local"}
+                        ${order.tipo_entrega === "DELIVERY" ? "Envío a Domicilio" : "Retiro en Local"}
                       </span>
                     </div>
                     <h3 class="font-extrabold text-slate-900 text-sm mt-1.5">${order.cliente.nombre}</h3>
-                    <p class="text-xs text-slate-400">${order.cliente.telefono} Â· ${timeAgo(order.fecha)}</p>
+                    <p class="text-xs text-slate-400">${order.cliente.telefono} · ${timeAgo(order.fecha)}</p>
                   </div>
                   <div class="text-right">
                     <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Estimado</span>
@@ -2384,7 +2406,7 @@ function renderOperatorView(container) {
                   <p class="leading-relaxed">${itemsList || "Sin productos"}</p>
                 </div>
 
-                <!-- Acciones Principales y de GestiÃ³n -->
+                <!-- Acciones Principales y de Gestión -->
                 <div class="mt-3 space-y-2">
                   <button 
                     data-start-id="${order.id}" 
@@ -2416,7 +2438,7 @@ function renderOperatorView(container) {
       `;
     }
 
-    // 2. PestaÃ±a EN PREPARACIÃ“N (MÃ³dulo de Pesaje en Balanza)
+    // 2. Pestaña EN PREPARACIÓN (Módulo de Pesaje en Balanza)
     if (activeTab === "EN_PREPARACION") {
       const activeProducts = store.getProducts().filter((p) => p.disponible);
 
@@ -2437,7 +2459,7 @@ function renderOperatorView(container) {
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div>
                     <span class="text-[10px] font-black text-blue-600 tracking-widest uppercase">Pesaje Activo</span>
-                    <h2 class="text-lg font-black text-slate-900">Pedido #${order.id} Â· ${order.cliente.nombre}</h2>
+                    <h2 class="text-lg font-black text-slate-900">Pedido #${order.id} · ${order.cliente.nombre}</h2>
                     <p class="text-xs text-slate-400">
                       ${order.tipo_entrega === "DELIVERY" ? order.direccion_entrega : "Retiro por mostrador"}
                     </p>
@@ -2448,13 +2470,13 @@ function renderOperatorView(container) {
                   </div>
                 </div>
 
-                <!-- Lista de Pesaje Ãtem por Ãtem -->
+                <!-- Lista de Pesaje Ítem por Ítem -->
                 <div class="mt-4 space-y-2.5">
                   ${
                     order.items.length === 0
                       ? `
                     <div class="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                      No hay productos en este pedido. PodÃ©s agregar uno abajo.
+                      No hay productos en este pedido. Podés agregar uno abajo.
                     </div>
                   `
                       : order.items
@@ -2481,12 +2503,12 @@ function renderOperatorView(container) {
                               ${item.nombre}
                             </h4>
                             <p class="text-xs text-slate-500 mt-0.5">
-                              SolicitÃ³: <strong class="text-slate-800 font-bold">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
-                              Â· ($${item.precio_unitario.toLocaleString("es-AR")} / ${isWeight ? "kg" : "u"})
+                              Solicitó: <strong class="text-slate-800 font-bold">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
+                              · ($${item.precio_unitario.toLocaleString("es-AR")} / ${isWeight ? "kg" : "u"})
                             </p>
                           </div>
 
-                          <!-- Acciones por Ã­tem: Sin Stock y Quitar -->
+                          <!-- Acciones por ítem: Sin Stock y Quitar -->
                           <div class="flex items-center gap-1.5 shrink-0">
                             <button 
                               data-toggle-stock-order="${order.id}"
@@ -2496,7 +2518,7 @@ function renderOperatorView(container) {
                                   ? "bg-rose-600 text-white border-rose-600"
                                   : "bg-white text-slate-600 border-slate-300 hover:text-rose-600"
                               }"
-                              title="Marcar sin disponibilidad en el cajÃ³n"
+                              title="Marcar sin disponibilidad en el cajón"
                             >
                               ${item.sin_stock ? "Anulado" : "Sin Stock"}
                             </button>
@@ -2505,7 +2527,7 @@ function renderOperatorView(container) {
                               data-remove-item-order="${order.id}"
                               data-item-index="${idx}"
                               class="btn-remove-item min-h-[36px] px-2.5 py-1 text-slate-400 hover:text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-50 transition tap-feedback"
-                              title="Eliminar este Ã­tem del pedido"
+                              title="Eliminar este ítem del pedido"
                             >
                               Quitar
                             </button>
@@ -2530,7 +2552,7 @@ function renderOperatorView(container) {
                                 class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-sm font-black transition tap-feedback shrink-0"
                                 title="Restar ${stepFine}"
                               >
-                                âˆ’
+                                −
                               </button>
 
                               <div class="relative flex-1 max-w-[110px]">
@@ -2564,7 +2586,7 @@ function renderOperatorView(container) {
                                 +
                               </button>
 
-                              <!-- BotÃ³n rÃ¡pido para copiar lo solicitado -->
+                              <!-- Botón rápido para copiar lo solicitado -->
                               <button 
                                 type="button"
                                 data-copy-requested-order="${order.id}"
@@ -2592,7 +2614,7 @@ function renderOperatorView(container) {
                   }
                 </div>
 
-                <!-- MÃ³dulo para Agregar Producto al Pedido -->
+                <!-- Módulo para Agregar Producto al Pedido -->
                 <div class="mt-3">
                   ${
                     isAddingProduct
@@ -2646,7 +2668,7 @@ function renderOperatorView(container) {
                       data-toggle-add-order="${order.id}"
                       class="btn-open-add-product w-full py-2.5 px-3 border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 tap-feedback"
                     >
-                      <span>Agregar producto que olvidÃ³ el cliente</span>
+                      <span>Agregar producto que olvidó el cliente</span>
                     </button>
                   `
                   }
@@ -2685,7 +2707,7 @@ function renderOperatorView(container) {
       `;
     }
 
-    // 3. PestaÃ±a LISTOS
+    // 3. Pestaña LISTOS
     if (activeTab === "LISTO") {
       return `
         <div class="space-y-4">
@@ -2702,8 +2724,8 @@ function renderOperatorView(container) {
                     <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
                       Pesaje Completo
                     </span>
-                    <h3 class="text-base font-black text-slate-900 mt-1">#${order.id} Â· ${order.cliente.nombre}</h3>
-                    <p class="text-xs text-slate-500">${order.cliente.telefono} Â· ${order.tipo_entrega === "DELIVERY" ? "EnvÃ­o" : "Retiro"}</p>
+                    <h3 class="text-base font-black text-slate-900 mt-1">#${order.id} · ${order.cliente.nombre}</h3>
+                    <p class="text-xs text-slate-500">${order.cliente.telefono} · ${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"}</p>
                   </div>
                   <div class="text-right">
                     <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Total Exacto</span>
@@ -2732,7 +2754,7 @@ function renderOperatorView(container) {
                   </button>
                 </div>
 
-                <!-- OpciÃ³n de Cancelar / Eliminar Pedido Listo -->
+                <!-- Opción de Cancelar / Eliminar Pedido Listo -->
                 <div class="mt-2 text-right">
                   <button 
                     data-delete-order-id="${order.id}"
@@ -2749,7 +2771,7 @@ function renderOperatorView(container) {
       `;
     }
 
-    // 4. PestaÃ±a ENTREGADOS / COBRADOS
+    // 4. Pestaña ENTREGADOS / COBRADOS
     if (activeTab === "ENTREGADO") {
       return `
         <div class="space-y-2.5">
@@ -2760,7 +2782,7 @@ function renderOperatorView(container) {
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">#${order.id}</span>
                 <h4 class="font-extrabold text-slate-900 text-sm">${order.cliente.nombre}</h4>
-                <p class="text-xs text-slate-400">${order.tipo_entrega === "DELIVERY" ? "EnvÃ­o" : "Retiro"} Â· ${timeAgo(order.fecha)}</p>
+                <p class="text-xs text-slate-400">${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"} · ${timeAgo(order.fecha)}</p>
               </div>
               <div class="text-right">
                 <span class="font-black text-base text-slate-900">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
@@ -2775,7 +2797,7 @@ function renderOperatorView(container) {
     }
   }
 
-  // --- Modal de EdiciÃ³n de Pedido ---
+  // --- Modal de Edición de Pedido ---
   function renderEditModal(order) {
     if (!order) return "";
 
@@ -2805,7 +2827,7 @@ function renderOperatorView(container) {
             </div>
 
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">TelÃ©fono / WhatsApp</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Teléfono / WhatsApp</label>
               <input 
                 type="tel" 
                 id="edit-phone" 
@@ -2824,13 +2846,13 @@ function renderOperatorView(container) {
                 </label>
                 <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer has-[:checked]:border-slate-900 has-[:checked]:bg-slate-50">
                   <input type="radio" name="edit-delivery-mode" value="DELIVERY" ${order.tipo_entrega === "DELIVERY" ? "checked" : ""} />
-                  <span class="text-xs font-bold text-slate-800">EnvÃ­o Domicilio</span>
+                  <span class="text-xs font-bold text-slate-800">Envío Domicilio</span>
                 </label>
               </div>
             </div>
 
             <div id="edit-address-container" class="${order.tipo_entrega === "DELIVERY" ? "" : "hidden"}">
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">DirecciÃ³n de entrega</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Dirección de entrega</label>
               <input 
                 type="text" 
                 id="edit-address" 
@@ -2870,15 +2892,15 @@ function renderOperatorView(container) {
 
     const total = order.total_real || order.total_estimado;
 
-    return `Hola ${order.cliente.nombre}. Tu pedido #${order.id} en Mi Huerta ya fue pesado y estÃ¡ listo:
+    return `Hola ${order.cliente.nombre}. Tu pedido #${order.id} en Mi Huerta ya fue pesado y está listo:
 
 ${itemsLines}
 
 Total exacto en balanza: $${total.toLocaleString("es-AR")}
-${order.tipo_entrega === "DELIVERY" ? "El cadete estÃ¡ coordinado con tu direcciÃ³n de entrega." : "Ya podÃ©s pasar a retirarlo por el mostrador."}
+${order.tipo_entrega === "DELIVERY" ? "El cadete está coordinado con tu dirección de entrega." : "Ya podés pasar a retirarlo por el mostrador."}
 
 Alias para transferir: mihuerta.verduras
-(O podÃ©s abonar en efectivo al recibir).`;
+(O podés abonar en efectivo al recibir).`;
   }
 
   // --- Attach Event Listeners ---
@@ -2900,7 +2922,7 @@ Alias para transferir: mihuerta.verduras
         const id = Number(btn.dataset.deleteOrderId);
         const order = orders.find((o) => o.id === id);
         const clientName = order ? order.cliente.nombre : "este cliente";
-        const confirmCancel = confirm(`Â¿EstÃ¡s seguro de que querÃ©s cancelar y eliminar el pedido #${id} de ${clientName}?`);
+        const confirmCancel = confirm(`¿Estás seguro de que querés cancelar y eliminar el pedido #${id} de ${clientName}?`);
         if (confirmCancel) {
           if (navigator.vibrate) { try { navigator.vibrate(25); } catch {} }
           store.deleteOrder(id);
@@ -2908,7 +2930,7 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
-    // Abrir Modal de EdiciÃ³n
+    // Abrir Modal de Edición
     container.querySelectorAll(".btn-open-edit").forEach((btn) => {
       btn.addEventListener("click", () => {
         editingOrderId = Number(btn.dataset.editOrderId);
@@ -2932,7 +2954,7 @@ Alias para transferir: mihuerta.verduras
       });
     }
 
-    // Confirmar agregar nuevo Ã­tem a la orden
+    // Confirmar agregar nuevo ítem a la orden
     const btnConfirmAddItem = container.querySelector(".btn-confirm-add-item");
     if (btnConfirmAddItem) {
       btnConfirmAddItem.addEventListener("click", () => {
@@ -2948,12 +2970,12 @@ Alias para transferir: mihuerta.verduras
       });
     }
 
-    // Quitar un Ã­tem especÃ­fico del pedido
+    // Quitar un ítem específico del pedido
     container.querySelectorAll(".btn-remove-item").forEach((btn) => {
       btn.addEventListener("click", () => {
         const orderId = Number(btn.dataset.removeItemOrder);
         const itemIdx = Number(btn.dataset.itemIndex);
-        const confirmRemove = confirm("Â¿Eliminar este producto de la lista?");
+        const confirmRemove = confirm("¿Eliminar este producto de la lista?");
         if (confirmRemove) {
           store.removeItemFromOrder(orderId, itemIdx);
         }
@@ -2979,7 +3001,7 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
-    // BotÃ³n copiar solicitado (= X.X)
+    // Botón copiar solicitado (= X.X)
     container.querySelectorAll(".btn-copy-requested").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
@@ -2996,7 +3018,7 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
-    // Modal de ediciÃ³n - Listeners
+    // Modal de edición - Listeners
     if (editingOrderId) {
       const btnCloseEdit = container.querySelector("#btn-close-edit-modal");
       const btnCancelEdit = container.querySelector("#btn-cancel-edit-modal");
@@ -3132,7 +3154,7 @@ Alias para transferir: mihuerta.verduras
   }
 
   const unsubscribe = store.subscribe((event) => {
-    // Si el usuario estÃ¡ interactuando activamente con un input, evitar destruir el DOM
+    // Si el usuario está interactuando activamente con un input, evitar destruir el DOM
     const isTyping = document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT");
     if ((event === "orders_changed" || event === "order_created" || event === "storage_sync") && !isTyping) {
       update();
@@ -3186,10 +3208,10 @@ function renderAdminView(container) {
           <div class="flex items-center justify-between">
             <div>
               <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-0.5">
-                Panel de AdministraciÃ³n
+                Panel de Administración
               </span>
-              <h1 class="font-black text-slate-900 text-lg tracking-tight">Precios y CatÃ¡logo</h1>
-              <p class="text-xs text-slate-500 mt-0.5">AjustÃ¡ los valores del dÃ­a en tiempo real.</p>
+              <h1 class="font-black text-slate-900 text-lg tracking-tight">Precios y Catálogo</h1>
+              <p class="text-xs text-slate-500 mt-0.5">Ajustá los valores del día en tiempo real.</p>
             </div>
             <div class="flex flex-col items-end gap-1.5">
               <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
@@ -3197,20 +3219,29 @@ function renderAdminView(container) {
               }">
                 ${isConnected ? "Cloud Online" : "Modo Local"}
               </span>
-              <button 
-                id="btn-toggle-cloud"
-                class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition tap-feedback ${
-                  isConnected
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                }"
-              >
-                ${showCloudSettings ? "Cerrar Config" : "Config Cloud"}
-              </button>
+              <div class="flex items-center gap-1.5">
+                <button 
+                  id="btn-toggle-cloud"
+                  class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition tap-feedback ${
+                    isConnected
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }"
+                >
+                  ${showCloudSettings ? "Cerrar Config" : "Config Cloud"}
+                </button>
+                <button 
+                  id="btn-admin-logout" 
+                  title="Salir y bloquear panel" 
+                  class="text-[11px] font-bold px-2 py-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition tap-feedback"
+                >
+                  Salir
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Buscador rÃ¡pido para celular -->
+          <!-- Buscador rápido para celular -->
           <div class="mt-3.5 relative">
             <input 
               type="text" 
@@ -3231,7 +3262,7 @@ function renderAdminView(container) {
               ? `
             <div class="mt-3 p-4 bg-slate-900 text-white rounded-2xl border border-slate-800 animate-fade-in text-xs space-y-3">
               <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-                <span class="font-black text-slate-200 uppercase tracking-wider text-[11px]">SincronizaciÃ³n Cloud & PIN</span>
+                <span class="font-black text-slate-200 uppercase tracking-wider text-[11px]">Sincronización Cloud & PIN</span>
                 ${
                   configSavedToast
                     ? `<span class="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">Guardado</span>`
@@ -3287,7 +3318,7 @@ function renderAdminView(container) {
               : ""
           }
 
-          <!-- Filtro de CategorÃ­as TÃ¡ctil con conteo -->
+          <!-- Filtro de Categorías Táctil con conteo -->
           <div class="mt-3.5 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             ${CATEGORIAS.map(
               (cat) => `
@@ -3348,7 +3379,7 @@ function renderAdminView(container) {
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
-              <!-- Stepper rÃ¡pido -100 / +100 -->
+              <!-- Stepper rápido -100 / +100 -->
               <button 
                 type="button"
                 data-step-price="${p.id}"
@@ -3356,7 +3387,7 @@ function renderAdminView(container) {
                 class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold rounded-lg text-xs transition tap-feedback"
                 title="Bajar $100"
               >
-                âˆ’
+                −
               </button>
 
               <div class="relative w-28">
@@ -3383,7 +3414,7 @@ function renderAdminView(container) {
                 +
               </button>
 
-              <!-- BotÃ³n Switch Activo / Pausado (44px min) -->
+              <!-- Botón Switch Activo / Pausado (44px min) -->
               <button 
                 data-toggle-stock="${p.id}"
                 class="btn-stock-toggle min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold transition tap-feedback ${
@@ -3402,7 +3433,7 @@ function renderAdminView(container) {
   }
 
   function attachAdminListeners() {
-    // BÃºsqueda en vivo sin recrear el DOM del input
+    // Búsqueda en vivo sin recrear el DOM del input
     const searchInput = container.querySelector("#admin-search-input");
     searchInput?.addEventListener("input", (e) => {
       searchQuery = e.target.value;
@@ -3423,6 +3454,11 @@ function renderAdminView(container) {
     container.querySelector("#btn-admin-clear-search")?.addEventListener("click", () => {
       searchQuery = "";
       update();
+    });
+
+    container.querySelector("#btn-admin-logout")?.addEventListener("click", () => {
+      store.lockStaff();
+      window.location.href = "?view=cliente";
     });
 
     const btnToggleCloud = container.querySelector("#btn-toggle-cloud");
@@ -3478,7 +3514,7 @@ function renderAdminView(container) {
       });
     });
 
-    // Ajuste rÃ¡pido con botones +/- 100
+    // Ajuste rápido con botones +/- 100
     container.querySelectorAll(".btn-step-price").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (navigator.vibrate) { try { navigator.vibrate(10); } catch {} }
@@ -3556,13 +3592,15 @@ class App {
       }
     };
 
-    // Si entra un cliente real desde el link de WhatsApp (?tel=...) ocultamos la barra del simulador
-    if (isRealMode && this.simulatorBar && urlParams.get("sim") !== "1") {
+    const isDemoMode = urlParams.get("demo") === "1" || urlParams.get("sim") === "1";
+
+    // La barra del simulador SOLO se muestra si explícitamente se agrega ?demo=1 en la URL
+    if (isDemoMode && this.simulatorBar) {
+      this.simulatorBar.classList.remove("hidden");
+      document.body.classList.add("has-sim-bar");
+    } else if (this.simulatorBar) {
       this.simulatorBar.classList.add("hidden");
       document.body.classList.remove("has-sim-bar");
-      this.requirePinInDemo = true;
-    } else {
-      document.body.classList.add("has-sim-bar");
     }
     updateSimBarHeight();
     window.addEventListener("resize", updateSimBarHeight);
@@ -3570,12 +3608,7 @@ class App {
     if (this.btnLockPin) {
       this.btnLockPin.addEventListener("click", () => {
         store.lockStaff();
-        this.requirePinInDemo = true;
-        if (this.currentView === "client") {
-          this.navigate("operator");
-        } else {
-          this.navigate(this.currentView);
-        }
+        this.navigate("client");
       });
     }
 
@@ -3592,15 +3625,16 @@ class App {
   }
 
   renderPinGate(targetView) {
-    const roleLabel = targetView === "admin" || targetView === "dueno" ? "Panel de Precios (DueÃ±o)" : "Mostrador y Balanza (Operario)";
+    const isOperario = targetView === "operator" || targetView === "operario";
+    const roleLabel = isOperario ? "Puesto de Balanza (Operario)" : "Panel de Precios (Dueño)";
     this.container.innerHTML = `
-      <div class="max-w-sm mx-auto p-4 pt-12">
+      <div class="max-w-sm mx-auto p-4 pt-16">
         <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-xl text-center">
           <span class="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-100 text-slate-700 mb-3">
             Acceso Personal del Local
           </span>
           <h2 class="text-xl font-black text-slate-900">${roleLabel}</h2>
-          <p class="text-xs text-slate-500 mt-1 mb-5">IngresÃ¡ el PIN numÃ©rico de 4 dÃ­gitos del negocio (Por defecto: <strong>1234</strong>)</p>
+          <p class="text-xs text-slate-500 mt-1 mb-5">Ingresá el PIN numérico de 4 dígitos del comercio (Por defecto: <strong>1234</strong>)</p>
 
           <form id="pin-gate-form" class="space-y-4">
             <input 
@@ -3608,18 +3642,18 @@ class App {
               id="pin-input" 
               inputmode="numeric" 
               maxlength="8" 
-              placeholder="â€¢â€¢â€¢â€¢" 
+              placeholder="••••" 
               required
               class="w-40 mx-auto block text-center tracking-[0.5em] py-3 px-4 bg-slate-50 border-2 border-slate-300 rounded-2xl font-black text-2xl text-slate-900 outline-none focus:border-slate-900 focus:bg-white transition"
             />
-            <p id="pin-error" class="hidden text-xs font-bold text-rose-600">PIN incorrecto. IntentÃ¡ nuevamente.</p>
+            <p id="pin-error" class="hidden text-xs font-bold text-rose-600">PIN incorrecto. Intentá nuevamente.</p>
             <div class="flex gap-2 pt-1">
               <button 
                 type="button" 
                 id="btn-pin-back"
                 class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
               >
-                Ir al CatÃ¡logo
+                Volver al Catálogo
               </button>
               <button 
                 type="submit" 
@@ -3648,7 +3682,6 @@ class App {
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         if (store.verifyStaffPin(input.value)) {
-          this.requirePinInDemo = false;
           this.navigate(targetView);
         } else {
           errorEl.classList.remove("hidden");
@@ -3679,8 +3712,9 @@ class App {
       }
     });
 
+    // Control estricto de acceso por PIN: si no está desbloqueado, exige PIN
     const isStaffView = ["operator", "operario", "admin", "dueno"].includes(viewName);
-    if (isStaffView && this.requirePinInDemo && !store.isStaffUnlocked()) {
+    if (isStaffView && !store.isStaffUnlocked()) {
       this.renderPinGate(viewName);
       return;
     }

@@ -30,13 +30,15 @@ class App {
       }
     };
 
-    // Si entra un cliente real desde el link de WhatsApp (?tel=...) ocultamos la barra del simulador
-    if (isRealMode && this.simulatorBar && urlParams.get("sim") !== "1") {
+    const isDemoMode = urlParams.get("demo") === "1" || urlParams.get("sim") === "1";
+
+    // La barra del simulador SOLO se muestra si explícitamente se agrega ?demo=1 en la URL
+    if (isDemoMode && this.simulatorBar) {
+      this.simulatorBar.classList.remove("hidden");
+      document.body.classList.add("has-sim-bar");
+    } else if (this.simulatorBar) {
       this.simulatorBar.classList.add("hidden");
       document.body.classList.remove("has-sim-bar");
-      this.requirePinInDemo = true;
-    } else {
-      document.body.classList.add("has-sim-bar");
     }
     updateSimBarHeight();
     window.addEventListener("resize", updateSimBarHeight);
@@ -44,12 +46,7 @@ class App {
     if (this.btnLockPin) {
       this.btnLockPin.addEventListener("click", () => {
         store.lockStaff();
-        this.requirePinInDemo = true;
-        if (this.currentView === "client") {
-          this.navigate("operator");
-        } else {
-          this.navigate(this.currentView);
-        }
+        this.navigate("client");
       });
     }
 
@@ -66,15 +63,16 @@ class App {
   }
 
   renderPinGate(targetView) {
-    const roleLabel = targetView === "admin" || targetView === "dueno" ? "Panel de Precios (Dueño)" : "Mostrador y Balanza (Operario)";
+    const isOperario = targetView === "operator" || targetView === "operario";
+    const roleLabel = isOperario ? "Puesto de Balanza (Operario)" : "Panel de Precios (Dueño)";
     this.container.innerHTML = `
-      <div class="max-w-sm mx-auto p-4 pt-12">
+      <div class="max-w-sm mx-auto p-4 pt-16">
         <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-xl text-center">
           <span class="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-100 text-slate-700 mb-3">
             Acceso Personal del Local
           </span>
           <h2 class="text-xl font-black text-slate-900">${roleLabel}</h2>
-          <p class="text-xs text-slate-500 mt-1 mb-5">Ingresá el PIN numérico de 4 dígitos del negocio (Por defecto: <strong>1234</strong>)</p>
+          <p class="text-xs text-slate-500 mt-1 mb-5">Ingresá el PIN numérico de 4 dígitos del comercio (Por defecto: <strong>1234</strong>)</p>
 
           <form id="pin-gate-form" class="space-y-4">
             <input 
@@ -93,7 +91,7 @@ class App {
                 id="btn-pin-back"
                 class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
               >
-                Ir al Catálogo
+                Volver al Catálogo
               </button>
               <button 
                 type="submit" 
@@ -122,7 +120,6 @@ class App {
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         if (store.verifyStaffPin(input.value)) {
-          this.requirePinInDemo = false;
           this.navigate(targetView);
         } else {
           errorEl.classList.remove("hidden");
@@ -153,8 +150,9 @@ class App {
       }
     });
 
+    // Control estricto de acceso por PIN: si no está desbloqueado, exige PIN
     const isStaffView = ["operator", "operario", "admin", "dueno"].includes(viewName);
-    if (isStaffView && this.requirePinInDemo && !store.isStaffUnlocked()) {
+    if (isStaffView && !store.isStaffUnlocked()) {
       this.renderPinGate(viewName);
       return;
     }

@@ -324,6 +324,14 @@ export function renderClientView(container) {
           ${renderProductCardsHTML(filteredProducts, cart)}
         </main>
 
+        <!-- Footer discreto para acceso a personal del local -->
+        <footer class="mt-8 mb-16 text-center text-xs text-slate-400">
+          <p>Verdulería Mi Huerta • Catálogo y Pesaje en Balanza</p>
+          <a href="?view=operario" class="inline-block mt-2 text-[11px] text-slate-400 hover:text-slate-600 underline">
+            Acceso Personal del Local
+          </a>
+        </footer>
+
         <!-- Barra Flotante Inferior de Pedido (Safe Area Adaptable) -->
         ${
           totalItems > 0

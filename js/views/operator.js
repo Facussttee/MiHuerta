@@ -30,14 +30,23 @@ export function renderOperatorView(container) {
               </p>
             </div>
 
-            <!-- Botón para probar sonido de alerta -->
-            <button 
-              id="btn-test-sound" 
-              title="Probar timbre de pedido" 
-              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
-            >
-              <span>Probar timbre</span>
-            </button>
+            <!-- Botones de Acción de Cabecera -->
+            <div class="flex items-center gap-1.5">
+              <button 
+                id="btn-test-sound" 
+                title="Probar timbre de pedido" 
+                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
+              >
+                <span>Timbre</span>
+              </button>
+              <button 
+                id="btn-operator-logout" 
+                title="Salir y bloquear" 
+                class="px-2.5 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-semibold border border-rose-800/60 transition tap-feedback"
+              >
+                Salir
+              </button>
+            </div>
           </div>
 
           <!-- Pestañas del Kanban (Mobile-First) -->
@@ -103,6 +112,11 @@ export function renderOperatorView(container) {
     // Listeners del header
     container.querySelector("#btn-test-sound")?.addEventListener("click", () => {
       store.playAudioAlert();
+    });
+
+    container.querySelector("#btn-operator-logout")?.addEventListener("click", () => {
+      store.lockStaff();
+      window.location.href = "?view=cliente";
     });
 
     container.querySelectorAll(".tab-btn").forEach((btn) => {
