@@ -36,7 +36,6 @@ export function renderOperatorView(container) {
               title="Probar sonido de pedido" 
               class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
             >
-              <span>🔔</span>
               <span>Probar timbre</span>
             </button>
           </div>
@@ -184,13 +183,13 @@ export function renderOperatorView(container) {
                       data-edit-order-id="${order.id}"
                       class="btn-open-edit min-h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
-                      <span>✏️</span> Editar datos
+                      <span>Editar datos</span>
                     </button>
                     <button 
                       data-delete-order-id="${order.id}"
                       class="btn-cancel-order min-h-[38px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
-                      <span>🗑️</span> Cancelar pedido
+                      <span>Cancelar pedido</span>
                     </button>
                   </div>
                 </div>
@@ -291,7 +290,7 @@ export function renderOperatorView(container) {
                               class="btn-remove-item min-h-[34px] px-2 py-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition tap-feedback"
                               title="Eliminar este ítem del pedido"
                             >
-                              ✕
+                              X
                             </button>
                           </div>
                         </div>
@@ -348,7 +347,7 @@ export function renderOperatorView(container) {
                     <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
                       <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">Sumar producto al pedido</span>
-                        <button id="btn-close-add-product" class="text-xs text-slate-400 hover:text-slate-700 font-bold">Cerrar ✕</button>
+                        <button id="btn-close-add-product" class="text-xs text-slate-400 hover:text-slate-700 font-bold">Cerrar</button>
                       </div>
 
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -416,14 +415,14 @@ export function renderOperatorView(container) {
                       data-edit-order-id="${order.id}"
                       class="btn-open-edit min-h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
-                      <span>✏️</span> Cambiar entrega/datos
+                      <span>Cambiar entrega/datos</span>
                     </button>
 
                     <button 
                       data-delete-order-id="${order.id}"
                       class="btn-cancel-order min-h-[38px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
-                      <span>🗑️</span> Cancelar pedido
+                      <span>Cancelar pedido</span>
                     </button>
                   </div>
                 </div>
@@ -489,7 +488,7 @@ export function renderOperatorView(container) {
                     data-delete-order-id="${order.id}"
                     class="btn-cancel-order text-[11px] font-bold text-rose-600 hover:text-rose-800 p-1 transition"
                   >
-                    ✕ Cancelar / Anular pedido
+                    Cancelar / Anular pedido
                   </button>
                 </div>
               </div>
@@ -539,7 +538,7 @@ export function renderOperatorView(container) {
               <h3 class="font-black text-base text-slate-900">Pedido #${order.id}</h3>
             </div>
             <button id="btn-close-edit-modal" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-xs">
-              ✕
+              X
             </button>
           </div>
 

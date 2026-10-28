@@ -250,7 +250,7 @@ export function renderClientView(container) {
             />
             ${
               searchQuery
-                ? `<button id="btn-clear-search" class="absolute right-1 top-1 w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 text-sm font-bold tap-feedback">✕</button>`
+                ? `<button id="btn-clear-search" class="absolute right-1 top-1 w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 text-sm font-bold tap-feedback">X</button>`
                 : ""
             }
           </div>
@@ -532,7 +532,7 @@ export function renderClientView(container) {
               class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300 flex items-center justify-center font-bold text-sm tap-feedback touch-target"
               title="Cerrar pedido"
             >
-              ✕
+              X
             </button>
           </div>
 
