@@ -68,7 +68,7 @@ export function renderClientView(container) {
                   required 
                   inputmode="numeric"
                   placeholder="11 2345 6789" 
-                  value="1123456789"
+                  value="${store.prefilledPhone || "1123456789"}"
                   class="w-full pl-20 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 font-bold text-base outline-none transition"
                 />
               </div>

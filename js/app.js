@@ -1,20 +1,44 @@
+import { store } from "./store.js";
 import { renderClientView } from "./views/client.js";
 import { renderOperatorView } from "./views/operator.js";
 import { renderAdminView } from "./views/admin.js";
 
-// Router simple basado en hash o query params
 class App {
   constructor() {
     this.container = document.getElementById("app-content");
+    this.simulatorBar = document.getElementById("simulator-bar");
     this.navButtons = document.querySelectorAll(".nav-switch");
+    this.btnLockPin = document.getElementById("btn-lock-pin");
     this.currentViewCleanup = null;
     this.currentView = "client";
+    this.requirePinInDemo = false;
 
     this.init();
   }
 
   init() {
-    // Escuchar clics en los botones de cambio de rol/vista
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasClientPhoneLink = urlParams.has("tel");
+    const isRealMode = urlParams.get("modo") === "real" || hasClientPhoneLink;
+
+    // Si entra un cliente real desde el link de WhatsApp (?tel=...) ocultamos la barra del simulador
+    if (isRealMode && this.simulatorBar && urlParams.get("sim") !== "1") {
+      this.simulatorBar.classList.add("hidden");
+      this.requirePinInDemo = true;
+    }
+
+    if (this.btnLockPin) {
+      this.btnLockPin.addEventListener("click", () => {
+        store.lockStaff();
+        this.requirePinInDemo = true;
+        if (this.currentView === "client") {
+          this.navigate("operator");
+        } else {
+          this.navigate(this.currentView);
+        }
+      });
+    }
+
     this.navButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
         const view = btn.dataset.view;
@@ -22,10 +46,76 @@ class App {
       });
     });
 
-    // Detectar parámetro en URL (?view=operario o #operario)
-    const urlParams = new URLSearchParams(window.location.search);
     const initialView = urlParams.get("view") || window.location.hash.replace("#", "") || "client";
     this.navigate(initialView);
+  }
+
+  renderPinGate(targetView) {
+    const roleLabel = targetView === "admin" || targetView === "dueno" ? "Panel de Precios (Dueño)" : "Mostrador y Balanza (Operario)";
+    this.container.innerHTML = `
+      <div class="max-w-sm mx-auto p-4 pt-12">
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-xl text-center">
+          <span class="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-100 text-slate-700 mb-3">
+            Acceso Personal del Local
+          </span>
+          <h2 class="text-xl font-black text-slate-900">${roleLabel}</h2>
+          <p class="text-xs text-slate-500 mt-1 mb-5">Ingresá el PIN numérico de 4 dígitos del negocio (Por defecto: <strong>1234</strong>)</p>
+
+          <form id="pin-gate-form" class="space-y-4">
+            <input 
+              type="password" 
+              id="pin-input" 
+              inputmode="numeric" 
+              maxlength="8" 
+              placeholder="••••" 
+              required
+              class="w-40 mx-auto block text-center tracking-[0.5em] py-3 px-4 bg-slate-50 border-2 border-slate-300 rounded-2xl font-black text-2xl text-slate-900 outline-none focus:border-slate-900 focus:bg-white transition"
+            />
+            <p id="pin-error" class="hidden text-xs font-bold text-rose-600">PIN incorrecto. Intentá nuevamente.</p>
+            <div class="flex gap-2 pt-1">
+              <button 
+                type="button" 
+                id="btn-pin-back"
+                class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+              >
+                Ir al Catálogo
+              </button>
+              <button 
+                type="submit" 
+                class="flex-1 py-3 bg-slate-950 hover:bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+              >
+                Ingresar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const input = this.container.querySelector("#pin-input");
+    const form = this.container.querySelector("#pin-gate-form");
+    const errorEl = this.container.querySelector("#pin-error");
+    const btnBack = this.container.querySelector("#btn-pin-back");
+
+    if (input) input.focus();
+
+    if (btnBack) {
+      btnBack.addEventListener("click", () => this.navigate("client"));
+    }
+
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (store.verifyStaffPin(input.value)) {
+          this.requirePinInDemo = false;
+          this.navigate(targetView);
+        } else {
+          errorEl.classList.remove("hidden");
+          input.value = "";
+          input.focus();
+        }
+      });
+    }
   }
 
   navigate(viewName) {
@@ -37,7 +127,6 @@ class App {
     this.currentView = viewName;
     window.location.hash = viewName;
 
-    // Actualizar estilos activos de los botones
     this.navButtons.forEach((btn) => {
       const isActive = btn.dataset.view === viewName;
       if (isActive) {
@@ -49,7 +138,12 @@ class App {
       }
     });
 
-    // Renderizar vista seleccionada
+    const isStaffView = ["operator", "operario", "admin", "dueno"].includes(viewName);
+    if (isStaffView && this.requirePinInDemo && !store.isStaffUnlocked()) {
+      this.renderPinGate(viewName);
+      return;
+    }
+
     switch (viewName) {
       case "operator":
       case "operario":
@@ -70,7 +164,6 @@ class App {
   }
 }
 
-// Inicializar cuando el DOM esté listo
 document.addEventListener("DOMContentLoaded", () => {
   new App();
 });

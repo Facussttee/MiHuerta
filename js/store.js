@@ -7,7 +7,9 @@ const STORAGE_KEYS = {
   CUSTOMERS: "mihuerta_customers_v3",
   CURRENT_USER: "mihuerta_current_user_v3",
   CART: "mihuerta_cart_v3",
-  ACTIVE_ORDER: "mihuerta_active_order_v3"
+  ACTIVE_ORDER: "mihuerta_active_order_v3",
+  CLOUD_CONFIG: "mihuerta_cloud_config_v3",
+  PIN_UNLOCKED: "mihuerta_pin_unlocked_v3"
 };
 
 // Fallback en memoria en caso de bloqueo de localStorage en file:///
@@ -179,6 +181,194 @@ class Store {
       ];
       safeSet(STORAGE_KEYS.ORDERS, sampleOrders);
     }
+
+    // 4. Configuración inicial de PIN y Cloud
+    if (!safeGet(STORAGE_KEYS.CLOUD_CONFIG, null)) {
+      safeSet(STORAGE_KEYS.CLOUD_CONFIG, {
+        supabaseUrl: "",
+        supabaseAnonKey: "",
+        staffPin: "1234"
+      });
+    }
+
+    // 5. Detectar parámetro ?tel= en el link enviado por el Bot de WhatsApp
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlPhone = urlParams.get("tel");
+      if (urlPhone) {
+        const cleanPhone = String(urlPhone).replace(/\D/g, "");
+        const existingCustomer = this.getCustomer(cleanPhone);
+        if (existingCustomer) {
+          this.setCurrentUser(existingCustomer);
+        } else if (cleanPhone.length >= 8) {
+          this.prefilledPhone = cleanPhone;
+        }
+      }
+    } catch {}
+
+    // 6. Inicializar conexión con Supabase Cloud si está configurada
+    this.supabase = null;
+    this.realtimeChannel = null;
+    this.initSupabaseConnection();
+  }
+
+  // --- Configuración Cloud (Supabase) y PIN de Seguridad ---
+  getCloudConfig() {
+    return safeGet(STORAGE_KEYS.CLOUD_CONFIG, {
+      supabaseUrl: "",
+      supabaseAnonKey: "",
+      staffPin: "1234"
+    });
+  }
+
+  saveCloudConfig(newConfig) {
+    const current = this.getCloudConfig();
+    const updated = {
+      supabaseUrl: (newConfig.supabaseUrl ?? current.supabaseUrl).trim(),
+      supabaseAnonKey: (newConfig.supabaseAnonKey ?? current.supabaseAnonKey).trim(),
+      staffPin: (newConfig.staffPin ?? current.staffPin).trim() || "1234"
+    };
+    safeSet(STORAGE_KEYS.CLOUD_CONFIG, updated);
+    this.initSupabaseConnection();
+    this.notify("cloud_config_changed", updated);
+    return updated;
+  }
+
+  isCloudConnected() {
+    return Boolean(this.supabase);
+  }
+
+  verifyStaffPin(inputPin) {
+    const { staffPin } = this.getCloudConfig();
+    const ok = String(inputPin).trim() === String(staffPin || "1234").trim();
+    if (ok) {
+      safeSet(STORAGE_KEYS.PIN_UNLOCKED, true);
+    }
+    return ok;
+  }
+
+  isStaffUnlocked() {
+    return Boolean(safeGet(STORAGE_KEYS.PIN_UNLOCKED, false));
+  }
+
+  lockStaff() {
+    safeRemove(STORAGE_KEYS.PIN_UNLOCKED);
+    this.notify("staff_locked");
+  }
+
+  async initSupabaseConnection() {
+    const { supabaseUrl, supabaseAnonKey } = this.getCloudConfig();
+    if (!supabaseUrl || !supabaseAnonKey || !window.supabase) {
+      this.supabase = null;
+      return;
+    }
+
+    try {
+      this.supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+      await this.pullFromSupabase();
+      this.subscribeToSupabaseRealtime();
+      this.notify("cloud_connected");
+    } catch (err) {
+      console.warn("No se pudo conectar a Supabase:", err);
+      this.supabase = null;
+    }
+  }
+
+  async pullFromSupabase() {
+    if (!this.supabase) return;
+    try {
+      const [prodRes, cliRes, ordRes] = await Promise.all([
+        this.supabase.from("productos").select("*").order("id"),
+        this.supabase.from("clientes").select("*"),
+        this.supabase.from("pedidos").select("*").order("id", { ascending: false }).limit(50)
+      ]);
+
+      if (prodRes.data && prodRes.data.length > 0) {
+        const mappedProducts = prodRes.data.map((p) => ({
+          ...p,
+          precio: Number(p.precio),
+          paso: Number(p.paso || 0.5)
+        }));
+        safeSet(STORAGE_KEYS.PRODUCTS, mappedProducts);
+      }
+
+      if (cliRes.data && cliRes.data.length > 0) {
+        const customerMap = {};
+        cliRes.data.forEach((c) => {
+          customerMap[c.telefono] = {
+            telefono: c.telefono,
+            nombre: c.nombre,
+            direccion: c.direccion || ""
+          };
+        });
+        safeSet(STORAGE_KEYS.CUSTOMERS, customerMap);
+      }
+
+      if (ordRes.data) {
+        const mappedOrders = ordRes.data.map((o) => ({
+          id: o.id,
+          cliente: {
+            nombre: o.cliente_nombre,
+            telefono: o.cliente_telefono,
+            direccion: o.direccion_entrega
+          },
+          tipo_entrega: o.tipo_entrega,
+          direccion_entrega: o.direccion_entrega,
+          estado: o.estado,
+          fecha: o.fecha,
+          total_estimado: Number(o.total_estimado),
+          total_real: o.total_real !== null ? Number(o.total_real) : null,
+          items: Array.isArray(o.items) ? o.items : []
+        }));
+        safeSet(STORAGE_KEYS.ORDERS, mappedOrders);
+      }
+
+      this.notify("storage_sync");
+    } catch (err) {
+      console.warn("Error sincronizando datos desde Supabase:", err);
+    }
+  }
+
+  subscribeToSupabaseRealtime() {
+    if (!this.supabase) return;
+    if (this.realtimeChannel) {
+      this.supabase.removeChannel(this.realtimeChannel);
+    }
+
+    this.realtimeChannel = this.supabase
+      .channel("mihuerta-pwa-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, (payload) => {
+        if (payload.eventType === "INSERT") {
+          this.playAudioAlert();
+        }
+        this.pullFromSupabase();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "productos" }, () => {
+        this.pullFromSupabase();
+      })
+      .subscribe();
+  }
+
+  async syncOrderToSupabase(order) {
+    if (!this.supabase || !order) return;
+    try {
+      await this.supabase.from("pedidos").upsert({
+        id: order.id,
+        cliente_telefono: order.cliente.telefono,
+        cliente_nombre: order.cliente.nombre,
+        tipo_entrega: order.tipo_entrega,
+        direccion_entrega: order.direccion_entrega,
+        estado: order.estado,
+        total_estimado: order.total_estimado,
+        total_real: order.total_real,
+        items: order.items,
+        fecha: order.fecha,
+        finalizado_at: order.finalizado_at || null,
+        updated_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn("Error guardando pedido en Supabase:", err);
+    }
   }
 
   // --- Reactividad ---
@@ -197,24 +387,33 @@ class Store {
   }
 
   updateProductPrice(productId, newPrice) {
+    const cleanPrice = Math.max(0, Number(newPrice));
     const products = this.getProducts().map((p) => {
       if (p.id === productId) {
-        return { ...p, precio: Math.max(0, Number(newPrice)) };
+        return { ...p, precio: cleanPrice };
       }
       return p;
     });
     safeSet(STORAGE_KEYS.PRODUCTS, products);
+    if (this.supabase) {
+      this.supabase.from("productos").update({ precio: cleanPrice, updated_at: new Date().toISOString() }).eq("id", productId).then(() => {});
+    }
     this.notify("products_changed");
   }
 
   toggleProductStock(productId) {
+    let newStatus = true;
     const products = this.getProducts().map((p) => {
       if (p.id === productId) {
-        return { ...p, disponible: !p.disponible };
+        newStatus = !p.disponible;
+        return { ...p, disponible: newStatus };
       }
       return p;
     });
     safeSet(STORAGE_KEYS.PRODUCTS, products);
+    if (this.supabase) {
+      this.supabase.from("productos").update({ disponible: newStatus, updated_at: new Date().toISOString() }).eq("id", productId).then(() => {});
+    }
     this.notify("products_changed");
   }
 
@@ -234,6 +433,14 @@ class Store {
     const customers = this.getCustomers();
     customers[cleanPhone] = { ...customer, telefono: cleanPhone };
     safeSet(STORAGE_KEYS.CUSTOMERS, customers);
+    if (this.supabase) {
+      this.supabase.from("clientes").upsert({
+        telefono: cleanPhone,
+        nombre: customer.nombre || "Cliente",
+        direccion: customer.direccion || "",
+        updated_at: new Date().toISOString()
+      }).then(() => {});
+    }
     this.setCurrentUser(customers[cleanPhone]);
     this.notify("customers_changed");
     return customers[cleanPhone];
@@ -361,6 +568,7 @@ class Store {
 
     orders.unshift(newOrder);
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    this.syncOrderToSupabase(newOrder);
     this.setActiveOrderId(newOrder.id);
     this.clearCart();
     this.playAudioAlert();
@@ -369,17 +577,21 @@ class Store {
   }
 
   updateOrderStatus(orderId, newStatus) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
-        return { ...order, estado: newStatus, updated_at: new Date().toISOString() };
+        targetOrder = { ...order, estado: newStatus, updated_at: new Date().toISOString() };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
   updateItemWeight(orderId, itemIndex, pesoReal) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const items = [...order.items];
@@ -398,15 +610,18 @@ class Store {
             .reduce((sum, i) => sum + (i.subtotal || 0), 0);
         }
 
-        return { ...order, items, total_real: totalReal };
+        targetOrder = { ...order, items, total_real: totalReal };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
   toggleItemOutOfStock(orderId, itemIndex) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const items = [...order.items];
@@ -424,15 +639,18 @@ class Store {
           .filter((i) => !i.sin_stock && i.peso_real !== null)
           .reduce((sum, i) => sum + (i.subtotal || 0), 0);
 
-        return { ...order, items, total_real: totalReal };
+        targetOrder = { ...order, items, total_real: totalReal };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
   finalizeOrderWeighing(orderId) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const items = order.items.map((i) => {
@@ -449,18 +667,20 @@ class Store {
           .filter((i) => !i.sin_stock)
           .reduce((sum, i) => sum + i.subtotal, 0);
 
-        return {
+        targetOrder = {
           ...order,
           items,
           total_real: totalFinal,
           estado: "LISTO",
           finalizado_at: new Date().toISOString()
         };
+        return targetOrder;
       }
       return order;
     });
 
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
     this.notify("order_ready", orderId);
   }
@@ -469,6 +689,9 @@ class Store {
   deleteOrder(orderId) {
     const orders = this.getOrders().filter((o) => o.id !== orderId);
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (this.supabase) {
+      this.supabase.from("pedidos").delete().eq("id", orderId).then(() => {});
+    }
     if (this.getActiveOrderId() === orderId) {
       this.setActiveOrderId(null);
     }
@@ -477,15 +700,18 @@ class Store {
 
   // Quitar un producto específico del pedido
   removeItemFromOrder(orderId, itemIndex) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const items = order.items.filter((_, idx) => idx !== itemIndex);
         const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
-        return { ...order, items, total_estimado: totalEstimado };
+        targetOrder = { ...order, items, total_estimado: totalEstimado };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
@@ -496,6 +722,7 @@ class Store {
     const qty = Math.max(0.1, Number(cantidad));
     const subtotal = Math.round(qty * product.precio);
 
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const newItem = {
@@ -511,19 +738,22 @@ class Store {
         };
         const items = [...order.items, newItem];
         const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
-        return { ...order, items, total_estimado: totalEstimado };
+        targetOrder = { ...order, items, total_estimado: totalEstimado };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
   // Modificar datos de entrega y contacto del pedido
   updateOrderDetails(orderId, details) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
-        return {
+        targetOrder = {
           ...order,
           cliente: {
             ...order.cliente,
@@ -533,10 +763,12 @@ class Store {
           tipo_entrega: details.tipo_entrega || order.tipo_entrega,
           direccion_entrega: details.direccion_entrega || order.direccion_entrega
         };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 

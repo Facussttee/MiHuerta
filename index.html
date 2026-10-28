@@ -28,21 +28,28 @@
     }
   </script>
 
+  <!-- Cliente Oficial de Supabase (Opcional para sincronización Cloud + Realtime) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- Estilos propios -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col selection:bg-emerald-100 selection:text-emerald-900">
 
-  <!-- Barra Superior del Simulador (Sin emojis, minimalista y mobile-first) -->
-  <aside class="bg-slate-950 text-white px-3 py-2 border-b border-slate-800 sticky top-0 z-50">
+  <!-- Barra Superior del Simulador (Se oculta automáticamente cuando un cliente entra por link ?tel= o ?modo=real) -->
+  <aside id="simulator-bar" class="bg-slate-950 text-white px-3 py-2 border-b border-slate-800 sticky top-0 z-50">
     <div class="max-w-xl mx-auto flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <span class="text-xs font-black tracking-widest uppercase text-emerald-400">
           Mi Huerta
         </span>
-        <span class="text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-          Modo Demo
-        </span>
+        <button 
+          id="btn-lock-pin"
+          title="Probar bloqueo con PIN de 4 dígitos para Operario/Dueño"
+          class="text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+        >
+          Probar PIN
+        </button>
       </div>
 
       <!-- Selector de Vistas / Roles -->

@@ -194,7 +194,7 @@ const CATEGORIAS = ["Todos", "Frutas", "Verduras", "Hojas Verdes", "AlmacÃ©n"]
 
   // ==========================================
 
-  // 2. STORE Y PERSISTENCIA LOCAL
+  // 2. STORE Y PERSISTENCIA LOCAL + SUPABASE
 
   // ==========================================
 
@@ -207,7 +207,9 @@ const STORAGE_KEYS = {
   CUSTOMERS: "mihuerta_customers_v3",
   CURRENT_USER: "mihuerta_current_user_v3",
   CART: "mihuerta_cart_v3",
-  ACTIVE_ORDER: "mihuerta_active_order_v3"
+  ACTIVE_ORDER: "mihuerta_active_order_v3",
+  CLOUD_CONFIG: "mihuerta_cloud_config_v3",
+  PIN_UNLOCKED: "mihuerta_pin_unlocked_v3"
 };
 
 // Fallback en memoria en caso de bloqueo de localStorage en file:///
@@ -379,6 +381,194 @@ class Store {
       ];
       safeSet(STORAGE_KEYS.ORDERS, sampleOrders);
     }
+
+    // 4. ConfiguraciÃ³n inicial de PIN y Cloud
+    if (!safeGet(STORAGE_KEYS.CLOUD_CONFIG, null)) {
+      safeSet(STORAGE_KEYS.CLOUD_CONFIG, {
+        supabaseUrl: "",
+        supabaseAnonKey: "",
+        staffPin: "1234"
+      });
+    }
+
+    // 5. Detectar parÃ¡metro ?tel= en el link enviado por el Bot de WhatsApp
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlPhone = urlParams.get("tel");
+      if (urlPhone) {
+        const cleanPhone = String(urlPhone).replace(/\D/g, "");
+        const existingCustomer = this.getCustomer(cleanPhone);
+        if (existingCustomer) {
+          this.setCurrentUser(existingCustomer);
+        } else if (cleanPhone.length >= 8) {
+          this.prefilledPhone = cleanPhone;
+        }
+      }
+    } catch {}
+
+    // 6. Inicializar conexiÃ³n con Supabase Cloud si estÃ¡ configurada
+    this.supabase = null;
+    this.realtimeChannel = null;
+    this.initSupabaseConnection();
+  }
+
+  // --- ConfiguraciÃ³n Cloud (Supabase) y PIN de Seguridad ---
+  getCloudConfig() {
+    return safeGet(STORAGE_KEYS.CLOUD_CONFIG, {
+      supabaseUrl: "",
+      supabaseAnonKey: "",
+      staffPin: "1234"
+    });
+  }
+
+  saveCloudConfig(newConfig) {
+    const current = this.getCloudConfig();
+    const updated = {
+      supabaseUrl: (newConfig.supabaseUrl ?? current.supabaseUrl).trim(),
+      supabaseAnonKey: (newConfig.supabaseAnonKey ?? current.supabaseAnonKey).trim(),
+      staffPin: (newConfig.staffPin ?? current.staffPin).trim() || "1234"
+    };
+    safeSet(STORAGE_KEYS.CLOUD_CONFIG, updated);
+    this.initSupabaseConnection();
+    this.notify("cloud_config_changed", updated);
+    return updated;
+  }
+
+  isCloudConnected() {
+    return Boolean(this.supabase);
+  }
+
+  verifyStaffPin(inputPin) {
+    const { staffPin } = this.getCloudConfig();
+    const ok = String(inputPin).trim() === String(staffPin || "1234").trim();
+    if (ok) {
+      safeSet(STORAGE_KEYS.PIN_UNLOCKED, true);
+    }
+    return ok;
+  }
+
+  isStaffUnlocked() {
+    return Boolean(safeGet(STORAGE_KEYS.PIN_UNLOCKED, false));
+  }
+
+  lockStaff() {
+    safeRemove(STORAGE_KEYS.PIN_UNLOCKED);
+    this.notify("staff_locked");
+  }
+
+  async initSupabaseConnection() {
+    const { supabaseUrl, supabaseAnonKey } = this.getCloudConfig();
+    if (!supabaseUrl || !supabaseAnonKey || !window.supabase) {
+      this.supabase = null;
+      return;
+    }
+
+    try {
+      this.supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+      await this.pullFromSupabase();
+      this.subscribeToSupabaseRealtime();
+      this.notify("cloud_connected");
+    } catch (err) {
+      console.warn("No se pudo conectar a Supabase:", err);
+      this.supabase = null;
+    }
+  }
+
+  async pullFromSupabase() {
+    if (!this.supabase) return;
+    try {
+      const [prodRes, cliRes, ordRes] = await Promise.all([
+        this.supabase.from("productos").select("*").order("id"),
+        this.supabase.from("clientes").select("*"),
+        this.supabase.from("pedidos").select("*").order("id", { ascending: false }).limit(50)
+      ]);
+
+      if (prodRes.data && prodRes.data.length > 0) {
+        const mappedProducts = prodRes.data.map((p) => ({
+          ...p,
+          precio: Number(p.precio),
+          paso: Number(p.paso || 0.5)
+        }));
+        safeSet(STORAGE_KEYS.PRODUCTS, mappedProducts);
+      }
+
+      if (cliRes.data && cliRes.data.length > 0) {
+        const customerMap = {};
+        cliRes.data.forEach((c) => {
+          customerMap[c.telefono] = {
+            telefono: c.telefono,
+            nombre: c.nombre,
+            direccion: c.direccion || ""
+          };
+        });
+        safeSet(STORAGE_KEYS.CUSTOMERS, customerMap);
+      }
+
+      if (ordRes.data) {
+        const mappedOrders = ordRes.data.map((o) => ({
+          id: o.id,
+          cliente: {
+            nombre: o.cliente_nombre,
+            telefono: o.cliente_telefono,
+            direccion: o.direccion_entrega
+          },
+          tipo_entrega: o.tipo_entrega,
+          direccion_entrega: o.direccion_entrega,
+          estado: o.estado,
+          fecha: o.fecha,
+          total_estimado: Number(o.total_estimado),
+          total_real: o.total_real !== null ? Number(o.total_real) : null,
+          items: Array.isArray(o.items) ? o.items : []
+        }));
+        safeSet(STORAGE_KEYS.ORDERS, mappedOrders);
+      }
+
+      this.notify("storage_sync");
+    } catch (err) {
+      console.warn("Error sincronizando datos desde Supabase:", err);
+    }
+  }
+
+  subscribeToSupabaseRealtime() {
+    if (!this.supabase) return;
+    if (this.realtimeChannel) {
+      this.supabase.removeChannel(this.realtimeChannel);
+    }
+
+    this.realtimeChannel = this.supabase
+      .channel("mihuerta-pwa-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, (payload) => {
+        if (payload.eventType === "INSERT") {
+          this.playAudioAlert();
+        }
+        this.pullFromSupabase();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "productos" }, () => {
+        this.pullFromSupabase();
+      })
+      .subscribe();
+  }
+
+  async syncOrderToSupabase(order) {
+    if (!this.supabase || !order) return;
+    try {
+      await this.supabase.from("pedidos").upsert({
+        id: order.id,
+        cliente_telefono: order.cliente.telefono,
+        cliente_nombre: order.cliente.nombre,
+        tipo_entrega: order.tipo_entrega,
+        direccion_entrega: order.direccion_entrega,
+        estado: order.estado,
+        total_estimado: order.total_estimado,
+        total_real: order.total_real,
+        items: order.items,
+        fecha: order.fecha,
+        finalizado_at: order.finalizado_at || null,
+        updated_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn("Error guardando pedido en Supabase:", err);
+    }
   }
 
   // --- Reactividad ---
@@ -397,24 +587,33 @@ class Store {
   }
 
   updateProductPrice(productId, newPrice) {
+    const cleanPrice = Math.max(0, Number(newPrice));
     const products = this.getProducts().map((p) => {
       if (p.id === productId) {
-        return { ...p, precio: Math.max(0, Number(newPrice)) };
+        return { ...p, precio: cleanPrice };
       }
       return p;
     });
     safeSet(STORAGE_KEYS.PRODUCTS, products);
+    if (this.supabase) {
+      this.supabase.from("productos").update({ precio: cleanPrice, updated_at: new Date().toISOString() }).eq("id", productId).then(() => {});
+    }
     this.notify("products_changed");
   }
 
   toggleProductStock(productId) {
+    let newStatus = true;
     const products = this.getProducts().map((p) => {
       if (p.id === productId) {
-        return { ...p, disponible: !p.disponible };
+        newStatus = !p.disponible;
+        return { ...p, disponible: newStatus };
       }
       return p;
     });
     safeSet(STORAGE_KEYS.PRODUCTS, products);
+    if (this.supabase) {
+      this.supabase.from("productos").update({ disponible: newStatus, updated_at: new Date().toISOString() }).eq("id", productId).then(() => {});
+    }
     this.notify("products_changed");
   }
 
@@ -434,6 +633,14 @@ class Store {
     const customers = this.getCustomers();
     customers[cleanPhone] = { ...customer, telefono: cleanPhone };
     safeSet(STORAGE_KEYS.CUSTOMERS, customers);
+    if (this.supabase) {
+      this.supabase.from("clientes").upsert({
+        telefono: cleanPhone,
+        nombre: customer.nombre || "Cliente",
+        direccion: customer.direccion || "",
+        updated_at: new Date().toISOString()
+      }).then(() => {});
+    }
     this.setCurrentUser(customers[cleanPhone]);
     this.notify("customers_changed");
     return customers[cleanPhone];
@@ -561,6 +768,7 @@ class Store {
 
     orders.unshift(newOrder);
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    this.syncOrderToSupabase(newOrder);
     this.setActiveOrderId(newOrder.id);
     this.clearCart();
     this.playAudioAlert();
@@ -569,17 +777,21 @@ class Store {
   }
 
   updateOrderStatus(orderId, newStatus) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
-        return { ...order, estado: newStatus, updated_at: new Date().toISOString() };
+        targetOrder = { ...order, estado: newStatus, updated_at: new Date().toISOString() };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
   updateItemWeight(orderId, itemIndex, pesoReal) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const items = [...order.items];
@@ -598,15 +810,18 @@ class Store {
             .reduce((sum, i) => sum + (i.subtotal || 0), 0);
         }
 
-        return { ...order, items, total_real: totalReal };
+        targetOrder = { ...order, items, total_real: totalReal };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
   toggleItemOutOfStock(orderId, itemIndex) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const items = [...order.items];
@@ -624,15 +839,18 @@ class Store {
           .filter((i) => !i.sin_stock && i.peso_real !== null)
           .reduce((sum, i) => sum + (i.subtotal || 0), 0);
 
-        return { ...order, items, total_real: totalReal };
+        targetOrder = { ...order, items, total_real: totalReal };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
   finalizeOrderWeighing(orderId) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const items = order.items.map((i) => {
@@ -649,18 +867,20 @@ class Store {
           .filter((i) => !i.sin_stock)
           .reduce((sum, i) => sum + i.subtotal, 0);
 
-        return {
+        targetOrder = {
           ...order,
           items,
           total_real: totalFinal,
           estado: "LISTO",
           finalizado_at: new Date().toISOString()
         };
+        return targetOrder;
       }
       return order;
     });
 
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
     this.notify("order_ready", orderId);
   }
@@ -669,6 +889,9 @@ class Store {
   deleteOrder(orderId) {
     const orders = this.getOrders().filter((o) => o.id !== orderId);
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (this.supabase) {
+      this.supabase.from("pedidos").delete().eq("id", orderId).then(() => {});
+    }
     if (this.getActiveOrderId() === orderId) {
       this.setActiveOrderId(null);
     }
@@ -677,15 +900,18 @@ class Store {
 
   // Quitar un producto especÃ­fico del pedido
   removeItemFromOrder(orderId, itemIndex) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const items = order.items.filter((_, idx) => idx !== itemIndex);
         const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
-        return { ...order, items, total_estimado: totalEstimado };
+        targetOrder = { ...order, items, total_estimado: totalEstimado };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
@@ -696,6 +922,7 @@ class Store {
     const qty = Math.max(0.1, Number(cantidad));
     const subtotal = Math.round(qty * product.precio);
 
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
         const newItem = {
@@ -711,19 +938,22 @@ class Store {
         };
         const items = [...order.items, newItem];
         const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
-        return { ...order, items, total_estimado: totalEstimado };
+        targetOrder = { ...order, items, total_estimado: totalEstimado };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
   // Modificar datos de entrega y contacto del pedido
   updateOrderDetails(orderId, details) {
+    let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
-        return {
+        targetOrder = {
           ...order,
           cliente: {
             ...order.cliente,
@@ -733,10 +963,12 @@ class Store {
           tipo_entrega: details.tipo_entrega || order.tipo_entrega,
           direccion_entrega: details.direccion_entrega || order.direccion_entrega
         };
+        return targetOrder;
       }
       return order;
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
   }
 
@@ -840,7 +1072,7 @@ function renderClientView(container) {
                   required 
                   inputmode="numeric"
                   placeholder="11 2345 6789" 
-                  value="1123456789"
+                  value="${store.prefilledPhone || "1123456789"}"
                   class="w-full pl-20 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 font-bold text-base outline-none transition"
                 />
               </div>
@@ -2573,10 +2805,14 @@ Alias para transferir: mihuerta.verduras
 
 function renderAdminView(container) {
   let selectedCategory = "Todos";
+  let showCloudSettings = false;
+  let configSavedToast = false;
 
   function update() {
     container.innerHTML = "";
     const products = store.getProducts();
+    const cloudConfig = store.getCloudConfig();
+    const isConnected = store.isCloudConnected();
 
     const filtered = products.filter(
       (p) => selectedCategory === "Todos" || p.categoria === selectedCategory
@@ -2586,7 +2822,7 @@ function renderAdminView(container) {
       <div class="max-w-xl mx-auto p-4 pb-32">
         <!-- Header DueÃ±o / Admin -->
         <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm mb-4">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <div>
               <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-0.5">
                 Panel de AdministraciÃ³n
@@ -2594,10 +2830,82 @@ function renderAdminView(container) {
               <h1 class="font-black text-slate-900 text-lg tracking-tight">Precios y Disponibilidad</h1>
               <p class="text-xs text-slate-500 mt-0.5">AjustÃ¡ los valores del dÃ­a en tiempo real.</p>
             </div>
-            <span class="text-xs font-black px-3 py-1 bg-slate-100 text-slate-800 rounded-full border border-slate-200">
-              ${products.length} productos
-            </span>
+            <div class="flex flex-col items-end gap-1.5">
+              <span class="text-xs font-black px-3 py-1 bg-slate-100 text-slate-800 rounded-full border border-slate-200">
+                ${products.length} productos
+              </span>
+              <button 
+                id="btn-toggle-cloud"
+                class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition ${
+                  isConnected
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                }"
+              >
+                ${isConnected ? "Cloud Conectado" : "Configurar PIN / Cloud"}
+              </button>
+            </div>
           </div>
+
+          ${
+            showCloudSettings
+              ? `
+            <form id="cloud-config-form" class="mt-4 pt-4 border-t border-slate-100 space-y-3 text-left">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xs font-black uppercase tracking-wider text-slate-800">Seguridad y Base de Datos Cloud</h2>
+                ${
+                  configSavedToast
+                    ? `<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Guardado</span>`
+                    : ""
+                }
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">PIN de acceso para Operario y DueÃ±o (4 dÃ­gitos)</label>
+                <input 
+                  type="text" 
+                  id="cfg-pin" 
+                  maxlength="8"
+                  inputmode="numeric"
+                  value="${cloudConfig.staffPin || "1234"}"
+                  class="w-36 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-black text-sm text-slate-900 outline-none focus:border-slate-900 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Supabase Project URL (opcional para modo Cloud)</label>
+                <input 
+                  type="url" 
+                  id="cfg-url" 
+                  placeholder="https://xyzcompany.supabase.co"
+                  value="${cloudConfig.supabaseUrl || ""}"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-slate-900 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Supabase Anon Public Key</label>
+                <input 
+                  type="password" 
+                  id="cfg-key" 
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI..."
+                  value="${cloudConfig.supabaseAnonKey || ""}"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 outline-none focus:border-slate-900 focus:bg-white"
+                />
+              </div>
+
+              <div class="flex justify-end gap-2 pt-1">
+                <button 
+                  type="submit"
+                  class="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs transition tap-feedback"
+                >
+                  Guardar configuraciÃ³n
+                </button>
+              </div>
+            </form>
+          `
+              : ""
+          }
 
           <!-- Filtro de CategorÃ­as TÃ¡ctil -->
           <div class="mt-4 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
@@ -2618,7 +2926,7 @@ function renderAdminView(container) {
           </div>
         </div>
 
-        <!-- Lista de Productos y Precios con Inputs de 16px (evita auto-zoom iOS) -->
+        <!-- Lista de Productos y Precios con Inputs de 16px -->
         <div class="space-y-2.5">
           ${filtered
             .map((p) => {
@@ -2674,6 +2982,32 @@ function renderAdminView(container) {
     `;
 
     // Listeners
+    const btnToggleCloud = container.querySelector("#btn-toggle-cloud");
+    if (btnToggleCloud) {
+      btnToggleCloud.addEventListener("click", () => {
+        showCloudSettings = !showCloudSettings;
+        configSavedToast = false;
+        update();
+      });
+    }
+
+    const cloudForm = container.querySelector("#cloud-config-form");
+    if (cloudForm) {
+      cloudForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const pin = container.querySelector("#cfg-pin").value;
+        const url = container.querySelector("#cfg-url").value;
+        const key = container.querySelector("#cfg-key").value;
+        store.saveCloudConfig({
+          staffPin: pin,
+          supabaseUrl: url,
+          supabaseAnonKey: key
+        });
+        configSavedToast = true;
+        update();
+      });
+    }
+
     container.querySelectorAll(".admin-cat-pill").forEach((btn) => {
       btn.addEventListener("click", () => {
         selectedCategory = btn.dataset.adminCat;
@@ -2698,7 +3032,7 @@ function renderAdminView(container) {
   }
 
   const unsubscribe = store.subscribe((event) => {
-    if (event === "products_changed" || event === "storage_sync") {
+    if (event === "products_changed" || event === "storage_sync" || event === "cloud_connected") {
       update();
     }
   });
@@ -2709,76 +3043,178 @@ function renderAdminView(container) {
 
 
   // ==========================================
-  // 6. ENRUTADOR Y CONTROLADOR PRINCIPAL
+
+  // 6. ENRUTADOR Y CONTROL DE ACCESO POR PIN
+
   // ==========================================
-  class App {
-    constructor() {
-      this.container = document.getElementById("app-content");
-      this.navButtons = document.querySelectorAll(".nav-switch");
-      this.currentViewCleanup = null;
-      this.currentView = "client";
 
-      this.init();
+
+class App {
+  constructor() {
+    this.container = document.getElementById("app-content");
+    this.simulatorBar = document.getElementById("simulator-bar");
+    this.navButtons = document.querySelectorAll(".nav-switch");
+    this.btnLockPin = document.getElementById("btn-lock-pin");
+    this.currentViewCleanup = null;
+    this.currentView = "client";
+    this.requirePinInDemo = false;
+
+    this.init();
+  }
+
+  init() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasClientPhoneLink = urlParams.has("tel");
+    const isRealMode = urlParams.get("modo") === "real" || hasClientPhoneLink;
+
+    // Si entra un cliente real desde el link de WhatsApp (?tel=...) ocultamos la barra del simulador
+    if (isRealMode && this.simulatorBar && urlParams.get("sim") !== "1") {
+      this.simulatorBar.classList.add("hidden");
+      this.requirePinInDemo = true;
     }
 
-    init() {
-      this.navButtons.forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const view = btn.dataset.view;
-          this.navigate(view);
-        });
-      });
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const initialView = urlParams.get("view") || window.location.hash.replace("#", "") || "client";
-      this.navigate(initialView);
-    }
-
-    navigate(viewName) {
-      if (this.currentViewCleanup) {
-        this.currentViewCleanup();
-        this.currentViewCleanup = null;
-      }
-
-      this.currentView = viewName;
-      window.location.hash = viewName;
-
-      this.navButtons.forEach((btn) => {
-        const isActive = btn.dataset.view === viewName;
-        if (isActive) {
-          btn.classList.add("bg-white", "text-slate-900", "shadow-sm");
-          btn.classList.remove("text-slate-400");
+    if (this.btnLockPin) {
+      this.btnLockPin.addEventListener("click", () => {
+        store.lockStaff();
+        this.requirePinInDemo = true;
+        if (this.currentView === "client") {
+          this.navigate("operator");
         } else {
-          btn.classList.remove("bg-white", "text-slate-900", "shadow-sm");
-          btn.classList.add("text-slate-400");
+          this.navigate(this.currentView);
         }
       });
+    }
 
-      switch (viewName) {
-        case "operator":
-        case "operario":
-          this.currentViewCleanup = renderOperatorView(this.container);
-          break;
-        case "admin":
-        case "dueno":
-          this.currentViewCleanup = renderAdminView(this.container);
-          break;
-        case "client":
-        case "cliente":
-        default:
-          this.currentViewCleanup = renderClientView(this.container);
-          break;
-      }
+    this.navButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const view = btn.dataset.view;
+        this.navigate(view);
+      });
+    });
 
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    const initialView = urlParams.get("view") || window.location.hash.replace("#", "") || "client";
+    this.navigate(initialView);
+  }
+
+  renderPinGate(targetView) {
+    const roleLabel = targetView === "admin" || targetView === "dueno" ? "Panel de Precios (DueÃ±o)" : "Mostrador y Balanza (Operario)";
+    this.container.innerHTML = `
+      <div class="max-w-sm mx-auto p-4 pt-12">
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-xl text-center">
+          <span class="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-100 text-slate-700 mb-3">
+            Acceso Personal del Local
+          </span>
+          <h2 class="text-xl font-black text-slate-900">${roleLabel}</h2>
+          <p class="text-xs text-slate-500 mt-1 mb-5">IngresÃ¡ el PIN numÃ©rico de 4 dÃ­gitos del negocio (Por defecto: <strong>1234</strong>)</p>
+
+          <form id="pin-gate-form" class="space-y-4">
+            <input 
+              type="password" 
+              id="pin-input" 
+              inputmode="numeric" 
+              maxlength="8" 
+              placeholder="â€¢â€¢â€¢â€¢" 
+              required
+              class="w-40 mx-auto block text-center tracking-[0.5em] py-3 px-4 bg-slate-50 border-2 border-slate-300 rounded-2xl font-black text-2xl text-slate-900 outline-none focus:border-slate-900 focus:bg-white transition"
+            />
+            <p id="pin-error" class="hidden text-xs font-bold text-rose-600">PIN incorrecto. IntentÃ¡ nuevamente.</p>
+            <div class="flex gap-2 pt-1">
+              <button 
+                type="button" 
+                id="btn-pin-back"
+                class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+              >
+                Ir al CatÃ¡logo
+              </button>
+              <button 
+                type="submit" 
+                class="flex-1 py-3 bg-slate-950 hover:bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+              >
+                Ingresar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const input = this.container.querySelector("#pin-input");
+    const form = this.container.querySelector("#pin-gate-form");
+    const errorEl = this.container.querySelector("#pin-error");
+    const btnBack = this.container.querySelector("#btn-pin-back");
+
+    if (input) input.focus();
+
+    if (btnBack) {
+      btnBack.addEventListener("click", () => this.navigate("client"));
+    }
+
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (store.verifyStaffPin(input.value)) {
+          this.requirePinInDemo = false;
+          this.navigate(targetView);
+        } else {
+          errorEl.classList.remove("hidden");
+          input.value = "";
+          input.focus();
+        }
+      });
     }
   }
 
-  // Auto-inicializar cuando el documento estÃ© listo
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => new App());
-  } else {
-    new App();
+  navigate(viewName) {
+    if (this.currentViewCleanup) {
+      this.currentViewCleanup();
+      this.currentViewCleanup = null;
+    }
+
+    this.currentView = viewName;
+    window.location.hash = viewName;
+
+    this.navButtons.forEach((btn) => {
+      const isActive = btn.dataset.view === viewName;
+      if (isActive) {
+        btn.classList.add("bg-white", "text-slate-900", "shadow-sm");
+        btn.classList.remove("text-slate-400");
+      } else {
+        btn.classList.remove("bg-white", "text-slate-900", "shadow-sm");
+        btn.classList.add("text-slate-400");
+      }
+    });
+
+    const isStaffView = ["operator", "operario", "admin", "dueno"].includes(viewName);
+    if (isStaffView && this.requirePinInDemo && !store.isStaffUnlocked()) {
+      this.renderPinGate(viewName);
+      return;
+    }
+
+    switch (viewName) {
+      case "operator":
+      case "operario":
+        this.currentViewCleanup = renderOperatorView(this.container);
+        break;
+      case "admin":
+      case "dueno":
+        this.currentViewCleanup = renderAdminView(this.container);
+        break;
+      case "client":
+      case "cliente":
+      default:
+        this.currentViewCleanup = renderClientView(this.container);
+        break;
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => new App());
+} else {
+  new App();
+}
+
 
 })();

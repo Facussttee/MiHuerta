@@ -11,7 +11,11 @@ $RECYCLE.BIN/
 *.swp
 *.swo
 
-# Dependencias futuras
+# Dependencias y Sesiones del Bot de WhatsApp
 node_modules/
+bot/node_modules/
+auth_info_baileys/
+bot/auth_info_baileys/
 .env
 .env.local
+bot/.env
