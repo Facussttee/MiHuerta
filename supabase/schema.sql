@@ -35,11 +35,12 @@ CREATE TABLE IF NOT EXISTS public.pedidos (
     cliente_nombre VARCHAR(120) NOT NULL,
     tipo_entrega VARCHAR(20) NOT NULL DEFAULT 'RETIRO' CHECK (tipo_entrega IN ('RETIRO', 'DELIVERY')),
     direccion_entrega TEXT DEFAULT 'Retiro en Mostrador',
-    estado VARCHAR(25) NOT NULL DEFAULT 'PENDIENTE' CHECK (estado IN ('PENDIENTE', 'EN_PREPARACION', 'LISTO', 'ENTREGADO')),
+    estado VARCHAR(25) NOT NULL DEFAULT 'PENDIENTE' CHECK (estado IN ('PENDIENTE', 'EN_PREPARACION', 'LISTO', 'ENTREGADO', 'CANCELADO')),
     total_estimado NUMERIC(10, 2) NOT NULL DEFAULT 0,
     total_real NUMERIC(10, 2),
     items JSONB NOT NULL DEFAULT '[]'::jsonb,
     notificado_whatsapp BOOLEAN DEFAULT FALSE,
+    notificado_at TIMESTAMPTZ,
     fecha TIMESTAMPTZ DEFAULT NOW(),
     finalizado_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -51,7 +52,33 @@ CREATE INDEX IF NOT EXISTS idx_pedidos_cliente_tel ON public.pedidos(cliente_tel
 CREATE INDEX IF NOT EXISTS idx_productos_categoria ON public.productos(categoria);
 
 -- =============================================================================
--- 4. SEGURIDAD DE FILAS (RLS) PARA EL MVP
+-- 4. FUNCION Y TRIGGERS PARA AUTO-ACTUALIZAR updated_at
+-- =============================================================================
+CREATE OR REPLACE FUNCTION public.set_current_timestamp_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_clientes_updated_at ON public.clientes;
+CREATE TRIGGER trigger_clientes_updated_at
+    BEFORE UPDATE ON public.clientes
+    FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
+
+DROP TRIGGER IF EXISTS trigger_productos_updated_at ON public.productos;
+CREATE TRIGGER trigger_productos_updated_at
+    BEFORE UPDATE ON public.productos
+    FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
+
+DROP TRIGGER IF EXISTS trigger_pedidos_updated_at ON public.pedidos;
+CREATE TRIGGER trigger_pedidos_updated_at
+    BEFORE UPDATE ON public.pedidos
+    FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
+
+-- =============================================================================
+-- 5. SEGURIDAD DE FILAS (RLS) PARA EL MVP
 -- =============================================================================
 ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.productos ENABLE ROW LEVEL SECURITY;
@@ -77,7 +104,7 @@ CREATE POLICY "Permitir acceso publico a pedidos MVP"
     WITH CHECK (true);
 
 -- =============================================================================
--- 5. HABILITAR WEBSOCKETS EN TIEMPO REAL (SUPABASE REALTIME)
+-- 6. HABILITAR WEBSOCKETS EN TIEMPO REAL (SUPABASE REALTIME)
 -- =============================================================================
 DO $$
 BEGIN
@@ -97,7 +124,7 @@ BEGIN
 END $$;
 
 -- =============================================================================
--- 6. SEMILLA INICIAL DE PRODUCTOS (17 PRODUCTOS BASE DE VERDULERÍA)
+-- 7. SEMILLA INICIAL DE PRODUCTOS (17 PRODUCTOS BASE DE VERDULERÍA)
 -- =============================================================================
 INSERT INTO public.productos (id, nombre, categoria, unidad_medida, precio, disponible, paso)
 VALUES

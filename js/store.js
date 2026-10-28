@@ -182,11 +182,11 @@ class Store {
       safeSet(STORAGE_KEYS.ORDERS, sampleOrders);
     }
 
-    // 4. Configuración inicial de PIN y Cloud
+    // 4. Configuración inicial de PIN y Cloud (conectado por defecto al proyecto Supabase del local)
     if (!safeGet(STORAGE_KEYS.CLOUD_CONFIG, null)) {
       safeSet(STORAGE_KEYS.CLOUD_CONFIG, {
-        supabaseUrl: "",
-        supabaseAnonKey: "",
+        supabaseUrl: "https://afrvwqqhnvblqjbdndnt.supabase.co",
+        supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcnZ3cWdobnZibGdqYmRuZG50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMjQ0OTYsImV4cCI6MjEwODgwMDQ5Nn0.mhw70b-K3G-bhUEBTdXS-GMoylYnvBtWkJzeEmOrRzM",
         staffPin: "1234"
       });
     }
@@ -214,11 +214,17 @@ class Store {
 
   // --- Configuración Cloud (Supabase) y PIN de Seguridad ---
   getCloudConfig() {
-    return safeGet(STORAGE_KEYS.CLOUD_CONFIG, {
-      supabaseUrl: "",
-      supabaseAnonKey: "",
+    const DEFAULT_CONFIG = {
+      supabaseUrl: "https://afrvwqqhnvblqjbdndnt.supabase.co",
+      supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcnZ3cWdobnZibGdqYmRuZG50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMjQ0OTYsImV4cCI6MjEwODgwMDQ5Nn0.mhw70b-K3G-bhUEBTdXS-GMoylYnvBtWkJzeEmOrRzM",
       staffPin: "1234"
-    });
+    };
+    const stored = safeGet(STORAGE_KEYS.CLOUD_CONFIG, DEFAULT_CONFIG);
+    return {
+      supabaseUrl: stored.supabaseUrl || DEFAULT_CONFIG.supabaseUrl,
+      supabaseAnonKey: stored.supabaseAnonKey || DEFAULT_CONFIG.supabaseAnonKey,
+      staffPin: stored.staffPin || "1234"
+    };
   }
 
   saveCloudConfig(newConfig) {

@@ -21,6 +21,8 @@ import { createClient } from "@supabase/supabase-js";
 import qrcode from "qrcode-terminal";
 import pino from "pino";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
@@ -31,9 +33,39 @@ const CATALOG_WEB_URL = (process.env.CATALOG_WEB_URL || "http://localhost:3000")
 const COOLDOWN_MINUTES = Number(process.env.COOLDOWN_MINUTES || 180);
 const PAYMENT_ALIAS = process.env.PAYMENT_ALIAS || "mihuerta.verduras";
 
-// Mapa en memoria para controlar la ventana de silencio (Cooldown) por número
-// Estructura: Map<phoneNumber, timestampLastSent>
-const customerCooldowns = new Map();
+// Persistencia de la ventana de silencio (Cooldown) para sobrevivir reinicios
+const COOLDOWN_FILE = path.resolve("./.cooldowns.json");
+
+function loadCooldowns() {
+  try {
+    if (fs.existsSync(COOLDOWN_FILE)) {
+      const data = JSON.parse(fs.readFileSync(COOLDOWN_FILE, "utf-8"));
+      const map = new Map();
+      const now = Date.now();
+      const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
+      for (const [phone, ts] of Object.entries(data)) {
+        if (now - Number(ts) < cooldownMs) {
+          map.set(phone, Number(ts));
+        }
+      }
+      return map;
+    }
+  } catch (err) {
+    console.warn("[COOLDOWN] No se pudo leer archivo de cooldowns previo:", err.message);
+  }
+  return new Map();
+}
+
+function saveCooldowns(map) {
+  try {
+    const obj = Object.fromEntries(map.entries());
+    fs.writeFileSync(COOLDOWN_FILE, JSON.stringify(obj, null, 2));
+  } catch (err) {
+    console.warn("[COOLDOWN] No se pudo guardar cooldowns en disco:", err.message);
+  }
+}
+
+const customerCooldowns = loadCooldowns();
 
 // Inicializar cliente Supabase si las credenciales están presentes
 const supabase =
@@ -140,6 +172,7 @@ async function startWhatsAppBot() {
     } else if (connection === "open") {
       console.log("\n[OK] Bot de WhatsApp Mi Huerta conectado y activo.");
       setupSupabaseRealtimeListener(sock);
+      reconcilePendingReadyOrders(sock);
     }
   });
 
@@ -167,6 +200,7 @@ async function startWhatsAppBot() {
       }
 
       customerCooldowns.set(localPhone, now);
+      saveCooldowns(customerCooldowns);
       const personalCatalogLink = `${CATALOG_WEB_URL}/?tel=${localPhone}`;
 
       const welcomeText =
@@ -183,6 +217,60 @@ async function startWhatsAppBot() {
       }
     }
   });
+}
+
+// Función común y segura para despachar el mensaje de pedido pesado y listo
+async function notifyOrderReady(sock, order) {
+  const phone = order.cliente_telefono;
+  if (!phone) return false;
+
+  const jid = toWhatsAppJid(phone);
+  const summaryText = buildOrderReadyMessage(order);
+
+  try {
+    await sock.sendMessage(jid, { text: summaryText });
+    console.log(`[PEDIDO #${order.id} NOTIFICADO] Resumen de balanza enviado por WhatsApp a ${phone}`);
+
+    if (supabase) {
+      await supabase
+        .from("pedidos")
+        .update({
+          notificado_whatsapp: true,
+          notificado_at: new Date().toISOString()
+        })
+        .eq("id", order.id);
+    }
+    return true;
+  } catch (err) {
+    console.error(`[ERROR] Falló el envío del resumen del pedido #${order.id}:`, err.message);
+    return false;
+  }
+}
+
+// Reconciliación: enviar avisos a pedidos LISTO que se prepararon mientras el bot estaba apagado
+async function reconcilePendingReadyOrders(sock) {
+  if (!supabase) return;
+  try {
+    const { data: pending, error } = await supabase
+      .from("pedidos")
+      .select("*")
+      .eq("estado", "LISTO")
+      .eq("notificado_whatsapp", false);
+
+    if (error) {
+      console.warn("[RECONCILIACIÓN] Error consultando pedidos pendientes:", error.message);
+      return;
+    }
+
+    if (pending && pending.length > 0) {
+      console.log(`[RECONCILIACIÓN] Recuperando ${pending.length} pedido(s) listos sin notificar...`);
+      for (const order of pending) {
+        await notifyOrderReady(sock, order);
+      }
+    }
+  } catch (err) {
+    console.warn("[RECONCILIACIÓN] Excepción durante el proceso de recuperación:", err.message);
+  }
 }
 
 // 2. Suscribirse en tiempo real a los pedidos que pasan a estado "LISTO" en Supabase
@@ -212,24 +300,7 @@ function setupSupabaseRealtimeListener(sock) {
 
         // Disparar mensaje cuando cambia a LISTO y aún no fue notificado
         if (nuevo && nuevo.estado === "LISTO" && (!anterior || anterior.estado !== "LISTO") && !nuevo.notificado_whatsapp) {
-          const phone = nuevo.cliente_telefono;
-          if (!phone) return;
-
-          const jid = toWhatsAppJid(phone);
-          const summaryText = buildOrderReadyMessage(nuevo);
-
-          try {
-            await sock.sendMessage(jid, { text: summaryText });
-            console.log(`[PEDIDO #${nuevo.id} NOTIFICADO] Resumen de balanza enviado por WhatsApp a ${phone}`);
-
-            // Marcar como notificado en Supabase para evitar envíos duplicados
-            await supabase
-              .from("pedidos")
-              .update({ notificado_whatsapp: true })
-              .eq("id", nuevo.id);
-          } catch (err) {
-            console.error(`[ERROR] Falló el envío del resumen del pedido #${nuevo.id}:`, err.message);
-          }
+          await notifyOrderReady(sock, nuevo);
         }
       }
     )

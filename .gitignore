@@ -19,3 +19,5 @@ bot/auth_info_baileys/
 .env
 .env.local
 bot/.env
+.cooldowns.json
+bot/.cooldowns.json
