@@ -43,11 +43,13 @@ class Store {
     this.init();
 
     // Sincronización en tiempo real entre pestañas
-    window.addEventListener("storage", (e) => {
-      if (Object.values(STORAGE_KEYS).includes(e.key)) {
-        this.notify("storage_sync");
-      }
-    });
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", (e) => {
+        if (Object.values(STORAGE_KEYS).includes(e.key)) {
+          this.notify("storage_sync");
+        }
+      });
+    }
   }
 
   init() {
@@ -185,7 +187,7 @@ class Store {
     // 4. Configuración inicial de PIN y Cloud (conectado por defecto al proyecto Supabase del local)
     if (!safeGet(STORAGE_KEYS.CLOUD_CONFIG, null)) {
       safeSet(STORAGE_KEYS.CLOUD_CONFIG, {
-        supabaseUrl: "https://afrvwqqhnvblqjbdndnt.supabase.co",
+        supabaseUrl: "https://afrvwqghnvblgjbdndnt.supabase.co",
         supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcnZ3cWdobnZibGdqYmRuZG50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMjQ0OTYsImV4cCI6MjEwODgwMDQ5Nn0.mhw70b-K3G-bhUEBTdXS-GMoylYnvBtWkJzeEmOrRzM",
         staffPin: "1234"
       });
@@ -215,7 +217,7 @@ class Store {
   // --- Configuración Cloud (Supabase) y PIN de Seguridad ---
   getCloudConfig() {
     const DEFAULT_CONFIG = {
-      supabaseUrl: "https://afrvwqqhnvblqjbdndnt.supabase.co",
+      supabaseUrl: "https://afrvwqghnvblgjbdndnt.supabase.co",
       supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcnZ3cWdobnZibGdqYmRuZG50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMjQ0OTYsImV4cCI6MjEwODgwMDQ5Nn0.mhw70b-K3G-bhUEBTdXS-GMoylYnvBtWkJzeEmOrRzM",
       staffPin: "1234"
     };
@@ -264,7 +266,7 @@ class Store {
 
   async initSupabaseConnection() {
     const { supabaseUrl, supabaseAnonKey } = this.getCloudConfig();
-    if (!supabaseUrl || !supabaseAnonKey || !window.supabase) {
+    if (typeof window === "undefined" || !supabaseUrl || !supabaseAnonKey || !window.supabase) {
       this.supabase = null;
       return;
     }
@@ -505,6 +507,30 @@ class Store {
     this.notify("cart_changed");
   }
 
+  setCartQuantity(productId, targetQty) {
+    const cleanQty = Math.max(0, Number(targetQty.toFixed(2)));
+    if (cleanQty <= 0) {
+      this.removeFromCart(productId);
+      return;
+    }
+    const cart = this.getCart();
+    const product = this.getProducts().find((p) => p.id === productId);
+    if (!product || !product.disponible) return;
+
+    cart[productId] = {
+      producto_id: productId,
+      nombre: product.nombre,
+      categoria: product.categoria,
+      unidad_medida: product.unidad_medida,
+      precio_unitario: product.precio,
+      cantidad: cleanQty,
+      subtotal_estimado: Math.round(cleanQty * product.precio)
+    };
+
+    safeSet(STORAGE_KEYS.CART, cart);
+    this.notify("cart_changed");
+  }
+
   clearCart() {
     safeRemove(STORAGE_KEYS.CART);
     this.notify("cart_changed");
@@ -596,7 +622,7 @@ class Store {
     this.notify("orders_changed");
   }
 
-  updateItemWeight(orderId, itemIndex, pesoReal) {
+  updateItemWeight(orderId, itemIndex, pesoReal, { notify = true } = {}) {
     let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
@@ -623,7 +649,9 @@ class Store {
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
     if (targetOrder) this.syncOrderToSupabase(targetOrder);
-    this.notify("orders_changed");
+    if (notify) {
+      this.notify("orders_changed");
+    }
   }
 
   toggleItemOutOfStock(orderId, itemIndex) {
@@ -655,13 +683,18 @@ class Store {
     this.notify("orders_changed");
   }
 
-  finalizeOrderWeighing(orderId) {
+  finalizeOrderWeighing(orderId, weightsMap = null) {
     let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
-        const items = order.items.map((i) => {
+        const items = order.items.map((i, idx) => {
           if (i.sin_stock) return i;
-          const pesoFinal = i.peso_real !== null ? i.peso_real : i.cantidad_solicitada;
+          let pesoFinal;
+          if (weightsMap && weightsMap[idx] !== undefined && weightsMap[idx] !== null && String(weightsMap[idx]).trim() !== "") {
+            pesoFinal = Math.max(0, Number(weightsMap[idx]));
+          } else {
+            pesoFinal = i.peso_real !== null ? i.peso_real : i.cantidad_solicitada;
+          }
           return {
             ...i,
             peso_real: pesoFinal,

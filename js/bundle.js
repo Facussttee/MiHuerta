@@ -243,11 +243,13 @@ class Store {
     this.init();
 
     // SincronizaciÃ³n en tiempo real entre pestaÃ±as
-    window.addEventListener("storage", (e) => {
-      if (Object.values(STORAGE_KEYS).includes(e.key)) {
-        this.notify("storage_sync");
-      }
-    });
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", (e) => {
+        if (Object.values(STORAGE_KEYS).includes(e.key)) {
+          this.notify("storage_sync");
+        }
+      });
+    }
   }
 
   init() {
@@ -385,7 +387,7 @@ class Store {
     // 4. ConfiguraciÃ³n inicial de PIN y Cloud (conectado por defecto al proyecto Supabase del local)
     if (!safeGet(STORAGE_KEYS.CLOUD_CONFIG, null)) {
       safeSet(STORAGE_KEYS.CLOUD_CONFIG, {
-        supabaseUrl: "https://afrvwqqhnvblqjbdndnt.supabase.co",
+        supabaseUrl: "https://afrvwqghnvblgjbdndnt.supabase.co",
         supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcnZ3cWdobnZibGdqYmRuZG50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMjQ0OTYsImV4cCI6MjEwODgwMDQ5Nn0.mhw70b-K3G-bhUEBTdXS-GMoylYnvBtWkJzeEmOrRzM",
         staffPin: "1234"
       });
@@ -415,7 +417,7 @@ class Store {
   // --- ConfiguraciÃ³n Cloud (Supabase) y PIN de Seguridad ---
   getCloudConfig() {
     const DEFAULT_CONFIG = {
-      supabaseUrl: "https://afrvwqqhnvblqjbdndnt.supabase.co",
+      supabaseUrl: "https://afrvwqghnvblgjbdndnt.supabase.co",
       supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcnZ3cWdobnZibGdqYmRuZG50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMjQ0OTYsImV4cCI6MjEwODgwMDQ5Nn0.mhw70b-K3G-bhUEBTdXS-GMoylYnvBtWkJzeEmOrRzM",
       staffPin: "1234"
     };
@@ -464,7 +466,7 @@ class Store {
 
   async initSupabaseConnection() {
     const { supabaseUrl, supabaseAnonKey } = this.getCloudConfig();
-    if (!supabaseUrl || !supabaseAnonKey || !window.supabase) {
+    if (typeof window === "undefined" || !supabaseUrl || !supabaseAnonKey || !window.supabase) {
       this.supabase = null;
       return;
     }
@@ -705,6 +707,30 @@ class Store {
     this.notify("cart_changed");
   }
 
+  setCartQuantity(productId, targetQty) {
+    const cleanQty = Math.max(0, Number(targetQty.toFixed(2)));
+    if (cleanQty <= 0) {
+      this.removeFromCart(productId);
+      return;
+    }
+    const cart = this.getCart();
+    const product = this.getProducts().find((p) => p.id === productId);
+    if (!product || !product.disponible) return;
+
+    cart[productId] = {
+      producto_id: productId,
+      nombre: product.nombre,
+      categoria: product.categoria,
+      unidad_medida: product.unidad_medida,
+      precio_unitario: product.precio,
+      cantidad: cleanQty,
+      subtotal_estimado: Math.round(cleanQty * product.precio)
+    };
+
+    safeSet(STORAGE_KEYS.CART, cart);
+    this.notify("cart_changed");
+  }
+
   clearCart() {
     safeRemove(STORAGE_KEYS.CART);
     this.notify("cart_changed");
@@ -796,7 +822,7 @@ class Store {
     this.notify("orders_changed");
   }
 
-  updateItemWeight(orderId, itemIndex, pesoReal) {
+  updateItemWeight(orderId, itemIndex, pesoReal, { notify = true } = {}) {
     let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
@@ -823,7 +849,9 @@ class Store {
     });
     safeSet(STORAGE_KEYS.ORDERS, orders);
     if (targetOrder) this.syncOrderToSupabase(targetOrder);
-    this.notify("orders_changed");
+    if (notify) {
+      this.notify("orders_changed");
+    }
   }
 
   toggleItemOutOfStock(orderId, itemIndex) {
@@ -855,13 +883,18 @@ class Store {
     this.notify("orders_changed");
   }
 
-  finalizeOrderWeighing(orderId) {
+  finalizeOrderWeighing(orderId, weightsMap = null) {
     let targetOrder = null;
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
-        const items = order.items.map((i) => {
+        const items = order.items.map((i, idx) => {
           if (i.sin_stock) return i;
-          const pesoFinal = i.peso_real !== null ? i.peso_real : i.cantidad_solicitada;
+          let pesoFinal;
+          if (weightsMap && weightsMap[idx] !== undefined && weightsMap[idx] !== null && String(weightsMap[idx]).trim() !== "") {
+            pesoFinal = Math.max(0, Number(weightsMap[idx]));
+          } else {
+            pesoFinal = i.peso_real !== null ? i.peso_real : i.cantidad_solicitada;
+          }
           return {
             ...i,
             peso_real: pesoFinal,
@@ -1015,6 +1048,7 @@ function renderClientView(container) {
   let selectedCategory = "Todos";
   let searchQuery = "";
   let isCartOpen = false;
+  let isDrawerFirstOpen = true;
   let viewingActiveOrder = false;
   let deliveryMode = "RETIRO"; // RETIRO | DELIVERY
   let deliveryAddress = "";
@@ -1078,7 +1112,7 @@ function renderClientView(container) {
                   required 
                   inputmode="numeric"
                   placeholder="11 2345 6789" 
-                  value="${store.prefilledPhone || "1123456789"}"
+                  value="${store.prefilledPhone || ""}"
                   class="w-full pl-20 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 font-bold text-base outline-none transition"
                 />
               </div>
@@ -1118,11 +1152,21 @@ function renderClientView(container) {
               class="w-full mt-2 min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-slate-950/15 transition tap-feedback text-sm flex items-center justify-center gap-2"
             >
               <span>Ingresar al CatÃ¡logo</span>
-              <span class="text-xs text-slate-400">â€º</span>
             </button>
           </form>
 
-          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <!-- Acceso rÃ¡pido demo -->
+          <div class="mt-4 pt-3 border-t border-slate-100">
+            <button 
+              id="btn-quick-demo-user"
+              type="button"
+              class="w-full min-h-[44px] bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-3 rounded-xl transition tap-feedback text-center"
+            >
+              Probar como Facundo GÃ³mez (Cliente demo)
+            </button>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
             <span class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
               Precios del dÃ­a
@@ -1137,22 +1181,36 @@ function renderClientView(container) {
     const phoneInput = container.querySelector("#phone-input");
     const nameInput = container.querySelector("#name-input");
     const addressInput = container.querySelector("#address-input");
+    const btnQuickDemo = container.querySelector("#btn-quick-demo-user");
 
     function syncUserFields(phoneVal) {
       const match = store.getCustomer(phoneVal);
       if (match) {
-        nameInput.value = match.nombre || "";
-        addressInput.value = match.direccion || "";
+        if (nameInput) nameInput.value = match.nombre || "";
+        if (addressInput) addressInput.value = match.direccion || "";
       }
     }
 
-    phoneInput.addEventListener("input", (e) => {
+    phoneInput?.addEventListener("input", (e) => {
       syncUserFields(e.target.value);
     });
 
-    syncUserFields(phoneInput.value);
+    if (phoneInput?.value) {
+      syncUserFields(phoneInput.value);
+    }
 
-    phoneForm.addEventListener("submit", (e) => {
+    btnQuickDemo?.addEventListener("click", () => {
+      const demoUser = store.saveCustomer({
+        telefono: "1123456789",
+        nombre: "Facundo GÃ³mez",
+        direccion: "Av. Rivadavia 4520, Piso 3 B"
+      });
+      store.setCurrentUser(demoUser);
+      deliveryAddress = demoUser.direccion || "";
+      update();
+    });
+
+    phoneForm?.addEventListener("submit", (e) => {
       e.preventDefault();
       const phone = phoneInput.value.trim();
       const name = nameInput.value.trim() || "Cliente";
@@ -1190,6 +1248,19 @@ function renderClientView(container) {
       return matchesCategory && matchesSearch;
     });
 
+    // Conteo por categorÃ­a
+    const categoryCounts = {};
+    CATEGORIAS.forEach((cat) => {
+      categoryCounts[cat] =
+        cat === "Todos"
+          ? products.length
+          : products.filter((p) => p.categoria === cat).length;
+    });
+
+    // Preservar scroll del drawer si ya estaba montado
+    const prevScrollEl = container.querySelector("#cart-drawer-items-list");
+    const savedDrawerScroll = prevScrollEl ? prevScrollEl.scrollTop : 0;
+
     container.innerHTML = `
       <div class="max-w-md mx-auto pb-36">
         
@@ -1200,7 +1271,7 @@ function renderClientView(container) {
           <div class="px-4 pt-3">
             <button 
               id="btn-banner-active-order"
-              class="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 p-3 rounded-2xl text-left flex items-center justify-between transition tap-feedback shadow-sm"
+              class="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 p-3 rounded-2xl text-left flex items-center justify-between transition tap-feedback shadow-xs"
             >
               <div>
                 <div class="flex items-center gap-2">
@@ -1208,7 +1279,7 @@ function renderClientView(container) {
                   <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800">
                     Pedido #${activeOrder.id} en curso
                   </span>
-                  <span class="text-[10px] px-2 py-0.2 rounded-full font-bold bg-white text-emerald-800 border border-emerald-200">
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white text-emerald-800 border border-emerald-200">
                     ${activeOrder.estado}
                   </span>
                 </div>
@@ -1216,25 +1287,27 @@ function renderClientView(container) {
                   TocÃ¡ aquÃ­ para ver el pesaje en balanza en tiempo real
                 </p>
               </div>
-              <span class="text-sm font-bold text-emerald-700 ml-2">â€º</span>
+              <span class="text-xs font-bold text-emerald-800 bg-white px-2.5 py-1 rounded-lg border border-emerald-200">
+                Ver
+              </span>
             </button>
           </div>
         `
             : ""
         }
 
-        <!-- Header MÃ³vil del CatÃ¡logo (Coordinado debajo de la barra demo: top-[49px]) -->
-        <header class="sticky top-[49px] z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 pt-3 pb-2.5 shadow-sm">
+        <!-- Header MÃ³vil del CatÃ¡logo (Coordinado con clase sticky-header-offset) -->
+        <header class="sticky sticky-header-offset z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 pt-3 pb-2.5 shadow-xs">
           <div class="flex items-center justify-between gap-2">
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-sm font-black text-slate-900 tracking-tight uppercase">CatÃ¡logo de Huerta</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span class="text-sm font-black text-slate-900 tracking-tight uppercase">CatÃ¡logo del DÃ­a</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span class="text-[11px] font-bold text-emerald-700">Abierto</span>
               </div>
               <p class="text-xs text-slate-500">
                 <span>Hola, <strong class="text-slate-800 font-semibold">${user.nombre}</strong></span>
-                <button id="btn-change-user" class="text-slate-400 underline ml-1 hover:text-slate-600">Cambiar</button>
+                <button id="btn-change-user" class="text-slate-400 underline ml-1 hover:text-slate-600 text-[11px]">Cambiar</button>
               </p>
             </div>
             
@@ -1243,7 +1316,7 @@ function renderClientView(container) {
               class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-2 tap-feedback"
             >
               <span>Pedido</span>
-              <span class="px-2 py-0.5 rounded-full ${totalItems > 0 ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-700"} text-xs font-black">
+              <span class="px-2 py-0.5 rounded-full ${totalItems > 0 ? "bg-emerald-600 text-white font-black" : "bg-slate-300 text-slate-700 font-bold"} text-xs">
                 ${totalItems}
               </span>
             </button>
@@ -1256,28 +1329,33 @@ function renderClientView(container) {
               id="search-input" 
               placeholder="Buscar productos (papa, tomate, acelga)..." 
               value="${searchQuery}"
-              class="w-full pl-3.5 pr-10 py-2.5 bg-slate-100 focus:bg-white border border-transparent focus:border-slate-300 rounded-xl text-base font-medium outline-none transition"
+              class="w-full pl-3.5 pr-14 py-2.5 bg-slate-100 focus:bg-white border border-transparent focus:border-slate-300 rounded-xl text-base font-medium outline-none transition"
             />
             ${
               searchQuery
-                ? `<button id="btn-clear-search" class="absolute right-1 top-1 w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 text-sm font-bold tap-feedback">X</button>`
+                ? `<button id="btn-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 hover:text-slate-700 text-xs font-bold tap-feedback">Borrar</button>`
                 : ""
             }
           </div>
 
-          <!-- PÃ­ldoras de CategorÃ­as (Horizontal Scroll TÃ¡ctil) -->
+          <!-- PÃ­ldoras de CategorÃ­as con conteo (Horizontal Scroll TÃ¡ctil) -->
           <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar py-1">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-category="${cat}"
-                class="category-pill whitespace-nowrap min-h-[38px] px-4 py-1.5 rounded-full text-xs font-bold transition tap-feedback ${
+                class="category-pill whitespace-nowrap min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition tap-feedback flex items-center gap-1.5 ${
                   selectedCategory === cat
-                    ? "bg-slate-900 text-white shadow-sm"
+                    ? "bg-slate-900 text-white shadow-xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }"
               >
-                ${cat}
+                <span>${cat}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
+                  selectedCategory === cat ? "bg-slate-800 text-slate-200 font-black" : "bg-slate-200 text-slate-600"
+                }">
+                  ${categoryCounts[cat] || 0}
+                </span>
               </button>
             `
             ).join("")}
@@ -1300,7 +1378,7 @@ function renderClientView(container) {
             >
               <div class="flex items-center gap-3">
                 <span class="bg-emerald-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded-full">
-                  ${totalItems}
+                  ${totalItems} ${totalItems === 1 ? "Ã­tem" : "Ã­tems"}
                 </span>
                 <div class="text-left">
                   <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Total Estimado</span>
@@ -1309,7 +1387,6 @@ function renderClientView(container) {
               </div>
               <div class="flex items-center gap-1.5 font-bold text-xs bg-slate-800 hover:bg-slate-700 px-3.5 py-2.5 rounded-xl text-emerald-400 transition">
                 <span>Ver Pedido</span>
-                <span class="text-xs">â€º</span>
               </div>
             </button>
           </div>
@@ -1322,13 +1399,22 @@ function renderClientView(container) {
       </div>
     `;
 
+    // Restaurar posiciÃ³n de scroll del drawer
+    if (isCartOpen) {
+      const newScrollEl = container.querySelector("#cart-drawer-items-list");
+      if (newScrollEl && savedDrawerScroll > 0) {
+        newScrollEl.scrollTop = savedDrawerScroll;
+      }
+      isDrawerFirstOpen = false;
+    }
+
     attachCatalogListeners(user);
     if (isCartOpen) {
       attachCartDrawerListeners(user);
     }
   }
 
-  // Generador de tarjetas de productos
+  // Generador de tarjetas de productos optimizadas para mobile
   function renderProductCardsHTML(products, cart) {
     if (products.length === 0) {
       return `
@@ -1346,89 +1432,139 @@ function renderClientView(container) {
       .map((product) => {
         const cartItem = cart[product.id];
         const currentQty = cartItem ? cartItem.cantidad : 0;
-        const step = product.paso || 0.5;
-        const unitLabel = product.unidad_medida === "KG" ? "kg" : "u.";
-        const unitSubtitle = product.unidad_medida === "KG" ? "Por kilo" : "Por unidad";
+        const step = product.paso || (product.unidad_medida === "KG" ? 0.5 : 1);
+        const isKg = product.unidad_medida === "KG";
+        const unitLabel = isKg ? "kg" : "u.";
+        const unitSubtitle = isKg ? "Por kilo" : "Por unidad";
+        const inCart = currentQty > 0;
 
         return `
-          <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 transition ${
-            !product.disponible ? "opacity-40 grayscale pointer-events-none" : ""
-          }">
-            <!-- Info Producto -->
-            <div class="flex-1 min-w-0 pr-1">
-              <div class="flex items-center gap-1.5 mb-1">
-                <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                  ${product.categoria}
-                </span>
-                <span class="text-[10px] text-slate-300">Â·</span>
-                <span class="text-[10px] font-semibold text-slate-400">
-                  ${unitSubtitle}
-                </span>
+          <div class="bg-white rounded-2xl p-4 border transition ${
+            inCart ? "border-emerald-500/50 bg-emerald-50/10 shadow-xs" : "border-slate-200/80 shadow-xs"
+          } ${!product.disponible ? "opacity-40 grayscale pointer-events-none" : ""}">
+            
+            <div class="flex items-start justify-between gap-3">
+              <!-- Info Producto -->
+              <div class="flex-1 min-w-0 pr-1">
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                    ${product.categoria}
+                  </span>
+                  <span class="text-[10px] text-slate-300">Â·</span>
+                  <span class="text-[10px] font-semibold text-slate-400">
+                    ${unitSubtitle}
+                  </span>
+                  ${
+                    inCart
+                      ? `<span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 ml-1">En pedido (${currentQty} ${unitLabel})</span>`
+                      : ""
+                  }
+                </div>
+
+                <h3 class="font-extrabold text-slate-900 text-sm leading-tight truncate">
+                  ${product.nombre}
+                </h3>
+
+                <p class="text-[11px] text-slate-400 truncate mt-0.5">
+                  ${product.detalle || ""}
+                </p>
+
+                <div class="mt-1.5 flex items-baseline gap-1">
+                  <span class="text-base font-black text-emerald-700">
+                    $${product.precio.toLocaleString("es-AR")}
+                  </span>
+                  <span class="text-xs text-slate-400 font-medium">/ ${unitLabel}</span>
+                </div>
+
+                ${
+                  !product.disponible
+                    ? `<span class="inline-block text-[10px] font-bold text-rose-600 uppercase tracking-wider mt-1">Sin Stock</span>`
+                    : ""
+                }
               </div>
 
-              <h3 class="font-extrabold text-slate-900 text-sm leading-tight truncate">
-                ${product.nombre}
-              </h3>
-
-              <p class="text-[11px] text-slate-400 truncate mt-0.5">
-                ${product.detalle || ""}
-              </p>
-
-              <div class="mt-1.5 flex items-baseline gap-1">
-                <span class="text-base font-black text-emerald-700">
-                  $${product.precio.toLocaleString("es-AR")}
-                </span>
-                <span class="text-xs text-slate-400 font-medium">/ ${unitLabel}</span>
+              <!-- Selector de Cantidad / BotÃ³n TÃ¡ctil -->
+              <div class="shrink-0 flex flex-col items-end">
+                ${
+                  product.disponible
+                    ? !inCart
+                      ? `
+                      <button 
+                        data-add-id="${product.id}"
+                        data-step="${step}"
+                        class="btn-add-initial min-h-[44px] min-w-[96px] bg-slate-900 hover:bg-slate-800 text-white font-bold px-3 py-2.5 rounded-xl text-xs transition tap-feedback flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <span>Agregar</span>
+                        <span class="text-xs font-bold">+</span>
+                      </button>
+                    `
+                      : `
+                      <div class="flex items-center bg-emerald-600 text-white rounded-xl p-0.5 shadow-xs">
+                        <button 
+                          data-dec-id="${product.id}"
+                          data-step="${step}"
+                          class="btn-qty-dec w-9 h-9 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-sm font-black transition tap-feedback"
+                          title="Restar"
+                        >
+                          âˆ’
+                        </button>
+                        <span class="px-2 text-xs font-black min-w-[46px] text-center tracking-tight select-none">
+                          ${currentQty} ${unitLabel}
+                        </span>
+                        <button 
+                          data-inc-id="${product.id}"
+                          data-step="${step}"
+                          class="btn-qty-inc w-9 h-9 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-sm font-black transition tap-feedback"
+                          title="Sumar"
+                        >
+                          +
+                        </button>
+                      </div>
+                    `
+                    : ""
+                }
               </div>
-
-              ${
-                !product.disponible
-                  ? `<span class="inline-block text-[10px] font-bold text-rose-600 uppercase tracking-wider mt-1">Sin Stock</span>`
-                  : ""
-              }
             </div>
 
-            <!-- Selector de Cantidad / BotÃ³n TÃ¡ctil -->
-            <div class="shrink-0">
-              ${
-                product.disponible
-                  ? currentQty === 0
-                    ? `
-                    <button 
-                      data-add-id="${product.id}"
-                      data-step="${step}"
-                      class="btn-add-initial min-h-[44px] bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition tap-feedback flex items-center gap-1.5 shadow-sm"
-                    >
-                      <span>Agregar</span>
-                      <span class="text-xs font-normal">+</span>
-                    </button>
-                  `
-                    : `
-                    <div class="flex items-center bg-emerald-600 text-white rounded-xl p-1 shadow-sm">
-                      <button 
-                        data-dec-id="${product.id}"
-                        data-step="${step}"
-                        class="btn-qty-dec w-10 h-10 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback"
-                        title="Restar"
-                      >
-                        âˆ’
-                      </button>
-                      <span class="px-2 text-xs font-black min-w-[50px] text-center tracking-tight select-none">
-                        ${currentQty} ${unitLabel}
-                      </span>
-                      <button 
-                        data-inc-id="${product.id}"
-                        data-step="${step}"
-                        class="btn-qty-inc w-10 h-10 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback"
-                        title="Sumar"
-                      >
-                        +
-                      </button>
-                    </div>
-                  `
-                  : ""
-              }
-            </div>
+            <!-- Accesos rÃ¡pidos de peso para productos pesables (Disponibles en todo momento) -->
+            ${
+              product.disponible && isKg
+                ? `
+              <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ajuste rÃ¡pido:</span>
+                <div class="flex items-center gap-1.5">
+                  <button 
+                    data-quick-weight-id="${product.id}" 
+                    data-weight="0.5" 
+                    class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
+                      currentQty === 0.5 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }"
+                  >
+                    500g
+                  </button>
+                  <button 
+                    data-quick-weight-id="${product.id}" 
+                    data-weight="1" 
+                    class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
+                      currentQty === 1 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }"
+                  >
+                    1 kg
+                  </button>
+                  <button 
+                    data-quick-weight-id="${product.id}" 
+                    data-weight="2" 
+                    class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
+                      currentQty === 2 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }"
+                  >
+                    2 kg
+                  </button>
+                </div>
+              </div>
+            `
+                : ""
+            }
           </div>
         `;
       })
@@ -1450,6 +1586,7 @@ function renderClientView(container) {
       const { totalItems } = store.getCartSummary();
       if (totalItems > 0) {
         isCartOpen = true;
+        isDrawerFirstOpen = true;
         renderCatalog();
       }
     });
@@ -1493,6 +1630,7 @@ function renderClientView(container) {
 
     container.querySelector("#btn-open-cart")?.addEventListener("click", () => {
       isCartOpen = true;
+      isDrawerFirstOpen = true;
       renderCatalog();
     });
 
@@ -1502,6 +1640,7 @@ function renderClientView(container) {
   function attachProductItemListeners() {
     container.querySelectorAll(".btn-add-initial, .btn-qty-inc").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(12); } catch {} }
         const id = btn.dataset.addId || btn.dataset.incId;
         const step = Number(btn.dataset.step) || 0.5;
         store.addToCart(id, step);
@@ -1510,9 +1649,19 @@ function renderClientView(container) {
 
     container.querySelectorAll(".btn-qty-dec").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(12); } catch {} }
         const id = btn.dataset.decId;
         const step = Number(btn.dataset.step) || 0.5;
         store.addToCart(id, -step);
+      });
+    });
+
+    container.querySelectorAll(".btn-quick-weight").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
+        const id = btn.dataset.quickWeightId;
+        const weight = Number(btn.dataset.weight);
+        store.setCartQuantity(id, weight);
       });
     });
   }
@@ -1522,11 +1671,14 @@ function renderClientView(container) {
   // ========================================================
   function renderCartDrawer(user, items, totalEstimado) {
     const isDelivery = deliveryMode === "DELIVERY";
+    const isEmpty = items.length === 0;
 
     return `
       <!-- Backdrop con cierre al tocar fondo -->
-      <div id="cart-drawer-backdrop" class="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm flex items-end justify-center animate-fade-in">
-        <div id="cart-drawer-sheet" class="bg-white w-full max-w-md rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl animate-slide-up border-t border-slate-200">
+      <div id="cart-drawer-backdrop" class="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-xs flex items-end justify-center animate-fade-in">
+        <div id="cart-drawer-sheet" class="bg-white w-full max-w-md rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl ${
+          isDrawerFirstOpen ? "animate-slide-up" : ""
+        } border-t border-slate-200">
           
           <!-- Handle bar tÃ¡ctil -->
           <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mt-3"></div>
@@ -1539,18 +1691,31 @@ function renderClientView(container) {
             </div>
             <button 
               id="btn-close-cart" 
-              class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300 flex items-center justify-center font-bold text-sm tap-feedback touch-target"
+              class="min-h-[44px] px-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300 flex items-center justify-center font-bold text-xs tap-feedback touch-target"
               title="Cerrar pedido"
             >
-              X
+              Cerrar
             </button>
           </div>
 
           <!-- Lista de Ãtems en Carrito con Controles Directos -->
-          <div class="p-5 overflow-y-auto space-y-3 flex-1 overscroll-contain">
+          <div id="cart-drawer-items-list" class="p-5 overflow-y-auto space-y-3 flex-1 overscroll-contain">
             ${
-              items.length === 0
-                ? `<p class="text-xs text-slate-400 text-center py-8">Tu pedido estÃ¡ vacÃ­o</p>`
+              isEmpty
+                ? `
+                <div class="text-center py-12 px-4">
+                  <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 mb-2">Pedido VacÃ­o</span>
+                  <h4 class="font-extrabold text-slate-800 text-sm">Tu pedido no tiene productos</h4>
+                  <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">SeleccionÃ¡ frutas y verduras del catÃ¡logo para coordinar el pesaje en balanza.</p>
+                  <button 
+                    id="btn-drawer-empty-back" 
+                    type="button"
+                    class="mt-4 min-h-[44px] px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl transition tap-feedback"
+                  >
+                    Volver al CatÃ¡logo
+                  </button>
+                </div>
+              `
                 : items
                     .map(
                       (item) => `
@@ -1565,9 +1730,9 @@ function renderClientView(container) {
                     </p>
                   </div>
 
-                  <!-- Stepper en Carrito con botones cÃ³modos (38px) -->
+                  <!-- Stepper en Carrito con botones cÃ³modos (36px) y botÃ³n eliminar -->
                   <div class="flex items-center gap-2">
-                    <div class="flex items-center bg-white border border-slate-200 rounded-xl p-0.5 shadow-sm">
+                    <div class="flex items-center bg-white border border-slate-200 rounded-xl p-0.5 shadow-xs">
                       <button 
                         data-drawer-dec="${item.producto_id}" 
                         class="w-8 h-8 flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-95 rounded-lg font-black text-sm tap-feedback"
@@ -1587,10 +1752,16 @@ function renderClientView(container) {
                       </button>
                     </div>
 
-                    <div class="text-right min-w-[70px]">
+                    <div class="text-right min-w-[65px]">
                       <span class="font-black text-sm text-slate-900 block">
                         $${item.subtotal_estimado.toLocaleString("es-AR")}
                       </span>
+                      <button 
+                        data-drawer-remove="${item.producto_id}"
+                        class="text-[11px] font-bold text-rose-500 hover:text-rose-700 underline"
+                      >
+                        Quitar
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1599,14 +1770,17 @@ function renderClientView(container) {
                     .join("")
             }
 
+            ${
+              !isEmpty
+                ? `
             <!-- Selector de Forma de Entrega Segmentado -->
             <div class="pt-3">
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                 MÃ©todo de Entrega
               </label>
               <div class="grid grid-cols-2 gap-2">
-                <label class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
-                  !isDelivery ? "border-slate-900 bg-slate-900 text-white shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                <label id="delivery-card-retiro" class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
+                  !isDelivery ? "border-slate-900 bg-slate-900 text-white shadow-xs" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
                 }">
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-black">Retiro en Local</span>
@@ -1615,8 +1789,8 @@ function renderClientView(container) {
                   <span class="text-[10px] opacity-75 mt-1">Listo en 20-30 min Â· Sin costo</span>
                 </label>
 
-                <label class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
-                  isDelivery ? "border-slate-900 bg-slate-900 text-white shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                <label id="delivery-card-delivery" class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
+                  isDelivery ? "border-slate-900 bg-slate-900 text-white shadow-xs" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
                 }">
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-black">EnvÃ­o a Domicilio</span>
@@ -1651,6 +1825,9 @@ function renderClientView(container) {
                 El total indicado es una estimaciÃ³n. En el mostrador se pesan las unidades reales y te notificaremos el comprobante con los gramos exactos y el importe final.
               </p>
             </div>
+            `
+                : ""
+            }
           </div>
 
           <!-- Footer con ConfirmaciÃ³n y Safe Area Pad -->
@@ -1663,13 +1840,26 @@ function renderClientView(container) {
               <span class="font-black text-2xl text-slate-900">$${totalEstimado.toLocaleString("es-AR")}</span>
             </div>
 
-            <button 
-              id="btn-confirm-order"
-              class="w-full min-h-[50px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-950/20 text-sm transition tap-feedback flex items-center justify-center gap-2"
-            >
-              <span>Confirmar Pedido</span>
-              <span class="text-xs text-slate-400">â€º</span>
-            </button>
+            ${
+              isEmpty
+                ? `
+              <button 
+                id="btn-confirm-order"
+                disabled
+                class="w-full min-h-[50px] bg-slate-200 text-slate-400 font-black py-4 rounded-2xl text-sm cursor-not-allowed opacity-60 text-center"
+              >
+                Pedido VacÃ­o
+              </button>
+            `
+                : `
+              <button 
+                id="btn-confirm-order"
+                class="w-full min-h-[50px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-950/20 text-sm transition tap-feedback flex items-center justify-center gap-2"
+              >
+                <span>Confirmar Pedido</span>
+              </button>
+            `
+            }
           </div>
         </div>
       </div>
@@ -1691,40 +1881,82 @@ function renderClientView(container) {
       renderCatalog();
     });
 
+    container.querySelector("#btn-drawer-empty-back")?.addEventListener("click", () => {
+      isCartOpen = false;
+      renderCatalog();
+    });
+
     const addressInput = container.querySelector("#delivery-address-input");
     addressInput?.addEventListener("input", (e) => {
       deliveryAddress = e.target.value;
     });
 
+    // Toggle de entrega sin recrear todo el drawer para no reiniciar el scroll
+    const cardRetiro = container.querySelector("#delivery-card-retiro");
+    const cardDelivery = container.querySelector("#delivery-card-delivery");
+    const addressContainer = container.querySelector("#delivery-address-container");
     const radios = container.querySelectorAll('input[name="delivery-mode"]');
+
     radios.forEach((radio) => {
       radio.addEventListener("change", (e) => {
         deliveryMode = e.target.value;
-        renderCatalog();
+        const isDel = deliveryMode === "DELIVERY";
+
+        if (isDel) {
+          cardDelivery?.classList.add("border-slate-900", "bg-slate-900", "text-white", "shadow-xs");
+          cardDelivery?.classList.remove("border-slate-200", "bg-slate-50", "text-slate-700");
+          cardRetiro?.classList.remove("border-slate-900", "bg-slate-900", "text-white", "shadow-xs");
+          cardRetiro?.classList.add("border-slate-200", "bg-slate-50", "text-slate-700");
+          addressContainer?.classList.remove("hidden");
+          addressInput?.focus();
+        } else {
+          cardRetiro?.classList.add("border-slate-900", "bg-slate-900", "text-white", "shadow-xs");
+          cardRetiro?.classList.remove("border-slate-200", "bg-slate-50", "text-slate-700");
+          cardDelivery?.classList.remove("border-slate-900", "bg-slate-900", "text-white", "shadow-xs");
+          cardDelivery?.classList.add("border-slate-200", "bg-slate-50", "text-slate-700");
+          addressContainer?.classList.add("hidden");
+        }
       });
     });
 
-    // Controles directos de cantidad en drawer (preservando estado de envÃ­o)
+    // Controles directos de cantidad en drawer
     container.querySelectorAll("[data-drawer-inc]").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(12); } catch {} }
         const id = btn.dataset.drawerInc;
         const product = store.getProducts().find((p) => p.id === id);
-        const step = product?.paso || 0.5;
+        const step = product?.paso || (product?.unidad_medida === "KG" ? 0.5 : 1);
         store.addToCart(id, step);
       });
     });
 
     container.querySelectorAll("[data-drawer-dec]").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(12); } catch {} }
         const id = btn.dataset.drawerDec;
         const product = store.getProducts().find((p) => p.id === id);
-        const step = product?.paso || 0.5;
+        const step = product?.paso || (product?.unidad_medida === "KG" ? 0.5 : 1);
         store.addToCart(id, -step);
+      });
+    });
+
+    container.querySelectorAll("[data-drawer-remove]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
+        const id = btn.dataset.drawerRemove;
+        store.removeFromCart(id);
       });
     });
 
     const btnConfirm = container.querySelector("#btn-confirm-order");
     btnConfirm?.addEventListener("click", () => {
+      const { items } = store.getCartSummary();
+      if (items.length === 0) {
+        isCartOpen = false;
+        renderCatalog();
+        return;
+      }
+
       const mode = deliveryMode;
       const finalAddress = mode === "DELIVERY" ? deliveryAddress.trim() : "Retiro en Mostrador";
 
@@ -1734,15 +1966,20 @@ function renderClientView(container) {
         return;
       }
 
+      if (navigator.vibrate) { try { navigator.vibrate(30); } catch {} }
+
       const newOrder = store.createOrder({
         cliente: user,
         tipo_entrega: mode,
         direccion_entrega: finalAddress
       });
 
-      isCartOpen = false;
-      viewingActiveOrder = true;
-      update();
+      if (newOrder) {
+        isCartOpen = false;
+        isDrawerFirstOpen = true;
+        viewingActiveOrder = true;
+        update();
+      }
     });
   }
 
@@ -1765,14 +2002,20 @@ function renderClientView(container) {
     } else if (isReady && !isDelivered) {
       stepNumber = 3;
       stepTitle = "Listo para Entrega";
-      stepDesc = currentOrder.tipo_entrega === "DELIVERY"
-        ? "El pedido fue pesado y el cadete estÃ¡ listo para despachar."
-        : "El pedido fue pesado y podÃ©s pasar a retirarlo por el local.";
+      stepDesc =
+        currentOrder.tipo_entrega === "DELIVERY"
+          ? "El pedido fue pesado y el cadete estÃ¡ listo para despachar."
+          : "El pedido fue pesado y podÃ©s pasar a retirarlo por el local.";
     } else if (isDelivered) {
       stepNumber = 4;
       stepTitle = "Entregado y Cobrado";
       stepDesc = "Pedido finalizado exitosamente. Â¡Muchas gracias por tu compra!";
     }
+
+    const waHelpText = encodeURIComponent(
+      `Hola! Consulto por mi pedido #${currentOrder.id} a nombre de ${currentOrder.cliente.nombre}.`
+    );
+    const waHelpLink = `https://wa.me/5491123456789?text=${waHelpText}`;
 
     container.innerHTML = `
       <div class="max-w-md mx-auto p-4 pt-4 pb-28">
@@ -1781,9 +2024,8 @@ function renderClientView(container) {
         <div class="mb-3">
           <button 
             id="btn-back-to-catalog" 
-            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl shadow-sm transition tap-feedback flex items-center gap-1.5"
+            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
           >
-            <span>â€¹</span>
             <span>Volver al CatÃ¡logo</span>
           </button>
         </div>
@@ -1886,7 +2128,10 @@ function renderClientView(container) {
                   return `
                   <div class="py-2.5 flex items-center justify-between gap-2 ${item.sin_stock ? "opacity-40 line-through" : ""}">
                     <div>
-                      <span class="font-bold text-slate-800 text-xs">${item.nombre}</span>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-slate-800 text-xs">${item.nombre}</span>
+                        ${item.sin_stock ? `<span class="text-[9px] font-bold text-rose-600 uppercase">Sin Stock</span>` : ""}
+                      </div>
                       <span class="text-[11px] text-slate-400 block">${pesoTexto}</span>
                     </div>
                     <strong class="text-slate-900 font-bold text-xs">
@@ -1899,8 +2144,19 @@ function renderClientView(container) {
             </div>
           </div>
 
+          <!-- BotÃ³n de consulta al local por WhatsApp -->
+          <div class="mt-5 pt-3 border-t border-slate-100">
+            <a 
+              href="${waHelpLink}"
+              target="_blank"
+              class="w-full min-h-[44px] bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-900 border border-emerald-300 font-bold py-2.5 px-3 rounded-xl text-xs transition tap-feedback flex items-center justify-center gap-1.5"
+            >
+              <span>Consultar al local por WhatsApp</span>
+            </a>
+          </div>
+
           <!-- Acciones de Seguimiento -->
-          <div class="mt-6 pt-4 border-t border-slate-100 space-y-2">
+          <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
             <button 
               id="btn-new-order" 
               class="w-full min-h-[46px] py-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition tap-feedback"
@@ -1969,12 +2225,12 @@ function renderOperatorView(container) {
 
     container.innerHTML = `
       <div class="max-w-2xl mx-auto pb-24">
-        <!-- Header del Mostrador -->
-        <header class="sticky top-11 z-20 bg-slate-900 text-white px-4 py-3 shadow-md">
+        <!-- Header del Mostrador con sticky-header-offset -->
+        <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md">
           <div class="flex items-center justify-between">
             <div>
               <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Puesto de Balanza</span>
-              <h1 class="font-extrabold text-sm leading-tight text-white">Mostrador & Pesaje</h1>
+              <h1 class="font-extrabold text-sm leading-tight text-white">Mostrador & Balanza</h1>
               <p class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 RecepciÃ³n en vivo activa
@@ -1984,8 +2240,8 @@ function renderOperatorView(container) {
             <!-- BotÃ³n para probar sonido de alerta -->
             <button 
               id="btn-test-sound" 
-              title="Probar sonido de pedido" 
-              class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
+              title="Probar timbre de pedido" 
+              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
             >
               <span>Probar timbre</span>
             </button>
@@ -1996,11 +2252,11 @@ function renderOperatorView(container) {
             <button 
               data-tab="PENDIENTE" 
               class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "PENDIENTE" ? "bg-amber-400 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+                activeTab === "PENDIENTE" ? "bg-amber-400 text-slate-950 shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>Entrantes</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
                 activeTab === "PENDIENTE" ? "bg-amber-600/30 text-slate-950 font-black" : "bg-slate-700 text-slate-300"
               }">${counts.PENDIENTE}</span>
             </button>
@@ -2008,11 +2264,11 @@ function renderOperatorView(container) {
             <button 
               data-tab="EN_PREPARACION" 
               class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "EN_PREPARACION" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+                activeTab === "EN_PREPARACION" ? "bg-blue-600 text-white shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>En Balanza</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
                 activeTab === "EN_PREPARACION" ? "bg-blue-800 text-white font-black" : "bg-slate-700 text-slate-300"
               }">${counts.EN_PREPARACION}</span>
             </button>
@@ -2020,11 +2276,11 @@ function renderOperatorView(container) {
             <button 
               data-tab="LISTO" 
               class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "LISTO" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+                activeTab === "LISTO" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>Listos</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
                 activeTab === "LISTO" ? "bg-emerald-800 text-white font-black" : "bg-slate-700 text-slate-300"
               }">${counts.LISTO}</span>
             </button>
@@ -2036,7 +2292,7 @@ function renderOperatorView(container) {
               }"
             >
               <span>Cobrados</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300">${counts.ENTREGADO}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">${counts.ENTREGADO}</span>
             </button>
           </div>
         </header>
@@ -2052,12 +2308,13 @@ function renderOperatorView(container) {
     `;
 
     // Listeners del header
-    container.querySelector("#btn-test-sound").addEventListener("click", () => {
+    container.querySelector("#btn-test-sound")?.addEventListener("click", () => {
       store.playAudioAlert();
     });
 
     container.querySelectorAll(".tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(10); } catch {} }
         activeTab = btn.dataset.tab;
         update();
       });
@@ -2091,7 +2348,7 @@ function renderOperatorView(container) {
                 .join(" Â· ");
 
               return `
-              <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm transition">
+              <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs transition">
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <div class="flex items-center gap-2">
@@ -2123,22 +2380,21 @@ function renderOperatorView(container) {
                 <div class="mt-3 space-y-2">
                   <button 
                     data-start-id="${order.id}" 
-                    class="btn-start-prep w-full min-h-[46px] bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-sm transition tap-feedback flex items-center justify-center gap-2"
+                    class="btn-start-prep w-full min-h-[46px] bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-xs transition tap-feedback flex items-center justify-center gap-2"
                   >
                     <span>Tomar y Pesar en Balanza</span>
-                    <span class="text-xs">â€º</span>
                   </button>
 
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-open-edit min-h-[40px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
                       <span>Editar datos</span>
                     </button>
                     <button 
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[38px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-cancel-order min-h-[40px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -2168,6 +2424,7 @@ function renderOperatorView(container) {
 
               return `
               <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-blue-200/80 shadow-md">
+                
                 <!-- Header de la tarjeta -->
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div>
@@ -2197,6 +2454,7 @@ function renderOperatorView(container) {
                             const isWeight = item.unidad_medida === "KG";
                             const currentVal = item.peso_real !== null ? item.peso_real : "";
                             const subtotalItem = item.peso_real !== null ? item.subtotal : Math.round(item.cantidad_solicitada * item.precio_unitario);
+                            const stepFine = isWeight ? 0.1 : 1;
 
                             return `
                       <div class="item-weigh-card p-3 rounded-2xl border transition ${
@@ -2225,7 +2483,7 @@ function renderOperatorView(container) {
                             <button 
                               data-toggle-stock-order="${order.id}"
                               data-item-index="${idx}"
-                              class="btn-toggle-stock min-h-[34px] text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition tap-feedback ${
+                              class="btn-toggle-stock min-h-[36px] text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition tap-feedback ${
                                 item.sin_stock
                                   ? "bg-rose-600 text-white border-rose-600"
                                   : "bg-white text-slate-600 border-slate-300 hover:text-rose-600"
@@ -2238,10 +2496,10 @@ function renderOperatorView(container) {
                             <button 
                               data-remove-item-order="${order.id}"
                               data-item-index="${idx}"
-                              class="btn-remove-item min-h-[34px] px-2 py-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition tap-feedback"
+                              class="btn-remove-item min-h-[36px] px-2.5 py-1 text-slate-400 hover:text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-50 transition tap-feedback"
                               title="Eliminar este Ã­tem del pedido"
                             >
-                              X
+                              Quitar
                             </button>
                           </div>
                         </div>
@@ -2249,12 +2507,25 @@ function renderOperatorView(container) {
                         ${
                           !item.sin_stock
                             ? `
-                          <div class="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-2 flex-1">
+                          <div class="mt-3 pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-1.5 flex-1 min-w-[200px]">
                               <label class="text-xs font-bold text-slate-700 shrink-0">
-                                ${isWeight ? "Peso Balanza:" : "Cantidad Real:"}
+                                ${isWeight ? "Peso:" : "Cant:"}
                               </label>
-                              <div class="relative flex-1 max-w-[150px]">
+
+                              <!-- Controles de ajuste fino (-0.1 / +0.1) -->
+                              <button
+                                type="button"
+                                data-adjust-order="${order.id}"
+                                data-item-idx="${idx}"
+                                data-delta="${-stepFine}"
+                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-sm font-black transition tap-feedback shrink-0"
+                                title="Restar ${stepFine}"
+                              >
+                                âˆ’
+                              </button>
+
+                              <div class="relative flex-1 max-w-[110px]">
                                 <input 
                                   type="number" 
                                   inputmode="decimal"
@@ -2269,10 +2540,33 @@ function renderOperatorView(container) {
                                     item.peso_real !== null ? "border-emerald-500 text-emerald-800 bg-emerald-50/20" : "border-slate-300"
                                   }"
                                 />
-                                <span class="absolute right-2.5 top-2.5 text-xs font-bold text-slate-400 pointer-events-none select-none">
+                                <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 pointer-events-none select-none">
                                   ${isWeight ? "kg" : "u."}
                                 </span>
                               </div>
+
+                              <button
+                                type="button"
+                                data-adjust-order="${order.id}"
+                                data-item-idx="${idx}"
+                                data-delta="${stepFine}"
+                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-sm font-black transition tap-feedback shrink-0"
+                                title="Sumar ${stepFine}"
+                              >
+                                +
+                              </button>
+
+                              <!-- BotÃ³n rÃ¡pido para copiar lo solicitado -->
+                              <button 
+                                type="button"
+                                data-copy-requested-order="${order.id}"
+                                data-item-idx="${idx}"
+                                data-requested-val="${item.cantidad_solicitada}"
+                                class="btn-copy-requested text-[10px] font-bold px-2 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-lg transition tap-feedback shrink-0"
+                                title="Copiar cantidad solicitada"
+                              >
+                                = ${item.cantidad_solicitada}
+                              </button>
                             </div>
 
                             <div class="text-right shrink-0">
@@ -2298,13 +2592,13 @@ function renderOperatorView(container) {
                     <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
                       <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">Sumar producto al pedido</span>
-                        <button id="btn-close-add-product" class="text-xs text-slate-400 hover:text-slate-700 font-bold">Cerrar</button>
+                        <button id="btn-close-add-product" class="text-xs text-slate-400 hover:text-slate-700 font-bold px-2 py-1">Cerrar</button>
                       </div>
 
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label class="block text-[11px] font-bold text-slate-600 mb-1">Producto</label>
-                          <select id="select-new-product" class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold outline-none focus:border-blue-600">
+                          <select id="select-new-product" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-base font-semibold outline-none focus:border-blue-600">
                             ${activeProducts
                               .map(
                                 (p) => `
@@ -2326,7 +2620,7 @@ function renderOperatorView(container) {
                               value="1.0" 
                               step="0.5" 
                               min="0.1" 
-                              class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-center outline-none focus:border-blue-600"
+                              class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-base font-black text-center outline-none focus:border-blue-600"
                             />
                             <button 
                               data-confirm-add-order="${order.id}"
@@ -2344,7 +2638,6 @@ function renderOperatorView(container) {
                       data-toggle-add-order="${order.id}"
                       class="btn-open-add-product w-full py-2.5 px-3 border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 tap-feedback"
                     >
-                      <span>+</span>
                       <span>Agregar producto que olvidÃ³ el cliente</span>
                     </button>
                   `
@@ -2358,20 +2651,19 @@ function renderOperatorView(container) {
                     class="btn-finish-weighing w-full min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-black py-3 px-4 rounded-xl shadow-lg shadow-slate-950/15 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback"
                   >
                     <span>Finalizar Pesaje y Notificar al Cliente</span>
-                    <span class="text-xs">â€º</span>
                   </button>
 
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-open-edit min-h-[40px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
                       <span>Cambiar entrega/datos</span>
                     </button>
 
                     <button 
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[38px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-cancel-order min-h-[40px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -2396,7 +2688,7 @@ function renderOperatorView(container) {
               const waLink = `https://wa.me/549${order.cliente.telefono}?text=${waMessage}`;
 
               return `
-              <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-sm">
+              <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs">
                 <div class="flex items-start justify-between pb-3 border-b border-slate-100">
                   <div>
                     <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -2423,7 +2715,6 @@ function renderOperatorView(container) {
                     class="min-h-[46px] bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition text-center tap-feedback"
                   >
                     <span>Enviar WhatsApp</span>
-                    <span class="text-xs">â€º</span>
                   </a>
                   <button 
                     data-deliver-order-id="${order.id}"
@@ -2457,7 +2748,7 @@ function renderOperatorView(container) {
           ${tabOrders
             .map(
               (order) => `
-            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">#${order.id}</span>
                 <h4 class="font-extrabold text-slate-900 text-sm">${order.cliente.nombre}</h4>
@@ -2488,8 +2779,8 @@ function renderOperatorView(container) {
               <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Modificar</span>
               <h3 class="font-black text-base text-slate-900">Pedido #${order.id}</h3>
             </div>
-            <button id="btn-close-edit-modal" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-xs">
-              X
+            <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold text-xs tap-feedback">
+              Cerrar
             </button>
           </div>
 
@@ -2500,7 +2791,7 @@ function renderOperatorView(container) {
                 type="text" 
                 id="edit-name" 
                 value="${order.cliente.nombre}" 
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
                 required
               />
             </div>
@@ -2511,7 +2802,7 @@ function renderOperatorView(container) {
                 type="tel" 
                 id="edit-phone" 
                 value="${order.cliente.telefono}" 
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
                 required
               />
             </div>
@@ -2537,7 +2828,7 @@ function renderOperatorView(container) {
                 id="edit-address" 
                 value="${order.direccion_entrega || ""}" 
                 placeholder="Calle, altura, depto..."
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
               />
             </div>
 
@@ -2587,6 +2878,7 @@ Alias para transferir: mihuerta.verduras
     // Tomar y pesar
     container.querySelectorAll(".btn-start-prep").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(20); } catch {} }
         const id = Number(btn.dataset.startId);
         store.updateOrderStatus(id, "EN_PREPARACION");
         activeTab = "EN_PREPARACION";
@@ -2602,6 +2894,7 @@ Alias para transferir: mihuerta.verduras
         const clientName = order ? order.cliente.nombre : "este cliente";
         const confirmCancel = confirm(`Â¿EstÃ¡s seguro de que querÃ©s cancelar y eliminar el pedido #${id} de ${clientName}?`);
         if (confirmCancel) {
+          if (navigator.vibrate) { try { navigator.vibrate(25); } catch {} }
           store.deleteOrder(id);
         }
       });
@@ -2659,6 +2952,42 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
+    // Ajuste fino con botones + y -
+    container.querySelectorAll(".btn-adjust-weight").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(10); } catch {} }
+        const orderId = Number(btn.dataset.adjustOrder);
+        const itemIdx = Number(btn.dataset.itemIdx);
+        const delta = Number(btn.dataset.delta);
+
+        const input = container.querySelector(`.input-weight[data-order-id="${orderId}"][data-item-idx="${itemIdx}"]`);
+        if (input) {
+          const current = Number(input.value) || Number(input.placeholder) || 0;
+          const next = Math.max(0, Number((current + delta).toFixed(2)));
+          input.value = next;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          store.updateItemWeight(orderId, itemIdx, next, { notify: false });
+        }
+      });
+    });
+
+    // BotÃ³n copiar solicitado (= X.X)
+    container.querySelectorAll(".btn-copy-requested").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
+        const orderId = Number(btn.dataset.copyRequestedOrder);
+        const itemIdx = Number(btn.dataset.itemIdx);
+        const requestedVal = Number(btn.dataset.requestedVal);
+
+        const input = container.querySelector(`.input-weight[data-order-id="${orderId}"][data-item-idx="${itemIdx}"]`);
+        if (input) {
+          input.value = requestedVal;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          store.updateItemWeight(orderId, itemIdx, requestedVal, { notify: false });
+        }
+      });
+    });
+
     // Modal de ediciÃ³n - Listeners
     if (editingOrderId) {
       const btnCloseEdit = container.querySelector("#btn-close-edit-modal");
@@ -2678,9 +3007,9 @@ Alias para transferir: mihuerta.verduras
       editRadios.forEach((radio) => {
         radio.addEventListener("change", (e) => {
           if (e.target.value === "DELIVERY") {
-            addressContainer.classList.remove("hidden");
+            addressContainer?.classList.remove("hidden");
           } else {
-            addressContainer.classList.add("hidden");
+            addressContainer?.classList.add("hidden");
           }
         });
       });
@@ -2688,10 +3017,11 @@ Alias para transferir: mihuerta.verduras
       if (editForm) {
         editForm.addEventListener("submit", (e) => {
           e.preventDefault();
-          const name = container.querySelector("#edit-name").value.trim();
-          const phone = container.querySelector("#edit-phone").value.trim();
-          const mode = container.querySelector('input[name="edit-delivery-mode"]:checked').value;
-          const address = mode === "DELIVERY" ? container.querySelector("#edit-address").value.trim() : "Retiro por mostrador";
+          const name = container.querySelector("#edit-name")?.value.trim() || "";
+          const phone = container.querySelector("#edit-phone")?.value.trim() || "";
+          const modeRadio = container.querySelector('input[name="edit-delivery-mode"]:checked');
+          const mode = modeRadio ? modeRadio.value : "RETIRO";
+          const address = mode === "DELIVERY" ? container.querySelector("#edit-address")?.value.trim() || "" : "Retiro por mostrador";
 
           store.updateOrderDetails(editingOrderId, {
             nombre: name,
@@ -2740,13 +3070,14 @@ Alias para transferir: mihuerta.verduras
         const itemIdx = Number(e.target.dataset.itemIdx);
         const val = e.target.value.trim();
         if (val !== "") {
-          store.updateItemWeight(orderId, itemIdx, Number(val));
+          store.updateItemWeight(orderId, itemIdx, Number(val), { notify: false });
         }
       });
     });
 
     container.querySelectorAll(".btn-toggle-stock").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
         const orderId = Number(btn.dataset.toggleStockOrder);
         const itemIdx = Number(btn.dataset.itemIndex);
         store.toggleItemOutOfStock(orderId, itemIdx);
@@ -2755,18 +3086,20 @@ Alias para transferir: mihuerta.verduras
 
     container.querySelectorAll(".btn-finish-weighing").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(30); } catch {} }
         const id = Number(btn.dataset.finishOrderId);
 
+        const weightsMap = {};
         const currentInputs = container.querySelectorAll(`.input-weight[data-order-id="${id}"]`);
         currentInputs.forEach((input) => {
           const itemIdx = Number(input.dataset.itemIdx);
           const val = input.value.trim();
           if (val !== "") {
-            store.updateItemWeight(id, itemIdx, Number(val));
+            weightsMap[itemIdx] = Number(val);
           }
         });
 
-        store.finalizeOrderWeighing(id);
+        store.finalizeOrderWeighing(id, weightsMap);
         activeTab = "LISTO";
         update();
       });
@@ -2774,6 +3107,7 @@ Alias para transferir: mihuerta.verduras
 
     container.querySelectorAll(".btn-deliver-order").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(20); } catch {} }
         const id = Number(btn.dataset.deliverOrderId);
         store.updateOrderStatus(id, "ENTREGADO");
         update();
@@ -2790,7 +3124,9 @@ Alias para transferir: mihuerta.verduras
   }
 
   const unsubscribe = store.subscribe((event) => {
-    if (event === "orders_changed" || event === "order_created" || event === "storage_sync") {
+    // Si el usuario estÃ¡ interactuando activamente con un input, evitar destruir el DOM
+    const isTyping = document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT");
+    if ((event === "orders_changed" || event === "order_created" || event === "storage_sync") && !isTyping) {
       update();
     }
   });
@@ -2811,6 +3147,7 @@ Alias para transferir: mihuerta.verduras
 
 function renderAdminView(container) {
   let selectedCategory = "Todos";
+  let searchQuery = "";
   let showCloudSettings = false;
   let configSavedToast = false;
 
@@ -2820,174 +3157,266 @@ function renderAdminView(container) {
     const cloudConfig = store.getCloudConfig();
     const isConnected = store.isCloudConnected();
 
-    const filtered = products.filter(
-      (p) => selectedCategory === "Todos" || p.categoria === selectedCategory
-    );
+    const filtered = products.filter((p) => {
+      const matchCat = selectedCategory === "Todos" || p.categoria === selectedCategory;
+      const matchSearch = p.nombre.toLowerCase().includes(searchQuery.toLowerCase().trim());
+      return matchCat && matchSearch;
+    });
+
+    const categoryCounts = {};
+    CATEGORIAS.forEach((cat) => {
+      categoryCounts[cat] =
+        cat === "Todos"
+          ? products.length
+          : products.filter((p) => p.categoria === cat).length;
+    });
 
     container.innerHTML = `
       <div class="max-w-xl mx-auto p-4 pb-32">
-        <!-- Header DueÃ±o / Admin -->
-        <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm mb-4">
-          <div class="flex items-center justify-between gap-2">
+        <!-- Header del Panel -->
+        <header class="sticky sticky-header-offset z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/90 pt-3 pb-3 mb-4 -mx-4 px-4 shadow-xs">
+          <div class="flex items-center justify-between">
             <div>
               <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-0.5">
                 Panel de AdministraciÃ³n
               </span>
-              <h1 class="font-black text-slate-900 text-lg tracking-tight">Precios y Disponibilidad</h1>
+              <h1 class="font-black text-slate-900 text-lg tracking-tight">Precios y CatÃ¡logo</h1>
               <p class="text-xs text-slate-500 mt-0.5">AjustÃ¡ los valores del dÃ­a en tiempo real.</p>
             </div>
             <div class="flex flex-col items-end gap-1.5">
-              <span class="text-xs font-black px-3 py-1 bg-slate-100 text-slate-800 rounded-full border border-slate-200">
-                ${products.length} productos
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                isConnected ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+              }">
+                ${isConnected ? "Cloud Online" : "Modo Local"}
               </span>
               <button 
                 id="btn-toggle-cloud"
-                class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition ${
+                class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition tap-feedback ${
                   isConnected
                     ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                     : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                 }"
               >
-                ${isConnected ? "Cloud Conectado" : "Configurar PIN / Cloud"}
+                ${showCloudSettings ? "Cerrar Config" : "Config Cloud"}
               </button>
             </div>
+          </div>
+
+          <!-- Buscador rÃ¡pido para celular -->
+          <div class="mt-3.5 relative">
+            <input 
+              type="text" 
+              id="admin-search-input" 
+              placeholder="Buscar producto por nombre..." 
+              value="${searchQuery}"
+              class="w-full pl-3.5 pr-16 py-2.5 bg-slate-100 focus:bg-white border border-transparent focus:border-slate-300 rounded-xl text-base font-medium outline-none transition"
+            />
+            ${
+              searchQuery
+                ? `<button id="btn-admin-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 hover:text-slate-700 text-xs font-bold tap-feedback">Borrar</button>`
+                : ""
+            }
           </div>
 
           ${
             showCloudSettings
               ? `
-            <form id="cloud-config-form" class="mt-4 pt-4 border-t border-slate-100 space-y-3 text-left">
-              <div class="flex items-center justify-between">
-                <h2 class="text-xs font-black uppercase tracking-wider text-slate-800">Seguridad y Base de Datos Cloud</h2>
+            <div class="mt-3 p-4 bg-slate-900 text-white rounded-2xl border border-slate-800 animate-fade-in text-xs space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span class="font-black text-slate-200 uppercase tracking-wider text-[11px]">SincronizaciÃ³n Cloud & PIN</span>
                 ${
                   configSavedToast
-                    ? `<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Guardado</span>`
+                    ? `<span class="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">Guardado</span>`
                     : ""
                 }
               </div>
 
-              <div>
-                <label class="block text-[11px] font-bold text-slate-600 mb-1">PIN de acceso para Operario y DueÃ±o (4 dÃ­gitos)</label>
-                <input 
-                  type="text" 
-                  id="cfg-pin" 
-                  maxlength="8"
-                  inputmode="numeric"
-                  value="${cloudConfig.staffPin || "1234"}"
-                  class="w-36 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-black text-sm text-slate-900 outline-none focus:border-slate-900 focus:bg-white"
-                />
-              </div>
+              <form id="cloud-config-form" class="space-y-2.5">
+                <div>
+                  <label class="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">PIN del Negocio (Staff)</label>
+                  <input 
+                    type="password" 
+                    id="cfg-pin" 
+                    maxlength="6"
+                    value="${cloudConfig.staffPin || "1234"}" 
+                    class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-base font-bold outline-none focus:border-emerald-500"
+                  />
+                </div>
 
-              <div>
-                <label class="block text-[11px] font-bold text-slate-600 mb-1">Supabase Project URL (opcional para modo Cloud)</label>
-                <input 
-                  type="url" 
-                  id="cfg-url" 
-                  placeholder="https://xyzcompany.supabase.co"
-                  value="${cloudConfig.supabaseUrl || ""}"
-                  class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-slate-900 focus:bg-white"
-                />
-              </div>
+                <div>
+                  <label class="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Supabase URL</label>
+                  <input 
+                    type="url" 
+                    id="cfg-url" 
+                    value="${cloudConfig.supabaseUrl || ""}" 
+                    placeholder="https://xyz.supabase.co"
+                    class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-base outline-none focus:border-emerald-500"
+                  />
+                </div>
 
-              <div>
-                <label class="block text-[11px] font-bold text-slate-600 mb-1">Supabase Anon Public Key</label>
-                <input 
-                  type="password" 
-                  id="cfg-key" 
-                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI..."
-                  value="${cloudConfig.supabaseAnonKey || ""}"
-                  class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 outline-none focus:border-slate-900 focus:bg-white"
-                />
-              </div>
+                <div>
+                  <label class="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Supabase Anon Key</label>
+                  <input 
+                    type="password" 
+                    id="cfg-key" 
+                    value="${cloudConfig.supabaseAnonKey || ""}" 
+                    placeholder="eyJhbG..."
+                    class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-base outline-none focus:border-emerald-500"
+                  />
+                </div>
 
-              <div class="flex justify-end gap-2 pt-1">
-                <button 
-                  type="submit"
-                  class="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs transition tap-feedback"
-                >
-                  Guardar configuraciÃ³n
-                </button>
-              </div>
-            </form>
+                <div class="pt-1 flex gap-2">
+                  <button 
+                    type="submit" 
+                    class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition"
+                  >
+                    Guardar y Conectar
+                  </button>
+                </div>
+              </form>
+            </div>
           `
               : ""
           }
 
-          <!-- Filtro de CategorÃ­as TÃ¡ctil -->
-          <div class="mt-4 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <!-- Filtro de CategorÃ­as TÃ¡ctil con conteo -->
+          <div class="mt-3.5 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-admin-cat="${cat}"
-                class="admin-cat-pill whitespace-nowrap min-h-[38px] px-4 py-1.5 rounded-full text-xs font-bold transition tap-feedback ${
+                class="admin-cat-pill whitespace-nowrap min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition tap-feedback flex items-center gap-1.5 ${
                   selectedCategory === cat
-                    ? "bg-slate-900 text-white shadow-sm"
+                    ? "bg-slate-900 text-white shadow-xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }"
               >
-                ${cat}
+                <span>${cat}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
+                  selectedCategory === cat ? "bg-slate-800 text-slate-200 font-black" : "bg-slate-200 text-slate-600"
+                }">
+                  ${categoryCounts[cat] || 0}
+                </span>
               </button>
             `
             ).join("")}
           </div>
-        </div>
+        </header>
 
-        <!-- Lista de Productos y Precios con Inputs de 16px -->
-        <div class="space-y-2.5">
-          ${filtered
-            .map((p) => {
-              const unit = p.unidad_medida === "KG" ? "kg" : "unidad";
-
-              return `
-              <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm flex items-center justify-between gap-3 transition">
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-1.5 mb-0.5">
-                    <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                      ${p.categoria}
-                    </span>
-                    <span class="text-[10px] text-slate-300">Â·</span>
-                    <span class="text-[10px] text-slate-400 font-medium">Por ${unit}</span>
-                  </div>
-                  <h3 class="font-extrabold text-slate-900 text-sm truncate mt-0.5">${p.nombre}</h3>
-                  <p class="text-[11px] text-slate-400 truncate">${p.detalle || ""}</p>
-                </div>
-
-                <!-- Campo de Precio Editable y Switch de Stock -->
-                <div class="flex items-center gap-2 shrink-0">
-                  <div class="relative w-28">
-                    <span class="absolute left-3 top-2.5 text-sm font-bold text-slate-400 select-none">$</span>
-                    <input 
-                      type="number" 
-                      inputmode="numeric"
-                      step="50"
-                      min="0"
-                      data-product-id="${p.id}"
-                      value="${p.precio}"
-                      class="input-price w-full pl-7 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-black text-base text-slate-900 outline-none focus:border-slate-900 focus:bg-white transition"
-                    />
-                  </div>
-
-                  <!-- BotÃ³n Switch Disponible / Pausado (44px min) -->
-                  <button 
-                    data-toggle-stock="${p.id}"
-                    class="btn-stock-toggle min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition tap-feedback ${
-                      p.disponible
-                        ? "bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100"
-                        : "bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200"
-                    }"
-                  >
-                    ${p.disponible ? "Activo" : "Pausado"}
-                  </button>
-                </div>
-              </div>
-            `;
-            })
-            .join("")}
+        <!-- Lista de Productos y Precios -->
+        <div id="admin-products-list" class="space-y-2.5">
+          ${renderAdminProductsListHTML(filtered)}
         </div>
       </div>
     `;
 
-    // Listeners
+    attachAdminListeners();
+  }
+
+  function renderAdminProductsListHTML(filtered) {
+    if (filtered.length === 0) {
+      return `
+        <div class="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 p-6">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin resultados</span>
+          <p class="text-sm font-semibold text-slate-700">No encontramos productos con ese nombre</p>
+        </div>
+      `;
+    }
+
+    return filtered
+      .map((p) => {
+        const unit = p.unidad_medida === "KG" ? "kg" : "u.";
+
+        return `
+          <div id="product-card-${p.id}" class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-3 transition">
+            <div class="flex-1 min-w-[160px]">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                  ${p.categoria}
+                </span>
+                <span class="text-[10px] text-slate-400 font-medium">${p.unidad_medida === "KG" ? "Por kilo" : "Por unidad"}</span>
+              </div>
+              <h3 class="font-extrabold text-slate-900 text-sm leading-tight">${p.nombre}</h3>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <!-- Stepper rÃ¡pido -100 / +100 -->
+              <button 
+                type="button"
+                data-step-price="${p.id}"
+                data-delta="-100"
+                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold rounded-lg text-xs transition tap-feedback"
+                title="Bajar $100"
+              >
+                âˆ’
+              </button>
+
+              <div class="relative w-28">
+                <span class="absolute left-2.5 top-2.5 text-xs font-bold text-slate-400 select-none pointer-events-none">$</span>
+                <input 
+                  type="number" 
+                  data-product-id="${p.id}"
+                  value="${p.precio}" 
+                  step="50"
+                  min="0"
+                  inputmode="numeric"
+                  class="input-price w-full pl-6 pr-6 py-2 bg-slate-50 border border-slate-300 rounded-xl text-center font-black text-base text-slate-900 outline-none focus:bg-white focus:border-slate-900 transition"
+                />
+                <span class="absolute right-2 top-2.5 text-[11px] font-semibold text-slate-400 select-none pointer-events-none">${unit}</span>
+              </div>
+
+              <button 
+                type="button"
+                data-step-price="${p.id}"
+                data-delta="100"
+                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold rounded-lg text-xs transition tap-feedback"
+                title="Subir $100"
+              >
+                +
+              </button>
+
+              <!-- BotÃ³n Switch Activo / Pausado (44px min) -->
+              <button 
+                data-toggle-stock="${p.id}"
+                class="btn-stock-toggle min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold transition tap-feedback ${
+                  p.disponible
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100"
+                    : "bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200"
+                }"
+              >
+                ${p.disponible ? "Activo" : "Pausado"}
+              </button>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  function attachAdminListeners() {
+    // BÃºsqueda en vivo sin recrear el DOM del input
+    const searchInput = container.querySelector("#admin-search-input");
+    searchInput?.addEventListener("input", (e) => {
+      searchQuery = e.target.value;
+      const products = store.getProducts();
+      const filtered = products.filter((p) => {
+        const matchCat = selectedCategory === "Todos" || p.categoria === selectedCategory;
+        const matchSearch = p.nombre.toLowerCase().includes(searchQuery.toLowerCase().trim());
+        return matchCat && matchSearch;
+      });
+
+      const listContainer = container.querySelector("#admin-products-list");
+      if (listContainer) {
+        listContainer.innerHTML = renderAdminProductsListHTML(filtered);
+        attachProductItemAdminListeners();
+      }
+    });
+
+    container.querySelector("#btn-admin-clear-search")?.addEventListener("click", () => {
+      searchQuery = "";
+      update();
+    });
+
     const btnToggleCloud = container.querySelector("#btn-toggle-cloud");
     if (btnToggleCloud) {
       btnToggleCloud.addEventListener("click", () => {
@@ -3001,9 +3430,9 @@ function renderAdminView(container) {
     if (cloudForm) {
       cloudForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        const pin = container.querySelector("#cfg-pin").value;
-        const url = container.querySelector("#cfg-url").value;
-        const key = container.querySelector("#cfg-key").value;
+        const pin = container.querySelector("#cfg-pin")?.value || "";
+        const url = container.querySelector("#cfg-url")?.value || "";
+        const key = container.querySelector("#cfg-key")?.value || "";
         store.saveCloudConfig({
           staffPin: pin,
           supabaseUrl: url,
@@ -3021,16 +3450,52 @@ function renderAdminView(container) {
       });
     });
 
+    attachProductItemAdminListeners();
+  }
+
+  function attachProductItemAdminListeners() {
+    // Inputs de precio directo
     container.querySelectorAll(".input-price").forEach((input) => {
       input.addEventListener("change", (e) => {
         const id = e.target.dataset.productId;
-        const val = Number(e.target.value);
+        const val = Math.max(0, Number(e.target.value) || 0);
         store.updateProductPrice(id, val);
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
+
+        const card = container.querySelector(`#product-card-${id}`);
+        if (card) {
+          card.classList.add("flash-saved");
+          setTimeout(() => card.classList.remove("flash-saved"), 1200);
+        }
       });
     });
 
+    // Ajuste rÃ¡pido con botones +/- 100
+    container.querySelectorAll(".btn-step-price").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(10); } catch {} }
+        const id = btn.dataset.stepPrice;
+        const delta = Number(btn.dataset.delta);
+        const input = container.querySelector(`.input-price[data-product-id="${id}"]`);
+        if (input) {
+          const current = Number(input.value) || 0;
+          const next = Math.max(0, current + delta);
+          input.value = next;
+          store.updateProductPrice(id, next);
+
+          const card = container.querySelector(`#product-card-${id}`);
+          if (card) {
+            card.classList.add("flash-saved");
+            setTimeout(() => card.classList.remove("flash-saved"), 1200);
+          }
+        }
+      });
+    });
+
+    // Toggle de disponibilidad
     container.querySelectorAll(".btn-stock-toggle").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
         const id = btn.dataset.toggleStock;
         store.toggleProductStock(id);
       });
@@ -3038,7 +3503,8 @@ function renderAdminView(container) {
   }
 
   const unsubscribe = store.subscribe((event) => {
-    if (event === "products_changed" || event === "storage_sync" || event === "cloud_connected") {
+    const isTyping = document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT");
+    if ((event === "products_changed" || event === "storage_sync" || event === "cloud_connected") && !isTyping) {
       update();
     }
   });
@@ -3073,11 +3539,25 @@ class App {
     const hasClientPhoneLink = urlParams.has("tel");
     const isRealMode = urlParams.get("modo") === "real" || hasClientPhoneLink;
 
+    const updateSimBarHeight = () => {
+      if (this.simulatorBar && !this.simulatorBar.classList.contains("hidden")) {
+        const h = this.simulatorBar.offsetHeight || 46;
+        document.documentElement.style.setProperty("--sim-bar-h", `${h}px`);
+      } else {
+        document.documentElement.style.setProperty("--sim-bar-h", "0px");
+      }
+    };
+
     // Si entra un cliente real desde el link de WhatsApp (?tel=...) ocultamos la barra del simulador
     if (isRealMode && this.simulatorBar && urlParams.get("sim") !== "1") {
       this.simulatorBar.classList.add("hidden");
+      document.body.classList.remove("has-sim-bar");
       this.requirePinInDemo = true;
+    } else {
+      document.body.classList.add("has-sim-bar");
     }
+    updateSimBarHeight();
+    window.addEventListener("resize", updateSimBarHeight);
 
     if (this.btnLockPin) {
       this.btnLockPin.addEventListener("click", () => {
@@ -3093,6 +3573,7 @@ class App {
 
     this.navButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
         const view = btn.dataset.view;
         this.navigate(view);
       });

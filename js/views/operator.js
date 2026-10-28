@@ -18,12 +18,12 @@ export function renderOperatorView(container) {
 
     container.innerHTML = `
       <div class="max-w-2xl mx-auto pb-24">
-        <!-- Header del Mostrador -->
-        <header class="sticky top-11 z-20 bg-slate-900 text-white px-4 py-3 shadow-md">
+        <!-- Header del Mostrador con sticky-header-offset -->
+        <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md">
           <div class="flex items-center justify-between">
             <div>
               <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Puesto de Balanza</span>
-              <h1 class="font-extrabold text-sm leading-tight text-white">Mostrador & Pesaje</h1>
+              <h1 class="font-extrabold text-sm leading-tight text-white">Mostrador & Balanza</h1>
               <p class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 Recepción en vivo activa
@@ -33,8 +33,8 @@ export function renderOperatorView(container) {
             <!-- Botón para probar sonido de alerta -->
             <button 
               id="btn-test-sound" 
-              title="Probar sonido de pedido" 
-              class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
+              title="Probar timbre de pedido" 
+              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
             >
               <span>Probar timbre</span>
             </button>
@@ -45,11 +45,11 @@ export function renderOperatorView(container) {
             <button 
               data-tab="PENDIENTE" 
               class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "PENDIENTE" ? "bg-amber-400 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+                activeTab === "PENDIENTE" ? "bg-amber-400 text-slate-950 shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>Entrantes</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
                 activeTab === "PENDIENTE" ? "bg-amber-600/30 text-slate-950 font-black" : "bg-slate-700 text-slate-300"
               }">${counts.PENDIENTE}</span>
             </button>
@@ -57,11 +57,11 @@ export function renderOperatorView(container) {
             <button 
               data-tab="EN_PREPARACION" 
               class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "EN_PREPARACION" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+                activeTab === "EN_PREPARACION" ? "bg-blue-600 text-white shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>En Balanza</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
                 activeTab === "EN_PREPARACION" ? "bg-blue-800 text-white font-black" : "bg-slate-700 text-slate-300"
               }">${counts.EN_PREPARACION}</span>
             </button>
@@ -69,11 +69,11 @@ export function renderOperatorView(container) {
             <button 
               data-tab="LISTO" 
               class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "LISTO" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+                activeTab === "LISTO" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>Listos</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
                 activeTab === "LISTO" ? "bg-emerald-800 text-white font-black" : "bg-slate-700 text-slate-300"
               }">${counts.LISTO}</span>
             </button>
@@ -85,7 +85,7 @@ export function renderOperatorView(container) {
               }"
             >
               <span>Cobrados</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300">${counts.ENTREGADO}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">${counts.ENTREGADO}</span>
             </button>
           </div>
         </header>
@@ -101,12 +101,13 @@ export function renderOperatorView(container) {
     `;
 
     // Listeners del header
-    container.querySelector("#btn-test-sound").addEventListener("click", () => {
+    container.querySelector("#btn-test-sound")?.addEventListener("click", () => {
       store.playAudioAlert();
     });
 
     container.querySelectorAll(".tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(10); } catch {} }
         activeTab = btn.dataset.tab;
         update();
       });
@@ -140,7 +141,7 @@ export function renderOperatorView(container) {
                 .join(" · ");
 
               return `
-              <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm transition">
+              <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs transition">
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <div class="flex items-center gap-2">
@@ -172,22 +173,21 @@ export function renderOperatorView(container) {
                 <div class="mt-3 space-y-2">
                   <button 
                     data-start-id="${order.id}" 
-                    class="btn-start-prep w-full min-h-[46px] bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-sm transition tap-feedback flex items-center justify-center gap-2"
+                    class="btn-start-prep w-full min-h-[46px] bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-xs transition tap-feedback flex items-center justify-center gap-2"
                   >
                     <span>Tomar y Pesar en Balanza</span>
-                    <span class="text-xs">›</span>
                   </button>
 
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-open-edit min-h-[40px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
                       <span>Editar datos</span>
                     </button>
                     <button 
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[38px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-cancel-order min-h-[40px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -217,6 +217,7 @@ export function renderOperatorView(container) {
 
               return `
               <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-blue-200/80 shadow-md">
+                
                 <!-- Header de la tarjeta -->
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div>
@@ -246,6 +247,7 @@ export function renderOperatorView(container) {
                             const isWeight = item.unidad_medida === "KG";
                             const currentVal = item.peso_real !== null ? item.peso_real : "";
                             const subtotalItem = item.peso_real !== null ? item.subtotal : Math.round(item.cantidad_solicitada * item.precio_unitario);
+                            const stepFine = isWeight ? 0.1 : 1;
 
                             return `
                       <div class="item-weigh-card p-3 rounded-2xl border transition ${
@@ -274,7 +276,7 @@ export function renderOperatorView(container) {
                             <button 
                               data-toggle-stock-order="${order.id}"
                               data-item-index="${idx}"
-                              class="btn-toggle-stock min-h-[34px] text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition tap-feedback ${
+                              class="btn-toggle-stock min-h-[36px] text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition tap-feedback ${
                                 item.sin_stock
                                   ? "bg-rose-600 text-white border-rose-600"
                                   : "bg-white text-slate-600 border-slate-300 hover:text-rose-600"
@@ -287,10 +289,10 @@ export function renderOperatorView(container) {
                             <button 
                               data-remove-item-order="${order.id}"
                               data-item-index="${idx}"
-                              class="btn-remove-item min-h-[34px] px-2 py-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition tap-feedback"
+                              class="btn-remove-item min-h-[36px] px-2.5 py-1 text-slate-400 hover:text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-50 transition tap-feedback"
                               title="Eliminar este ítem del pedido"
                             >
-                              X
+                              Quitar
                             </button>
                           </div>
                         </div>
@@ -298,12 +300,25 @@ export function renderOperatorView(container) {
                         ${
                           !item.sin_stock
                             ? `
-                          <div class="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-2 flex-1">
+                          <div class="mt-3 pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-1.5 flex-1 min-w-[200px]">
                               <label class="text-xs font-bold text-slate-700 shrink-0">
-                                ${isWeight ? "Peso Balanza:" : "Cantidad Real:"}
+                                ${isWeight ? "Peso:" : "Cant:"}
                               </label>
-                              <div class="relative flex-1 max-w-[150px]">
+
+                              <!-- Controles de ajuste fino (-0.1 / +0.1) -->
+                              <button
+                                type="button"
+                                data-adjust-order="${order.id}"
+                                data-item-idx="${idx}"
+                                data-delta="${-stepFine}"
+                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-sm font-black transition tap-feedback shrink-0"
+                                title="Restar ${stepFine}"
+                              >
+                                −
+                              </button>
+
+                              <div class="relative flex-1 max-w-[110px]">
                                 <input 
                                   type="number" 
                                   inputmode="decimal"
@@ -318,10 +333,33 @@ export function renderOperatorView(container) {
                                     item.peso_real !== null ? "border-emerald-500 text-emerald-800 bg-emerald-50/20" : "border-slate-300"
                                   }"
                                 />
-                                <span class="absolute right-2.5 top-2.5 text-xs font-bold text-slate-400 pointer-events-none select-none">
+                                <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 pointer-events-none select-none">
                                   ${isWeight ? "kg" : "u."}
                                 </span>
                               </div>
+
+                              <button
+                                type="button"
+                                data-adjust-order="${order.id}"
+                                data-item-idx="${idx}"
+                                data-delta="${stepFine}"
+                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-sm font-black transition tap-feedback shrink-0"
+                                title="Sumar ${stepFine}"
+                              >
+                                +
+                              </button>
+
+                              <!-- Botón rápido para copiar lo solicitado -->
+                              <button 
+                                type="button"
+                                data-copy-requested-order="${order.id}"
+                                data-item-idx="${idx}"
+                                data-requested-val="${item.cantidad_solicitada}"
+                                class="btn-copy-requested text-[10px] font-bold px-2 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-lg transition tap-feedback shrink-0"
+                                title="Copiar cantidad solicitada"
+                              >
+                                = ${item.cantidad_solicitada}
+                              </button>
                             </div>
 
                             <div class="text-right shrink-0">
@@ -347,13 +385,13 @@ export function renderOperatorView(container) {
                     <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
                       <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">Sumar producto al pedido</span>
-                        <button id="btn-close-add-product" class="text-xs text-slate-400 hover:text-slate-700 font-bold">Cerrar</button>
+                        <button id="btn-close-add-product" class="text-xs text-slate-400 hover:text-slate-700 font-bold px-2 py-1">Cerrar</button>
                       </div>
 
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label class="block text-[11px] font-bold text-slate-600 mb-1">Producto</label>
-                          <select id="select-new-product" class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold outline-none focus:border-blue-600">
+                          <select id="select-new-product" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-base font-semibold outline-none focus:border-blue-600">
                             ${activeProducts
                               .map(
                                 (p) => `
@@ -375,7 +413,7 @@ export function renderOperatorView(container) {
                               value="1.0" 
                               step="0.5" 
                               min="0.1" 
-                              class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-center outline-none focus:border-blue-600"
+                              class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-base font-black text-center outline-none focus:border-blue-600"
                             />
                             <button 
                               data-confirm-add-order="${order.id}"
@@ -393,7 +431,6 @@ export function renderOperatorView(container) {
                       data-toggle-add-order="${order.id}"
                       class="btn-open-add-product w-full py-2.5 px-3 border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 tap-feedback"
                     >
-                      <span>+</span>
                       <span>Agregar producto que olvidó el cliente</span>
                     </button>
                   `
@@ -407,20 +444,19 @@ export function renderOperatorView(container) {
                     class="btn-finish-weighing w-full min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-black py-3 px-4 rounded-xl shadow-lg shadow-slate-950/15 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback"
                   >
                     <span>Finalizar Pesaje y Notificar al Cliente</span>
-                    <span class="text-xs">›</span>
                   </button>
 
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-open-edit min-h-[40px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
                       <span>Cambiar entrega/datos</span>
                     </button>
 
                     <button 
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[38px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-cancel-order min-h-[40px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -445,7 +481,7 @@ export function renderOperatorView(container) {
               const waLink = `https://wa.me/549${order.cliente.telefono}?text=${waMessage}`;
 
               return `
-              <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-sm">
+              <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs">
                 <div class="flex items-start justify-between pb-3 border-b border-slate-100">
                   <div>
                     <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -472,7 +508,6 @@ export function renderOperatorView(container) {
                     class="min-h-[46px] bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition text-center tap-feedback"
                   >
                     <span>Enviar WhatsApp</span>
-                    <span class="text-xs">›</span>
                   </a>
                   <button 
                     data-deliver-order-id="${order.id}"
@@ -506,7 +541,7 @@ export function renderOperatorView(container) {
           ${tabOrders
             .map(
               (order) => `
-            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">#${order.id}</span>
                 <h4 class="font-extrabold text-slate-900 text-sm">${order.cliente.nombre}</h4>
@@ -537,8 +572,8 @@ export function renderOperatorView(container) {
               <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Modificar</span>
               <h3 class="font-black text-base text-slate-900">Pedido #${order.id}</h3>
             </div>
-            <button id="btn-close-edit-modal" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-xs">
-              X
+            <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold text-xs tap-feedback">
+              Cerrar
             </button>
           </div>
 
@@ -549,7 +584,7 @@ export function renderOperatorView(container) {
                 type="text" 
                 id="edit-name" 
                 value="${order.cliente.nombre}" 
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
                 required
               />
             </div>
@@ -560,7 +595,7 @@ export function renderOperatorView(container) {
                 type="tel" 
                 id="edit-phone" 
                 value="${order.cliente.telefono}" 
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
                 required
               />
             </div>
@@ -586,7 +621,7 @@ export function renderOperatorView(container) {
                 id="edit-address" 
                 value="${order.direccion_entrega || ""}" 
                 placeholder="Calle, altura, depto..."
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
               />
             </div>
 
@@ -636,6 +671,7 @@ Alias para transferir: mihuerta.verduras
     // Tomar y pesar
     container.querySelectorAll(".btn-start-prep").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(20); } catch {} }
         const id = Number(btn.dataset.startId);
         store.updateOrderStatus(id, "EN_PREPARACION");
         activeTab = "EN_PREPARACION";
@@ -651,6 +687,7 @@ Alias para transferir: mihuerta.verduras
         const clientName = order ? order.cliente.nombre : "este cliente";
         const confirmCancel = confirm(`¿Estás seguro de que querés cancelar y eliminar el pedido #${id} de ${clientName}?`);
         if (confirmCancel) {
+          if (navigator.vibrate) { try { navigator.vibrate(25); } catch {} }
           store.deleteOrder(id);
         }
       });
@@ -708,6 +745,42 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
+    // Ajuste fino con botones + y -
+    container.querySelectorAll(".btn-adjust-weight").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(10); } catch {} }
+        const orderId = Number(btn.dataset.adjustOrder);
+        const itemIdx = Number(btn.dataset.itemIdx);
+        const delta = Number(btn.dataset.delta);
+
+        const input = container.querySelector(`.input-weight[data-order-id="${orderId}"][data-item-idx="${itemIdx}"]`);
+        if (input) {
+          const current = Number(input.value) || Number(input.placeholder) || 0;
+          const next = Math.max(0, Number((current + delta).toFixed(2)));
+          input.value = next;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          store.updateItemWeight(orderId, itemIdx, next, { notify: false });
+        }
+      });
+    });
+
+    // Botón copiar solicitado (= X.X)
+    container.querySelectorAll(".btn-copy-requested").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
+        const orderId = Number(btn.dataset.copyRequestedOrder);
+        const itemIdx = Number(btn.dataset.itemIdx);
+        const requestedVal = Number(btn.dataset.requestedVal);
+
+        const input = container.querySelector(`.input-weight[data-order-id="${orderId}"][data-item-idx="${itemIdx}"]`);
+        if (input) {
+          input.value = requestedVal;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          store.updateItemWeight(orderId, itemIdx, requestedVal, { notify: false });
+        }
+      });
+    });
+
     // Modal de edición - Listeners
     if (editingOrderId) {
       const btnCloseEdit = container.querySelector("#btn-close-edit-modal");
@@ -727,9 +800,9 @@ Alias para transferir: mihuerta.verduras
       editRadios.forEach((radio) => {
         radio.addEventListener("change", (e) => {
           if (e.target.value === "DELIVERY") {
-            addressContainer.classList.remove("hidden");
+            addressContainer?.classList.remove("hidden");
           } else {
-            addressContainer.classList.add("hidden");
+            addressContainer?.classList.add("hidden");
           }
         });
       });
@@ -737,10 +810,11 @@ Alias para transferir: mihuerta.verduras
       if (editForm) {
         editForm.addEventListener("submit", (e) => {
           e.preventDefault();
-          const name = container.querySelector("#edit-name").value.trim();
-          const phone = container.querySelector("#edit-phone").value.trim();
-          const mode = container.querySelector('input[name="edit-delivery-mode"]:checked').value;
-          const address = mode === "DELIVERY" ? container.querySelector("#edit-address").value.trim() : "Retiro por mostrador";
+          const name = container.querySelector("#edit-name")?.value.trim() || "";
+          const phone = container.querySelector("#edit-phone")?.value.trim() || "";
+          const modeRadio = container.querySelector('input[name="edit-delivery-mode"]:checked');
+          const mode = modeRadio ? modeRadio.value : "RETIRO";
+          const address = mode === "DELIVERY" ? container.querySelector("#edit-address")?.value.trim() || "" : "Retiro por mostrador";
 
           store.updateOrderDetails(editingOrderId, {
             nombre: name,
@@ -789,13 +863,14 @@ Alias para transferir: mihuerta.verduras
         const itemIdx = Number(e.target.dataset.itemIdx);
         const val = e.target.value.trim();
         if (val !== "") {
-          store.updateItemWeight(orderId, itemIdx, Number(val));
+          store.updateItemWeight(orderId, itemIdx, Number(val), { notify: false });
         }
       });
     });
 
     container.querySelectorAll(".btn-toggle-stock").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
         const orderId = Number(btn.dataset.toggleStockOrder);
         const itemIdx = Number(btn.dataset.itemIndex);
         store.toggleItemOutOfStock(orderId, itemIdx);
@@ -804,18 +879,20 @@ Alias para transferir: mihuerta.verduras
 
     container.querySelectorAll(".btn-finish-weighing").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(30); } catch {} }
         const id = Number(btn.dataset.finishOrderId);
 
+        const weightsMap = {};
         const currentInputs = container.querySelectorAll(`.input-weight[data-order-id="${id}"]`);
         currentInputs.forEach((input) => {
           const itemIdx = Number(input.dataset.itemIdx);
           const val = input.value.trim();
           if (val !== "") {
-            store.updateItemWeight(id, itemIdx, Number(val));
+            weightsMap[itemIdx] = Number(val);
           }
         });
 
-        store.finalizeOrderWeighing(id);
+        store.finalizeOrderWeighing(id, weightsMap);
         activeTab = "LISTO";
         update();
       });
@@ -823,6 +900,7 @@ Alias para transferir: mihuerta.verduras
 
     container.querySelectorAll(".btn-deliver-order").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(20); } catch {} }
         const id = Number(btn.dataset.deliverOrderId);
         store.updateOrderStatus(id, "ENTREGADO");
         update();
@@ -839,7 +917,9 @@ Alias para transferir: mihuerta.verduras
   }
 
   const unsubscribe = store.subscribe((event) => {
-    if (event === "orders_changed" || event === "order_created" || event === "storage_sync") {
+    // Si el usuario está interactuando activamente con un input, evitar destruir el DOM
+    const isTyping = document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT");
+    if ((event === "orders_changed" || event === "order_created" || event === "storage_sync") && !isTyping) {
       update();
     }
   });

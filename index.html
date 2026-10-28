@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#020617">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Mi Huerta - Verdulería Digital</title>
   
   <!-- Tailwind CSS Play CDN -->
@@ -46,7 +50,7 @@
         <button 
           id="btn-lock-pin"
           title="Probar bloqueo con PIN de 4 dígitos para Operario/Dueño"
-          class="text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+          class="text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition tap-feedback"
         >
           Probar PIN
         </button>
@@ -56,7 +60,7 @@
       <nav class="flex items-center bg-slate-900 p-0.5 rounded-xl border border-slate-800 text-xs font-semibold">
         <button 
           data-view="client" 
-          class="nav-switch px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white"
+          class="nav-switch px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white tap-feedback"
           title="Vista del cliente"
         >
           Cliente
@@ -64,7 +68,7 @@
 
         <button 
           data-view="operator" 
-          class="nav-switch px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white"
+          class="nav-switch px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white tap-feedback"
           title="Vista del operario y pesaje"
         >
           Operario
@@ -72,7 +76,7 @@
 
         <button 
           data-view="admin" 
-          class="nav-switch px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white"
+          class="nav-switch px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white tap-feedback"
           title="Panel de precios y catálogo"
         >
           Precios

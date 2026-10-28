@@ -44,7 +44,7 @@ Todo el flujo funcional del negocio ya se encuentra programado y verificado:
   * Alerta sonora sintética (Web Audio API) cuando cae un pedido nuevo.
   * Carga de peso real de balanza con recálculo instantáneo de subtotales.
   * Botón **"Sin Stock"** para anular un producto agotado en el cajón sin frenar el pedido.
-  * Funciones de **Edición y Cancelación**: quitar un ítem individual (`✕`), sumar un producto olvidado por el cliente (`+ Agregar producto`), editar dirección/entrega y cancelar/eliminar pedidos.
+  * Funciones de **Edición y Cancelación**: quitar un ítem individual (`Quitar`), sumar un producto olvidado por el cliente (`+ Agregar producto`), editar dirección/entrega y cancelar/eliminar pedidos.
 * **Vista Dueño ([`js/views/admin.js`](file:///d:/Escritorio/miHuerta/js/views/admin.js)):**
   * Actualización rápida de precios por kilo/unidad y botón de pausa/activación de stock en 1 toque.
 

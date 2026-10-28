@@ -9,6 +9,11 @@
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
+  --sim-bar-h: 0px;
+}
+
+body.has-sim-bar {
+  --sim-bar-h: 46px;
 }
 
 * {
@@ -21,6 +26,7 @@ body {
   background-color: #f8fafc;
   color: #0f172a;
   overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Prevenir auto-zoom intrusivo en iOS Safari (requiere font-size >= 16px en inputs) */
@@ -37,6 +43,7 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Transiciones y animaciones fluidas */
@@ -55,6 +62,11 @@ body {
   50% { opacity: 0.5; }
 }
 
+@keyframes flashSuccess {
+  0% { border-color: #059669; background-color: #ecfdf5; }
+  100% { border-color: #cbd5e1; background-color: #ffffff; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -65,6 +77,10 @@ body {
 
 .animate-pulse-subtle {
   animation: pulseSubtle 2s ease-in-out infinite;
+}
+
+.flash-saved {
+  animation: flashSuccess 1.2s ease forwards;
 }
 
 /* Deshabilitar zoom accidental de doble toque */
@@ -79,12 +95,12 @@ button, input, select, a {
 }
 .tap-feedback:active {
   transform: scale(0.96);
-  opacity: 0.9;
+  opacity: 0.88;
 }
 
 /* Áreas seguras en dispositivos con notch / Home Bar (iPhone / Android) */
 .safe-pb {
-  padding-bottom: max(1rem, var(--sab));
+  padding-bottom: max(1.25rem, calc(1rem + var(--sab)));
 }
 .safe-floating-bottom {
   bottom: max(1rem, calc(1rem + var(--sab)));
@@ -93,9 +109,13 @@ button, input, select, a {
   margin-bottom: max(1rem, var(--sab));
 }
 
-/* Altura mínima accesible para toques con pulgar */
+/* Altura mínima accesible para toques con pulgar (WCAG Touch Targets) */
 .touch-target {
   min-height: 44px;
   min-width: 44px;
 }
 
+/* Sticky header helper con offset reactivo según simulator bar */
+.sticky-header-offset {
+  top: var(--sim-bar-h, 0px);
+}

@@ -21,11 +21,25 @@ class App {
     const hasClientPhoneLink = urlParams.has("tel");
     const isRealMode = urlParams.get("modo") === "real" || hasClientPhoneLink;
 
+    const updateSimBarHeight = () => {
+      if (this.simulatorBar && !this.simulatorBar.classList.contains("hidden")) {
+        const h = this.simulatorBar.offsetHeight || 46;
+        document.documentElement.style.setProperty("--sim-bar-h", `${h}px`);
+      } else {
+        document.documentElement.style.setProperty("--sim-bar-h", "0px");
+      }
+    };
+
     // Si entra un cliente real desde el link de WhatsApp (?tel=...) ocultamos la barra del simulador
     if (isRealMode && this.simulatorBar && urlParams.get("sim") !== "1") {
       this.simulatorBar.classList.add("hidden");
+      document.body.classList.remove("has-sim-bar");
       this.requirePinInDemo = true;
+    } else {
+      document.body.classList.add("has-sim-bar");
     }
+    updateSimBarHeight();
+    window.addEventListener("resize", updateSimBarHeight);
 
     if (this.btnLockPin) {
       this.btnLockPin.addEventListener("click", () => {
@@ -41,6 +55,7 @@ class App {
 
     this.navButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
         const view = btn.dataset.view;
         this.navigate(view);
       });

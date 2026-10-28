@@ -23,8 +23,12 @@ import pino from "pino";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 // Configuración desde variables de entorno (.env)
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -34,7 +38,7 @@ const COOLDOWN_MINUTES = Number(process.env.COOLDOWN_MINUTES || 180);
 const PAYMENT_ALIAS = process.env.PAYMENT_ALIAS || "mihuerta.verduras";
 
 // Persistencia de la ventana de silencio (Cooldown) para sobrevivir reinicios
-const COOLDOWN_FILE = path.resolve("./.cooldowns.json");
+const COOLDOWN_FILE = path.join(__dirname, ".cooldowns.json");
 
 function loadCooldowns() {
   try {
@@ -137,7 +141,8 @@ function buildOrderReadyMessage(order) {
 }
 
 async function startWhatsAppBot() {
-  const { state, saveCreds } = await useMultiFileAuthState("./auth_info_baileys");
+  const authDir = path.join(__dirname, "auth_info_baileys");
+  const { state, saveCreds } = await useMultiFileAuthState(authDir);
   const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
@@ -206,7 +211,7 @@ async function startWhatsAppBot() {
       const welcomeText =
         `¡Hola! Bienvenido a *Verdulería Mi Huerta*.\n\n` +
         `Armá tu pedido del día con los precios actualizados entrando directamente a tu catálogo acá:\n` +
-        `👉 ${personalCatalogLink}\n\n` +
+        `${personalCatalogLink}\n\n` +
         `_Elegí lo que necesites y apenas lo pesemos en la balanza del local te avisamos por acá con el importe exacto._`;
 
       try {
