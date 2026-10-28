@@ -1,4 +1,4 @@
-// Catálogo inicial de productos para la verdulería
+// Catálogo inicial de productos para la verdulería (sin emojis, enfocado en tipografía moderna)
 export const INITIAL_PRODUCTS = [
   // Frutas
   {
@@ -8,8 +8,8 @@ export const INITIAL_PRODUCTS = [
     unidad_medida: "KG",
     precio: 1800,
     disponible: true,
-    paso: 0.5, // incremento mínimo (500g)
-    icono: "🍌"
+    paso: 0.5,
+    detalle: "Ecuador Seleccionada"
   },
   {
     id: "prod-2",
@@ -19,7 +19,7 @@ export const INITIAL_PRODUCTS = [
     precio: 2200,
     disponible: true,
     paso: 0.5,
-    icono: "🍎"
+    detalle: "Alto Valle, Río Negro"
   },
   {
     id: "prod-3",
@@ -29,7 +29,7 @@ export const INITIAL_PRODUCTS = [
     precio: 1400,
     disponible: true,
     paso: 0.5,
-    icono: "🍊"
+    detalle: "San Pedro dulce y jugosa"
   },
   {
     id: "prod-4",
@@ -39,7 +39,7 @@ export const INITIAL_PRODUCTS = [
     precio: 1600,
     disponible: true,
     paso: 0.25,
-    icono: "🍋"
+    detalle: "Tucumano cuatro estaciones"
   },
   {
     id: "prod-5",
@@ -49,7 +49,7 @@ export const INITIAL_PRODUCTS = [
     precio: 4500,
     disponible: true,
     paso: 0.25,
-    icono: "🍓"
+    detalle: "Coronda madura y fresca"
   },
   {
     id: "prod-6",
@@ -59,7 +59,7 @@ export const INITIAL_PRODUCTS = [
     precio: 1200,
     disponible: true,
     paso: 1,
-    icono: "🥑"
+    detalle: "Punto justo para consumir"
   },
 
   // Verduras
@@ -71,7 +71,7 @@ export const INITIAL_PRODUCTS = [
     precio: 950,
     disponible: true,
     paso: 1.0,
-    icono: "🥔"
+    detalle: "Balcarce lavada y firme"
   },
   {
     id: "prod-8",
@@ -81,7 +81,7 @@ export const INITIAL_PRODUCTS = [
     precio: 1100,
     disponible: true,
     paso: 0.5,
-    icono: "🧅"
+    detalle: "Seca de primera calidad"
   },
   {
     id: "prod-9",
@@ -91,7 +91,7 @@ export const INITIAL_PRODUCTS = [
     precio: 2600,
     disponible: true,
     paso: 0.5,
-    icono: "🍅"
+    detalle: "Platense maduro en planta"
   },
   {
     id: "prod-10",
@@ -101,7 +101,7 @@ export const INITIAL_PRODUCTS = [
     precio: 1300,
     disponible: true,
     paso: 0.5,
-    icono: "🥕"
+    detalle: "Dulce y crujiente"
   },
   {
     id: "prod-11",
@@ -111,17 +111,17 @@ export const INITIAL_PRODUCTS = [
     precio: 1700,
     disponible: true,
     paso: 0.5,
-    icono: "🥒"
+    detalle: "Chico y tierno"
   },
   {
     id: "prod-12",
-    nombre: "Calabaza Anco / Butternut",
+    nombre: "Calabaza Anco Butternut",
     categoria: "Verduras",
     unidad_medida: "KG",
     precio: 1100,
     disponible: true,
     paso: 1.0,
-    icono: "🎃"
+    detalle: "Cremosa y dulce"
   },
 
   // Hojas Verdes
@@ -129,11 +129,11 @@ export const INITIAL_PRODUCTS = [
     id: "prod-13",
     nombre: "Acelga de Huerta",
     categoria: "Hojas Verdes",
-    unidad_medida: "UNIDAD", // Se vende por atado
+    unidad_medida: "UNIDAD",
     precio: 900,
     disponible: true,
     paso: 1,
-    icono: "🥬"
+    detalle: "Atado fresco del día"
   },
   {
     id: "prod-14",
@@ -143,7 +143,7 @@ export const INITIAL_PRODUCTS = [
     precio: 2800,
     disponible: true,
     paso: 0.25,
-    icono: "🥗"
+    detalle: "Hojas tiernas y limpias"
   },
   {
     id: "prod-15",
@@ -153,7 +153,7 @@ export const INITIAL_PRODUCTS = [
     precio: 1100,
     disponible: true,
     paso: 1,
-    icono: "🌿"
+    detalle: "Atado grande seleccionado"
   },
 
   // Almacén / Granja
@@ -165,7 +165,7 @@ export const INITIAL_PRODUCTS = [
     precio: 5200,
     disponible: true,
     paso: 1,
-    icono: "🥚"
+    detalle: "Castaños de gallinas libres"
   },
   {
     id: "prod-17",
@@ -175,7 +175,7 @@ export const INITIAL_PRODUCTS = [
     precio: 2300,
     disponible: true,
     paso: 1,
-    icono: "🥚"
+    detalle: "Caja seleccionada x 12 u."
   }
 ];
 

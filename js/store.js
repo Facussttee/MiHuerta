@@ -1,20 +1,45 @@
 import { INITIAL_PRODUCTS } from "./products-data.js";
 
-// Claves de almacenamiento local
+// Claves de almacenamiento local (versión 3 sin emojis)
 const STORAGE_KEYS = {
-  PRODUCTS: "mihuerta_products_v1",
-  ORDERS: "mihuerta_orders_v1",
-  CUSTOMERS: "mihuerta_customers_v1",
-  CURRENT_USER: "mihuerta_current_user_v1",
-  CART: "mihuerta_cart_v1"
+  PRODUCTS: "mihuerta_products_v3",
+  ORDERS: "mihuerta_orders_v3",
+  CUSTOMERS: "mihuerta_customers_v3",
+  CURRENT_USER: "mihuerta_current_user_v3",
+  CART: "mihuerta_cart_v3"
 };
+
+// Fallback en memoria en caso de bloqueo de localStorage en file:///
+const memoryFallback = {};
+function safeGet(key, def) {
+  try {
+    const val = localStorage.getItem(key);
+    return val ? JSON.parse(val) : (memoryFallback[key] || def);
+  } catch {
+    return memoryFallback[key] || def;
+  }
+}
+function safeSet(key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch {
+    memoryFallback[key] = val;
+  }
+}
+function safeRemove(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    delete memoryFallback[key];
+  }
+}
 
 class Store {
   constructor() {
     this.listeners = new Set();
     this.init();
 
-    // Sincronización en tiempo real entre distintas pestañas del navegador
+    // Sincronización en tiempo real entre pestañas
     window.addEventListener("storage", (e) => {
       if (Object.values(STORAGE_KEYS).includes(e.key)) {
         this.notify("storage_sync");
@@ -24,12 +49,12 @@ class Store {
 
   init() {
     // 1. Cargar o inicializar productos
-    if (!localStorage.getItem(STORAGE_KEYS.PRODUCTS)) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+    if (!safeGet(STORAGE_KEYS.PRODUCTS, null)) {
+      safeSet(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
     }
 
-    // 2. Clientes registrados
-    if (!localStorage.getItem(STORAGE_KEYS.CUSTOMERS)) {
+    // 2. Clientes registrados iniciales
+    if (!safeGet(STORAGE_KEYS.CUSTOMERS, null)) {
       const defaultCustomers = {
         "1123456789": {
           telefono: "1123456789",
@@ -42,11 +67,11 @@ class Store {
           direccion: "San Martín 1230"
         }
       };
-      localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(defaultCustomers));
+      safeSet(STORAGE_KEYS.CUSTOMERS, defaultCustomers);
     }
 
-    // 3. Pedidos iniciales de demostración para ver el tablero en acción
-    if (!localStorage.getItem(STORAGE_KEYS.ORDERS)) {
+    // 3. Pedidos iniciales de demostración
+    if (!safeGet(STORAGE_KEYS.ORDERS, null)) {
       const sampleOrders = [
         {
           id: 101,
@@ -57,15 +82,14 @@ class Store {
           },
           tipo_entrega: "DELIVERY",
           direccion_entrega: "Av. Rivadavia 4520, Piso 3 B",
-          estado: "PENDIENTE", // PENDIENTE | EN_PREPARACION | LISTO | ENTREGADO
-          fecha: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // hace 15 min
+          estado: "PENDIENTE",
+          fecha: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
           total_estimado: 6400,
           total_real: null,
           items: [
             {
               producto_id: "prod-9",
               nombre: "Tomate Redondo Premium",
-              icono: "🍅",
               unidad_medida: "KG",
               precio_unitario: 2600,
               cantidad_solicitada: 1.0,
@@ -76,7 +100,6 @@ class Store {
             {
               producto_id: "prod-1",
               nombre: "Banana Cavendish",
-              icono: "🍌",
               unidad_medida: "KG",
               precio_unitario: 1800,
               cantidad_solicitada: 1.0,
@@ -87,7 +110,6 @@ class Store {
             {
               producto_id: "prod-2",
               nombre: "Manzana Roja Elegida",
-              icono: "🍎",
               unidad_medida: "KG",
               precio_unitario: 2200,
               cantidad_solicitada: 0.5,
@@ -98,7 +120,6 @@ class Store {
             {
               producto_id: "prod-13",
               nombre: "Acelga de Huerta",
-              icono: "🥬",
               unidad_medida: "UNIDAD",
               precio_unitario: 900,
               cantidad_solicitada: 1,
@@ -125,29 +146,26 @@ class Store {
             {
               producto_id: "prod-7",
               nombre: "Papa Negra Cepillada",
-              icono: "🥔",
               unidad_medida: "KG",
               precio_unitario: 950,
               cantidad_solicitada: 2.0,
-              peso_real: 2.150, // Ya pesó la papa
-              subtotal: 2042.5,
+              peso_real: 2.15,
+              subtotal: 2043,
               sin_stock: false
             },
             {
               producto_id: "prod-10",
               nombre: "Zanahoria Fresca",
-              icono: "🥕",
               unidad_medida: "KG",
               precio_unitario: 1300,
               cantidad_solicitada: 1.0,
-              peso_real: null, // Aún falta pesar
+              peso_real: null,
               subtotal: 1300,
               sin_stock: false
             },
             {
               producto_id: "prod-3",
               nombre: "Naranja de Jugo",
-              icono: "🍊",
               unidad_medida: "KG",
               precio_unitario: 1400,
               cantidad_solicitada: 1.0,
@@ -158,11 +176,11 @@ class Store {
           ]
         }
       ];
-      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(sampleOrders));
+      safeSet(STORAGE_KEYS.ORDERS, sampleOrders);
     }
   }
 
-  // --- Suscripciones / Reactividad ---
+  // --- Reactividad ---
   subscribe(callback) {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
@@ -174,7 +192,7 @@ class Store {
 
   // --- Productos ---
   getProducts() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS) || "[]");
+    return safeGet(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
   }
 
   updateProductPrice(productId, newPrice) {
@@ -184,7 +202,7 @@ class Store {
       }
       return p;
     });
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    safeSet(STORAGE_KEYS.PRODUCTS, products);
     this.notify("products_changed");
   }
 
@@ -195,13 +213,13 @@ class Store {
       }
       return p;
     });
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    safeSet(STORAGE_KEYS.PRODUCTS, products);
     this.notify("products_changed");
   }
 
   // --- Clientes ---
   getCustomers() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOMERS) || "{}");
+    return safeGet(STORAGE_KEYS.CUSTOMERS, {});
   }
 
   getCustomer(phone) {
@@ -214,30 +232,30 @@ class Store {
     const cleanPhone = String(customer.telefono).replace(/\D/g, "");
     const customers = this.getCustomers();
     customers[cleanPhone] = { ...customer, telefono: cleanPhone };
-    localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
+    safeSet(STORAGE_KEYS.CUSTOMERS, customers);
     this.setCurrentUser(customers[cleanPhone]);
     this.notify("customers_changed");
     return customers[cleanPhone];
   }
 
   getCurrentUser() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CURRENT_USER) || "null");
+    return safeGet(STORAGE_KEYS.CURRENT_USER, null);
   }
 
   setCurrentUser(user) {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+    safeSet(STORAGE_KEYS.CURRENT_USER, user);
     this.notify("user_changed", user);
   }
 
   logoutUser() {
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    safeRemove(STORAGE_KEYS.CURRENT_USER);
     this.clearCart();
     this.notify("user_changed", null);
   }
 
-  // --- Carrito de Compras del Cliente ---
+  // --- Carrito ---
   getCart() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CART) || "{}");
+    return safeGet(STORAGE_KEYS.CART, {});
   }
 
   addToCart(productId, quantityDelta) {
@@ -254,7 +272,7 @@ class Store {
       cart[productId] = {
         producto_id: productId,
         nombre: product.nombre,
-        icono: product.icono,
+        categoria: product.categoria,
         unidad_medida: product.unidad_medida,
         precio_unitario: product.precio,
         cantidad: newQty,
@@ -262,12 +280,19 @@ class Store {
       };
     }
 
-    localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
+    safeSet(STORAGE_KEYS.CART, cart);
+    this.notify("cart_changed");
+  }
+
+  removeFromCart(productId) {
+    const cart = this.getCart();
+    delete cart[productId];
+    safeSet(STORAGE_KEYS.CART, cart);
     this.notify("cart_changed");
   }
 
   clearCart() {
-    localStorage.removeItem(STORAGE_KEYS.CART);
+    safeRemove(STORAGE_KEYS.CART);
     this.notify("cart_changed");
   }
 
@@ -281,7 +306,7 @@ class Store {
 
   // --- Pedidos ---
   getOrders() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.ORDERS) || "[]");
+    return safeGet(STORAGE_KEYS.ORDERS, []);
   }
 
   createOrder({ cliente, tipo_entrega, direccion_entrega }) {
@@ -303,7 +328,7 @@ class Store {
       items: items.map((item) => ({
         producto_id: item.producto_id,
         nombre: item.nombre,
-        icono: item.icono,
+        categoria: item.categoria,
         unidad_medida: item.unidad_medida,
         precio_unitario: item.precio_unitario,
         cantidad_solicitada: item.cantidad,
@@ -313,10 +338,10 @@ class Store {
       }))
     };
 
-    orders.unshift(newOrder); // al principio de la lista
-    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+    orders.unshift(newOrder);
+    safeSet(STORAGE_KEYS.ORDERS, orders);
     this.clearCart();
-    this.playAudioAlert(); // Alerta sonora de nuevo pedido
+    this.playAudioAlert();
     this.notify("order_created", newOrder);
     return newOrder;
   }
@@ -328,11 +353,10 @@ class Store {
       }
       return order;
     });
-    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+    safeSet(STORAGE_KEYS.ORDERS, orders);
     this.notify("orders_changed");
   }
 
-  // Operario actualiza el peso real de un ítem
   updateItemWeight(orderId, itemIndex, pesoReal) {
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
@@ -344,7 +368,6 @@ class Store {
         item.subtotal = Math.round(peso * item.precio_unitario);
         items[itemIndex] = item;
 
-        // Recalcular total real si todos los no anulados tienen peso
         const todosPesados = items.every((i) => i.sin_stock || i.peso_real !== null);
         let totalReal = null;
         if (todosPesados) {
@@ -357,11 +380,10 @@ class Store {
       }
       return order;
     });
-    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+    safeSet(STORAGE_KEYS.ORDERS, orders);
     this.notify("orders_changed");
   }
 
-  // Operario marca un ítem como sin stock
   toggleItemOutOfStock(orderId, itemIndex) {
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
@@ -376,7 +398,6 @@ class Store {
         }
         items[itemIndex] = item;
 
-        // Recalcular total real
         const totalReal = items
           .filter((i) => !i.sin_stock && i.peso_real !== null)
           .reduce((sum, i) => sum + (i.subtotal || 0), 0);
@@ -385,15 +406,13 @@ class Store {
       }
       return order;
     });
-    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+    safeSet(STORAGE_KEYS.ORDERS, orders);
     this.notify("orders_changed");
   }
 
-  // Finalizar pesaje y pasar a LISTO
   finalizeOrderWeighing(orderId) {
     const orders = this.getOrders().map((order) => {
       if (order.id === orderId) {
-        // Asegurar que cada ítem que no fue pesado tome el valor solicitado si es unidad
         const items = order.items.map((i) => {
           if (i.sin_stock) return i;
           const pesoFinal = i.peso_real !== null ? i.peso_real : i.cantidad_solicitada;
@@ -419,30 +438,30 @@ class Store {
       return order;
     });
 
-    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+    safeSet(STORAGE_KEYS.ORDERS, orders);
     this.notify("orders_changed");
     this.notify("order_ready", orderId);
   }
 
-  // Alerta sonora sutil con Web Audio API (cero dependencias de archivos mp3 externos)
   playAudioAlert() {
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
       gain.gain.setValueAtTime(0.15, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.35);
-    } catch {
-      // AudioContext bloqueado si el usuario no interactuó aún
-    }
+    } catch {}
   }
 }
 
 export const store = new Store();
+export { STORAGE_KEYS, safeGet, safeSet, safeRemove };

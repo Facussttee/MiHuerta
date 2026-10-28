@@ -1,39 +1,202 @@
 (function () {
   "use strict";
 
-  // --- 1. CATÁLOGO INICIAL ---
+  // ==========================================
+  // 1. CATÁLOGO INICIAL (Sin emojis, enfocado en tipografía moderna)
+  // ==========================================
   const INITIAL_PRODUCTS = [
-    { id: "prod-1", nombre: "Banana Cavendish", categoria: "Frutas", unidad_medida: "KG", precio: 1800, disponible: true, paso: 0.5, icono: "🍌" },
-    { id: "prod-2", nombre: "Manzana Roja Elegida", categoria: "Frutas", unidad_medida: "KG", precio: 2200, disponible: true, paso: 0.5, icono: "🍎" },
-    { id: "prod-3", nombre: "Naranja de Jugo", categoria: "Frutas", unidad_medida: "KG", precio: 1400, disponible: true, paso: 0.5, icono: "🍊" },
-    { id: "prod-4", nombre: "Limón Comercial", categoria: "Frutas", unidad_medida: "KG", precio: 1600, disponible: true, paso: 0.25, icono: "🍋" },
-    { id: "prod-5", nombre: "Frutilla Seleccionada", categoria: "Frutas", unidad_medida: "KG", precio: 4500, disponible: true, paso: 0.25, icono: "🍓" },
-    { id: "prod-6", nombre: "Palta Hass Madura", categoria: "Frutas", unidad_medida: "UNIDAD", precio: 1200, disponible: true, paso: 1, icono: "🥑" },
-    { id: "prod-7", nombre: "Papa Negra Cepillada", categoria: "Verduras", unidad_medida: "KG", precio: 950, disponible: true, paso: 1.0, icono: "🥔" },
-    { id: "prod-8", nombre: "Cebolla Selección", categoria: "Verduras", unidad_medida: "KG", precio: 1100, disponible: true, paso: 0.5, icono: "🧅" },
-    { id: "prod-9", nombre: "Tomate Redondo Premium", categoria: "Verduras", unidad_medida: "KG", precio: 2600, disponible: true, paso: 0.5, icono: "🍅" },
-    { id: "prod-10", nombre: "Zanahoria Fresca", categoria: "Verduras", unidad_medida: "KG", precio: 1300, disponible: true, paso: 0.5, icono: "🥕" },
-    { id: "prod-11", nombre: "Zapallito Verde Tronco", categoria: "Verduras", unidad_medida: "KG", precio: 1700, disponible: true, paso: 0.5, icono: "🥒" },
-    { id: "prod-12", nombre: "Calabaza Anco / Butternut", categoria: "Verduras", unidad_medida: "KG", precio: 1100, disponible: true, paso: 1.0, icono: "🎃" },
-    { id: "prod-13", nombre: "Acelga de Huerta", categoria: "Hojas Verdes", unidad_medida: "UNIDAD", precio: 900, disponible: true, paso: 1, icono: "🥬" },
-    { id: "prod-14", nombre: "Lechuga Mantecosa", categoria: "Hojas Verdes", unidad_medida: "KG", precio: 2800, disponible: true, paso: 0.25, icono: "🥗" },
-    { id: "prod-15", nombre: "Espinaca Fresca", categoria: "Hojas Verdes", unidad_medida: "UNIDAD", precio: 1100, disponible: true, paso: 1, icono: "🌿" },
-    { id: "prod-16", nombre: "Huevos de Campo (Maple x 30)", categoria: "Almacén", unidad_medida: "UNIDAD", precio: 5200, disponible: true, paso: 1, icono: "🥚" },
-    { id: "prod-17", nombre: "Huevos de Campo (Docena)", categoria: "Almacén", unidad_medida: "UNIDAD", precio: 2300, disponible: true, paso: 1, icono: "🥚" }
+    // Frutas
+    {
+      id: "prod-1",
+      nombre: "Banana Cavendish",
+      categoria: "Frutas",
+      unidad_medida: "KG",
+      precio: 1800,
+      disponible: true,
+      paso: 0.5,
+      detalle: "Ecuador Seleccionada"
+    },
+    {
+      id: "prod-2",
+      nombre: "Manzana Roja Elegida",
+      categoria: "Frutas",
+      unidad_medida: "KG",
+      precio: 2200,
+      disponible: true,
+      paso: 0.5,
+      detalle: "Alto Valle, Río Negro"
+    },
+    {
+      id: "prod-3",
+      nombre: "Naranja de Jugo",
+      categoria: "Frutas",
+      unidad_medida: "KG",
+      precio: 1400,
+      disponible: true,
+      paso: 0.5,
+      detalle: "San Pedro dulce y jugosa"
+    },
+    {
+      id: "prod-4",
+      nombre: "Limón Comercial",
+      categoria: "Frutas",
+      unidad_medida: "KG",
+      precio: 1600,
+      disponible: true,
+      paso: 0.25,
+      detalle: "Tucumano cuatro estaciones"
+    },
+    {
+      id: "prod-5",
+      nombre: "Frutilla Seleccionada",
+      categoria: "Frutas",
+      unidad_medida: "KG",
+      precio: 4500,
+      disponible: true,
+      paso: 0.25,
+      detalle: "Coronda madura y fresca"
+    },
+    {
+      id: "prod-6",
+      nombre: "Palta Hass Madura",
+      categoria: "Frutas",
+      unidad_medida: "UNIDAD",
+      precio: 1200,
+      disponible: true,
+      paso: 1,
+      detalle: "Punto justo para consumir"
+    },
+
+    // Verduras
+    {
+      id: "prod-7",
+      nombre: "Papa Negra Cepillada",
+      categoria: "Verduras",
+      unidad_medida: "KG",
+      precio: 950,
+      disponible: true,
+      paso: 1.0,
+      detalle: "Balcarce lavada y firme"
+    },
+    {
+      id: "prod-8",
+      nombre: "Cebolla Selección",
+      categoria: "Verduras",
+      unidad_medida: "KG",
+      precio: 1100,
+      disponible: true,
+      paso: 0.5,
+      detalle: "Seca de primera calidad"
+    },
+    {
+      id: "prod-9",
+      nombre: "Tomate Redondo Premium",
+      categoria: "Verduras",
+      unidad_medida: "KG",
+      precio: 2600,
+      disponible: true,
+      paso: 0.5,
+      detalle: "Platense maduro en planta"
+    },
+    {
+      id: "prod-10",
+      nombre: "Zanahoria Fresca",
+      categoria: "Verduras",
+      unidad_medida: "KG",
+      precio: 1300,
+      disponible: true,
+      paso: 0.5,
+      detalle: "Dulce y crujiente"
+    },
+    {
+      id: "prod-11",
+      nombre: "Zapallito Verde Tronco",
+      categoria: "Verduras",
+      unidad_medida: "KG",
+      precio: 1700,
+      disponible: true,
+      paso: 0.5,
+      detalle: "Chico y tierno"
+    },
+    {
+      id: "prod-12",
+      nombre: "Calabaza Anco Butternut",
+      categoria: "Verduras",
+      unidad_medida: "KG",
+      precio: 1100,
+      disponible: true,
+      paso: 1.0,
+      detalle: "Cremosa y dulce"
+    },
+
+    // Hojas Verdes
+    {
+      id: "prod-13",
+      nombre: "Acelga de Huerta",
+      categoria: "Hojas Verdes",
+      unidad_medida: "UNIDAD",
+      precio: 900,
+      disponible: true,
+      paso: 1,
+      detalle: "Atado fresco del día"
+    },
+    {
+      id: "prod-14",
+      nombre: "Lechuga Mantecosa",
+      categoria: "Hojas Verdes",
+      unidad_medida: "KG",
+      precio: 2800,
+      disponible: true,
+      paso: 0.25,
+      detalle: "Hojas tiernas y limpias"
+    },
+    {
+      id: "prod-15",
+      nombre: "Espinaca Fresca",
+      categoria: "Hojas Verdes",
+      unidad_medida: "UNIDAD",
+      precio: 1100,
+      disponible: true,
+      paso: 1,
+      detalle: "Atado grande seleccionado"
+    },
+
+    // Almacén / Granja
+    {
+      id: "prod-16",
+      nombre: "Huevos de Campo (Maple x 30)",
+      categoria: "Almacén",
+      unidad_medida: "UNIDAD",
+      precio: 5200,
+      disponible: true,
+      paso: 1,
+      detalle: "Castaños de gallinas libres"
+    },
+    {
+      id: "prod-17",
+      nombre: "Huevos de Campo (Docena)",
+      categoria: "Almacén",
+      unidad_medida: "UNIDAD",
+      precio: 2300,
+      disponible: true,
+      paso: 1,
+      detalle: "Caja seleccionada x 12 u."
+    }
   ];
 
   const CATEGORIAS = ["Todos", "Frutas", "Verduras", "Hojas Verdes", "Almacén"];
 
-  // --- 2. STORE REACTIVO ---
+  // ==========================================
+  // 2. STORE REACTIVO (Versión 3 sin emojis)
+  // ==========================================
   const STORAGE_KEYS = {
-    PRODUCTS: "mihuerta_products_v2",
-    ORDERS: "mihuerta_orders_v2",
-    CUSTOMERS: "mihuerta_customers_v2",
-    CURRENT_USER: "mihuerta_current_user_v2",
-    CART: "mihuerta_cart_v2"
+    PRODUCTS: "mihuerta_products_v3",
+    ORDERS: "mihuerta_orders_v3",
+    CUSTOMERS: "mihuerta_customers_v3",
+    CURRENT_USER: "mihuerta_current_user_v3",
+    CART: "mihuerta_cart_v3"
   };
 
-  // Memoria fallback por si el navegador bloquea localStorage en file:///
   const memoryFallback = {};
   function safeGet(key, def) {
     try {
@@ -95,7 +258,11 @@
         const sampleOrders = [
           {
             id: 101,
-            cliente: { nombre: "Facundo Gómez", telefono: "1123456789", direccion: "Av. Rivadavia 4520" },
+            cliente: {
+              nombre: "Facundo Gómez",
+              telefono: "1123456789",
+              direccion: "Av. Rivadavia 4520, Piso 3 B"
+            },
             tipo_entrega: "DELIVERY",
             direccion_entrega: "Av. Rivadavia 4520, Piso 3 B",
             estado: "PENDIENTE",
@@ -103,15 +270,59 @@
             total_estimado: 6400,
             total_real: null,
             items: [
-              { producto_id: "prod-9", nombre: "Tomate Redondo Premium", icono: "🍅", unidad_medida: "KG", precio_unitario: 2600, cantidad_solicitada: 1.0, peso_real: null, subtotal: 2600, sin_stock: false },
-              { producto_id: "prod-1", nombre: "Banana Cavendish", icono: "🍌", unidad_medida: "KG", precio_unitario: 1800, cantidad_solicitada: 1.0, peso_real: null, subtotal: 1800, sin_stock: false },
-              { producto_id: "prod-2", nombre: "Manzana Roja Elegida", icono: "🍎", unidad_medida: "KG", precio_unitario: 2200, cantidad_solicitada: 0.5, peso_real: null, subtotal: 1100, sin_stock: false },
-              { producto_id: "prod-13", nombre: "Acelga de Huerta", icono: "🥬", unidad_medida: "UNIDAD", precio_unitario: 900, cantidad_solicitada: 1, peso_real: 1, subtotal: 900, sin_stock: false }
+              {
+                producto_id: "prod-9",
+                nombre: "Tomate Redondo Premium",
+                categoria: "Verduras",
+                unidad_medida: "KG",
+                precio_unitario: 2600,
+                cantidad_solicitada: 1.0,
+                peso_real: null,
+                subtotal: 2600,
+                sin_stock: false
+              },
+              {
+                producto_id: "prod-1",
+                nombre: "Banana Cavendish",
+                categoria: "Frutas",
+                unidad_medida: "KG",
+                precio_unitario: 1800,
+                cantidad_solicitada: 1.0,
+                peso_real: null,
+                subtotal: 1800,
+                sin_stock: false
+              },
+              {
+                producto_id: "prod-2",
+                nombre: "Manzana Roja Elegida",
+                categoria: "Frutas",
+                unidad_medida: "KG",
+                precio_unitario: 2200,
+                cantidad_solicitada: 0.5,
+                peso_real: null,
+                subtotal: 1100,
+                sin_stock: false
+              },
+              {
+                producto_id: "prod-13",
+                nombre: "Acelga de Huerta",
+                categoria: "Hojas Verdes",
+                unidad_medida: "UNIDAD",
+                precio_unitario: 900,
+                cantidad_solicitada: 1,
+                peso_real: 1,
+                subtotal: 900,
+                sin_stock: false
+              }
             ]
           },
           {
             id: 102,
-            cliente: { nombre: "María Elena", telefono: "1198765432", direccion: "Retiro en Local" },
+            cliente: {
+              nombre: "María Elena",
+              telefono: "1198765432",
+              direccion: "Retiro en Local"
+            },
             tipo_entrega: "RETIRO",
             direccion_entrega: "Retiro por Mostrador",
             estado: "EN_PREPARACION",
@@ -119,9 +330,39 @@
             total_estimado: 4700,
             total_real: null,
             items: [
-              { producto_id: "prod-7", nombre: "Papa Negra Cepillada", icono: "🥔", unidad_medida: "KG", precio_unitario: 950, cantidad_solicitada: 2.0, peso_real: 2.150, subtotal: 2042.5, sin_stock: false },
-              { producto_id: "prod-10", nombre: "Zanahoria Fresca", icono: "🥕", unidad_medida: "KG", precio_unitario: 1300, cantidad_solicitada: 1.0, peso_real: null, subtotal: 1300, sin_stock: false },
-              { producto_id: "prod-3", nombre: "Naranja de Jugo", icono: "🍊", unidad_medida: "KG", precio_unitario: 1400, cantidad_solicitada: 1.0, peso_real: null, subtotal: 1400, sin_stock: false }
+              {
+                producto_id: "prod-7",
+                nombre: "Papa Negra Cepillada",
+                categoria: "Verduras",
+                unidad_medida: "KG",
+                precio_unitario: 950,
+                cantidad_solicitada: 2.0,
+                peso_real: 2.15,
+                subtotal: 2043,
+                sin_stock: false
+              },
+              {
+                producto_id: "prod-10",
+                nombre: "Zanahoria Fresca",
+                categoria: "Verduras",
+                unidad_medida: "KG",
+                precio_unitario: 1300,
+                cantidad_solicitada: 1.0,
+                peso_real: null,
+                subtotal: 1300,
+                sin_stock: false
+              },
+              {
+                producto_id: "prod-3",
+                nombre: "Naranja de Jugo",
+                categoria: "Frutas",
+                unidad_medida: "KG",
+                precio_unitario: 1400,
+                cantidad_solicitada: 1.0,
+                peso_real: null,
+                subtotal: 1400,
+                sin_stock: false
+              }
             ]
           }
         ];
@@ -217,7 +458,7 @@
         cart[productId] = {
           producto_id: productId,
           nombre: product.nombre,
-          icono: product.icono,
+          categoria: product.categoria,
           unidad_medida: product.unidad_medida,
           precio_unitario: product.precio,
           cantidad: newQty,
@@ -225,6 +466,13 @@
         };
       }
 
+      safeSet(STORAGE_KEYS.CART, cart);
+      this.notify("cart_changed");
+    }
+
+    removeFromCart(productId) {
+      const cart = this.getCart();
+      delete cart[productId];
       safeSet(STORAGE_KEYS.CART, cart);
       this.notify("cart_changed");
     }
@@ -265,7 +513,7 @@
         items: items.map((item) => ({
           producto_id: item.producto_id,
           nombre: item.nombre,
-          icono: item.icono,
+          categoria: item.categoria,
           unidad_medida: item.unidad_medida,
           precio_unitario: item.precio_unitario,
           cantidad_solicitada: item.cantidad,
@@ -299,6 +547,7 @@
         if (order.id === orderId) {
           const items = [...order.items];
           const item = { ...items[itemIndex] };
+          
           const peso = Math.max(0, Number(pesoReal));
           item.peso_real = peso;
           item.subtotal = Math.round(peso * item.precio_unitario);
@@ -401,7 +650,9 @@
 
   const store = new Store();
 
-  // --- 3. VISTA CLIENTE ---
+  // ==========================================
+  // 3. VISTA CLIENTE
+  // ==========================================
   function renderClientView(container) {
     let selectedCategory = "Todos";
     let searchQuery = "";
@@ -427,70 +678,82 @@
 
     function renderPhoneGate() {
       container.innerHTML = `
-        <div class="max-w-md mx-auto p-4 pt-8">
-          <div class="bg-white rounded-3xl p-6 shadow-xl border border-emerald-100 text-center">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">
-              🥕
+        <div class="max-w-md mx-auto p-4 pt-10 min-h-[85vh] flex flex-col justify-center">
+          <div class="bg-white rounded-3xl p-7 shadow-xl shadow-slate-200/50 border border-slate-200/80 text-left">
+            <div class="mb-6">
+              <span class="inline-block text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200/60 mb-2">
+                Verdulería Digital
+              </span>
+              <h1 class="text-2xl font-black text-slate-900 tracking-tight">Mi Huerta</h1>
+              <p class="text-xs text-slate-500 mt-1">
+                Catálogo de estación, pedidos directos y pesaje transparente en balanza.
+              </p>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800">Verdulería Mi Huerta</h2>
-            <p class="text-sm text-gray-500 mt-1 mb-6">Pedí fresco directo del cajón a tu casa</p>
 
-            <form id="phone-form" class="space-y-4 text-left">
+            <form id="phone-form" class="space-y-4">
               <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
-                  Tu número de WhatsApp
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Número de WhatsApp
                 </label>
-                <div class="relative">
-                  <span class="absolute left-3 top-3 text-gray-400 font-medium">+54 9</span>
+                <div class="relative flex items-center">
+                  <span class="absolute left-3.5 text-slate-400 font-semibold text-sm select-none">
+                    +54 9
+                  </span>
                   <input 
                     type="tel" 
                     id="phone-input" 
                     required 
+                    inputmode="numeric"
                     placeholder="11 2345 6789" 
                     value="1123456789"
-                    class="w-full pl-20 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-gray-800 font-semibold text-lg outline-none transition"
+                    class="w-full pl-20 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 font-bold text-base outline-none transition"
                   />
                 </div>
-                <p class="text-[11px] text-gray-400 mt-1">Con tu número reconocemos tu cuenta y te avisamos cuando el pedido esté pesado.</p>
+                <p class="text-[11px] text-slate-400 mt-1.5">
+                  Tu número nos permite sincronizar tu pedido y avisarte cuando esté pesado.
+                </p>
               </div>
 
-              <div id="new-user-fields" class="space-y-3 pt-2">
+              <div id="new-user-fields" class="space-y-3 pt-1">
                 <div>
-                  <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
-                    Tu Nombre
+                  <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Nombre completo
                   </label>
                   <input 
                     type="text" 
                     id="name-input" 
-                    placeholder="Ej: Facundo" 
-                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-gray-800 outline-none"
+                    placeholder="Ej: Facundo Gómez" 
+                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 text-sm font-medium outline-none transition"
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
-                    Dirección habitual (opcional)
+                  <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Dirección de entrega (opcional)
                   </label>
                   <input 
                     type="text" 
                     id="address-input" 
-                    placeholder="Ej: Av. Rivadavia 4520" 
-                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-gray-800 outline-none"
+                    placeholder="Ej: Av. Rivadavia 4520, Piso 3 B" 
+                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 text-sm font-medium outline-none transition"
                   />
                 </div>
               </div>
 
               <button 
                 type="submit" 
-                class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/30 transition transform active:scale-98 flex items-center justify-center gap-2 mt-4"
+                class="w-full mt-2 bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-slate-900/10 transition tap-feedback text-sm flex items-center justify-center gap-2"
               >
-                <span>Entrar al Catálogo</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                <span>Ingresar al Catálogo</span>
+                <span class="text-xs text-slate-400 font-normal">›</span>
               </button>
             </form>
 
-            <div class="mt-6 pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-xs text-gray-400">
-              <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Precios del día actualizados
+            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                Precios del día actualizados
+              </span>
+              <span>Balanza de precisión</span>
             </div>
           </div>
         </div>
@@ -501,16 +764,19 @@
       const nameInput = container.querySelector("#name-input");
       const addressInput = container.querySelector("#address-input");
 
-      function syncCustomer(phoneVal) {
-        const existing = store.getCustomer(phoneVal);
+      phoneInput.addEventListener("input", (e) => {
+        const existing = store.getCustomer(e.target.value);
         if (existing) {
-          nameInput.value = existing.nombre;
+          nameInput.value = existing.nombre || "";
           addressInput.value = existing.direccion || "";
         }
-      }
+      });
 
-      phoneInput.addEventListener("input", (e) => syncCustomer(e.target.value));
-      syncCustomer(phoneInput.value);
+      const initialMatch = store.getCustomer(phoneInput.value);
+      if (initialMatch) {
+        nameInput.value = initialMatch.nombre || "";
+        addressInput.value = initialMatch.direccion || "";
+      }
 
       phoneForm.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -542,49 +808,60 @@
       });
 
       container.innerHTML = `
-        <div class="max-w-md mx-auto pb-28">
-          <header class="sticky top-11 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 py-3">
+        <div class="max-w-md mx-auto pb-32">
+          
+          <!-- Header Móvil del Cliente -->
+          <header class="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 pt-3 pb-2.5">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-xl shadow-inner">
-                  🥬
+              <div>
+                <div class="flex items-center gap-2">
+                  <h1 class="text-base font-black text-slate-900 tracking-tight uppercase">Mi Huerta</h1>
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span class="text-[11px] font-bold text-emerald-700">Abierto</span>
                 </div>
-                <div>
-                  <h1 class="font-extrabold text-gray-900 leading-tight">Mi Huerta</h1>
-                  <p class="text-xs text-gray-500 flex items-center gap-1">
-                    <span>Hola, <strong class="text-emerald-700">${user.nombre}</strong></span>
-                    <button id="btn-change-user" class="text-xs text-gray-400 underline hover:text-gray-600">(Cambiar)</button>
-                  </p>
-                </div>
+                <p class="text-xs text-slate-500">
+                  <span>Hola, <strong class="text-slate-800 font-semibold">${user.nombre}</strong></span>
+                  <button id="btn-change-user" class="text-slate-400 underline ml-1 hover:text-slate-600">Cambiar</button>
+                </p>
               </div>
-              <div class="text-right">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Abierto
+              
+              <button 
+                id="btn-header-cart" 
+                class="relative px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 tap-feedback"
+              >
+                <span>Pedido</span>
+                <span class="px-1.5 py-0.2 rounded-full ${totalItems > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'} text-[10px] font-extrabold">
+                  ${totalItems}
                 </span>
-              </div>
+              </button>
             </div>
 
-            <div class="mt-3 relative">
-              <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <!-- Buscador -->
+            <div class="mt-2.5 relative">
               <input 
                 type="text" 
                 id="search-input" 
-                placeholder="Buscar papa, manzana, acelga..." 
+                placeholder="Buscar por nombre (ej: papa, tomate, acelga)..." 
                 value="${searchQuery}"
-                class="w-full pl-10 pr-4 py-2 bg-gray-100 hover:bg-gray-150 focus:bg-white border border-transparent focus:border-emerald-300 rounded-xl text-sm outline-none transition"
+                class="w-full pl-3 pr-8 py-2 bg-slate-100 hover:bg-slate-150 focus:bg-white border border-transparent focus:border-slate-300 rounded-xl text-xs font-medium outline-none transition"
               />
+              ${
+                searchQuery
+                  ? `<button id="btn-clear-search" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>`
+                  : ""
+              }
             </div>
 
-            <div class="mt-2.5 flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+            <!-- Píldoras de Categorías (Horizontal Scroll) -->
+            <div class="mt-2.5 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
               ${CATEGORIAS.map(
                 (cat) => `
                 <button 
                   data-category="${cat}"
-                  class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
+                  class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
                     selectedCategory === cat
-                      ? "bg-emerald-600 text-white shadow-sm"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }"
                 >
                   ${cat}
@@ -594,13 +871,17 @@
             </div>
           </header>
 
-          <main class="p-4 space-y-3">
+          <!-- Lista de Productos -->
+          <main class="p-4 space-y-2.5">
             ${
               filteredProducts.length === 0
                 ? `
-              <div class="text-center py-12 text-gray-400">
-                <span class="text-4xl block mb-2">🔍</span>
-                <p class="font-medium">No encontramos productos con ese nombre</p>
+              <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 p-6">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin coincidencias</span>
+                <p class="text-sm font-semibold text-slate-700">No encontramos productos con ese nombre</p>
+                <button id="btn-reset-filter" class="mt-3 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-200">
+                  Limpiar búsqueda
+                </button>
               </div>
             `
                 : filteredProducts
@@ -609,65 +890,87 @@
                       const currentQty = cartItem ? cartItem.cantidad : 0;
                       const step = product.paso || 0.5;
                       const unitLabel = product.unidad_medida === "KG" ? "kg" : "u.";
+                      const unitSubtitle = product.unidad_medida === "KG" ? "Venta por kilo" : "Venta por unidad";
 
                       return `
-                <div class="bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm flex items-center justify-between gap-3 ${
-                  !product.disponible ? "opacity-50 grayscale" : ""
+                <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 transition ${
+                  !product.disponible ? "opacity-40 grayscale pointer-events-none" : ""
                 }">
-                  <div class="flex items-center gap-3 flex-1 min-w-0">
-                    <div class="w-14 h-14 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-center text-3xl shrink-0">
-                      ${product.icono || "🍎"}
+                  <!-- Info Producto -->
+                  <div class="flex-1 min-w-0 pr-1">
+                    <div class="flex items-center gap-1.5 mb-0.5">
+                      <span class="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                        ${product.categoria}
+                      </span>
+                      <span class="text-[10px] text-slate-400">·</span>
+                      <span class="text-[10px] font-medium text-slate-400">
+                        ${unitSubtitle}
+                      </span>
                     </div>
-                    <div class="min-w-0">
-                      <h3 class="font-bold text-gray-900 text-sm truncate">${product.nombre}</h3>
-                      <p class="text-xs text-gray-500">
-                        $${product.precio.toLocaleString("es-AR")} 
-                        <span class="text-gray-400">/ ${unitLabel}</span>
-                      </p>
-                      ${
-                        !product.disponible
-                          ? `<span class="inline-block text-[10px] font-bold text-red-500 uppercase tracking-wider mt-0.5">Agotado por hoy</span>`
-                          : ""
-                      }
+
+                    <h3 class="font-extrabold text-slate-900 text-sm leading-tight truncate">
+                      ${product.nombre}
+                    </h3>
+
+                    <p class="text-[11px] text-slate-400 truncate mt-0.5">
+                      ${product.detalle || ""}
+                    </p>
+
+                    <div class="mt-1 flex items-baseline gap-1">
+                      <span class="text-sm font-black text-emerald-700">
+                        $${product.precio.toLocaleString("es-AR")}
+                      </span>
+                      <span class="text-[11px] text-slate-400 font-medium">/ ${unitLabel}</span>
                     </div>
+
+                    ${
+                      !product.disponible
+                        ? `<span class="inline-block text-[10px] font-bold text-rose-600 uppercase tracking-wider mt-1">Agotado</span>`
+                        : ""
+                    }
                   </div>
 
-                  ${
-                    product.disponible
-                      ? currentQty === 0
-                        ? `
-                        <button 
-                          data-add-id="${product.id}"
-                          data-step="${step}"
-                          class="btn-add-initial shrink-0 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 active:scale-95 px-3 py-2 rounded-xl text-xs font-bold border border-emerald-200 flex items-center gap-1 transition"
-                        >
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                          <span>Pedir</span>
-                        </button>
-                      `
-                        : `
-                        <div class="shrink-0 flex items-center bg-emerald-600 rounded-xl p-1 text-white shadow-sm">
+                  <!-- Selector de Cantidad / Botón Agregar -->
+                  <div class="shrink-0">
+                    ${
+                      product.disponible
+                        ? currentQty === 0
+                          ? `
                           <button 
-                            data-dec-id="${product.id}"
+                            data-add-id="${product.id}"
                             data-step="${step}"
-                            class="btn-qty-dec w-7 h-7 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 font-bold transition"
+                            class="btn-add-initial bg-slate-900 hover:bg-slate-800 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition tap-feedback flex items-center gap-1 shadow-sm"
                           >
-                            -
+                            <span>Agregar</span>
+                            <span class="text-xs font-normal">+</span>
                           </button>
-                          <span class="px-2 text-xs font-extrabold min-w-[42px] text-center">
-                            ${currentQty} ${unitLabel}
-                          </span>
-                          <button 
-                            data-inc-id="${product.id}"
-                            data-step="${step}"
-                            class="btn-qty-inc w-7 h-7 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 font-bold transition"
-                          >
-                            +
-                          </button>
-                        </div>
-                      `
-                      : ""
-                  }
+                        `
+                          : `
+                          <div class="flex items-center bg-emerald-600 text-white rounded-xl p-1 shadow-sm">
+                            <button 
+                              data-dec-id="${product.id}"
+                              data-step="${step}"
+                              class="btn-qty-dec w-8 h-8 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-95 text-sm font-extrabold transition"
+                              title="Restar"
+                            >
+                              −
+                            </button>
+                            <span class="px-2 text-xs font-black min-w-[48px] text-center tracking-tight">
+                              ${currentQty} ${unitLabel}
+                            </span>
+                            <button 
+                              data-inc-id="${product.id}"
+                              data-step="${step}"
+                              class="btn-qty-inc w-8 h-8 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-95 text-sm font-extrabold transition"
+                              title="Sumar"
+                            >
+                              +
+                            </button>
+                          </div>
+                        `
+                        : ""
+                    }
+                  </div>
                 </div>
               `;
                     })
@@ -675,51 +978,72 @@
             }
           </main>
 
+          <!-- Barra Flotante Inferior de Carrito -->
           ${
             totalItems > 0
               ? `
-            <div class="fixed bottom-0 left-0 right-0 p-3 z-30 pointer-events-none">
-              <div class="max-w-md mx-auto pointer-events-auto">
-                <button 
-                  id="btn-open-cart"
-                  class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white p-3.5 rounded-2xl shadow-xl shadow-emerald-900/30 flex items-center justify-between transition transform active:scale-98 border border-emerald-500"
-                >
-                  <div class="flex items-center gap-2.5">
-                    <span class="bg-emerald-800 text-white font-extrabold text-xs px-2.5 py-1 rounded-full">
-                      ${totalItems}
-                    </span>
-                    <div class="text-left">
-                      <span class="text-[10px] text-emerald-200 block uppercase font-bold tracking-wide">Total Estimado</span>
-                      <span class="font-extrabold text-base">$${totalEstimado.toLocaleString("es-AR")}</span>
-                    </div>
+            <div class="fixed bottom-4 left-4 right-4 z-30 max-w-md mx-auto pointer-events-auto">
+              <button 
+                id="btn-open-cart"
+                class="w-full bg-slate-950 hover:bg-slate-900 text-white p-3.5 px-4 rounded-2xl shadow-xl shadow-slate-950/25 flex items-center justify-between transition tap-feedback border border-slate-800"
+              >
+                <div class="flex items-center gap-3">
+                  <span class="bg-emerald-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded-full">
+                    ${totalItems}
+                  </span>
+                  <div class="text-left">
+                    <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Total Estimado</span>
+                    <span class="font-black text-base leading-none">$${totalEstimado.toLocaleString("es-AR")}</span>
                   </div>
-                  <div class="flex items-center gap-1 font-bold text-sm bg-white/20 px-3 py-1.5 rounded-xl">
-                    <span>Ver Pedido</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                  </div>
-                </button>
-              </div>
+                </div>
+                <div class="flex items-center gap-1.5 font-bold text-xs bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl text-emerald-400 transition">
+                  <span>Ver Pedido</span>
+                  <span>›</span>
+                </div>
+              </button>
             </div>
           `
               : ""
           }
 
+          <!-- Drawer de Carrito y Checkout -->
           ${isCartOpen ? renderCartDrawer(user, cartItems, totalEstimado) : ""}
         </div>
       `;
 
-      container.querySelector("#btn-change-user").addEventListener("click", () => {
+      // Listeners del catálogo
+      container.querySelector("#btn-change-user")?.addEventListener("click", () => {
         store.logoutUser();
         update();
       });
 
+      container.querySelector("#btn-header-cart")?.addEventListener("click", () => {
+        if (totalItems > 0) {
+          isCartOpen = true;
+          renderCatalog();
+        }
+      });
+
       const searchInput = container.querySelector("#search-input");
-      searchInput.addEventListener("input", (e) => {
+      searchInput?.addEventListener("input", (e) => {
         searchQuery = e.target.value;
         renderCatalog();
-        const newSearch = container.querySelector("#search-input");
-        newSearch.focus();
-        newSearch.setSelectionRange(searchQuery.length, searchQuery.length);
+        const nextInput = container.querySelector("#search-input");
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.setSelectionRange(searchQuery.length, searchQuery.length);
+        }
+      });
+
+      container.querySelector("#btn-clear-search")?.addEventListener("click", () => {
+        searchQuery = "";
+        renderCatalog();
+      });
+
+      container.querySelector("#btn-reset-filter")?.addEventListener("click", () => {
+        searchQuery = "";
+        selectedCategory = "Todos";
+        renderCatalog();
       });
 
       container.querySelectorAll(".category-pill").forEach((btn) => {
@@ -745,13 +1069,10 @@
         });
       });
 
-      const btnOpenCart = container.querySelector("#btn-open-cart");
-      if (btnOpenCart) {
-        btnOpenCart.addEventListener("click", () => {
-          isCartOpen = true;
-          renderCatalog();
-        });
-      }
+      container.querySelector("#btn-open-cart")?.addEventListener("click", () => {
+        isCartOpen = true;
+        renderCatalog();
+      });
 
       if (isCartOpen) {
         attachCartDrawerListeners(user);
@@ -760,84 +1081,132 @@
 
     function renderCartDrawer(user, items, totalEstimado) {
       return `
-        <div class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-end justify-center">
-          <div class="bg-white w-full max-w-md rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl">
-            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 class="font-extrabold text-gray-900 text-lg flex items-center gap-2">
-                <span>🧺</span> Tu Pedido Fresco
-              </h2>
-              <button id="btn-close-cart" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center font-bold">
+        <div class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm flex items-end justify-center animate-fade-in">
+          <div class="bg-white w-full max-w-md rounded-t-3xl max-h-[92vh] flex flex-col shadow-2xl animate-slide-up border-t border-slate-200">
+            
+            <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mt-3"></div>
+
+            <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 class="font-black text-slate-900 text-lg tracking-tight">Tu Pedido</h2>
+                <p class="text-[11px] text-slate-400">Revisá cantidades antes de confirmar</p>
+              </div>
+              <button 
+                id="btn-close-cart" 
+                class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-xs tap-feedback"
+              >
                 ✕
               </button>
             </div>
 
-            <div class="p-4 overflow-y-auto space-y-3 flex-1">
-              ${items
-                .map(
-                  (item) => `
-                <div class="flex items-center justify-between text-sm py-2 border-b border-gray-50">
-                  <div class="flex items-center gap-2.5">
-                    <span class="text-2xl">${item.icono}</span>
-                    <div>
-                      <h4 class="font-bold text-gray-800">${item.nombre}</h4>
-                      <p class="text-xs text-gray-400">
-                        ${item.cantidad} ${item.unidad_medida === "KG" ? "kg" : "u."} × $${item.precio_unitario}
+            <div class="p-5 overflow-y-auto space-y-3 flex-1">
+              ${
+                items.length === 0
+                  ? `<p class="text-xs text-slate-400 text-center py-8">Tu carrito está vacío</p>`
+                  : items
+                      .map(
+                        (item) => `
+                  <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200/60 flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                      <span class="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.2 rounded bg-slate-200/80 text-slate-600">
+                        ${item.categoria || "Producto"}
+                      </span>
+                      <h4 class="font-extrabold text-slate-900 text-sm truncate mt-0.5">${item.nombre}</h4>
+                      <p class="text-xs text-slate-400 mt-0.5">
+                        $${item.precio_unitario.toLocaleString("es-AR")} / ${item.unidad_medida === "KG" ? "kg" : "u."}
                       </p>
                     </div>
+
+                    <div class="flex items-center gap-1.5">
+                      <div class="flex items-center bg-white border border-slate-200 rounded-xl p-0.5">
+                        <button 
+                          data-drawer-dec="${item.producto_id}" 
+                          class="w-7 h-7 flex items-center justify-center text-slate-700 hover:bg-slate-100 rounded-lg font-bold text-xs"
+                        >
+                          −
+                        </button>
+                        <span class="px-2 text-xs font-black min-w-[36px] text-center text-slate-900">
+                          ${item.cantidad}
+                        </span>
+                        <button 
+                          data-drawer-inc="${item.producto_id}" 
+                          class="w-7 h-7 flex items-center justify-center text-slate-700 hover:bg-slate-100 rounded-lg font-bold text-xs"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <div class="text-right min-w-[65px]">
+                        <span class="font-black text-sm text-slate-900 block">
+                          $${item.subtotal_estimado.toLocaleString("es-AR")}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="font-extrabold text-gray-900">
-                    $${item.subtotal_estimado.toLocaleString("es-AR")}
-                  </div>
-                </div>
-              `
-                )
-                .join("")}
+                `
+                      )
+                      .join("")
+              }
 
               <div class="pt-3">
-                <label class="block text-xs font-bold uppercase text-gray-600 mb-2">Forma de Entrega</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  Método de Entrega
+                </label>
                 <div class="grid grid-cols-2 gap-2">
-                  <label class="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50">
-                    <input type="radio" name="delivery-mode" value="RETIRO" checked class="text-emerald-600" />
-                    <span class="text-xs font-bold text-gray-800">Retiro en Local</span>
+                  <label class="flex flex-col p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50 has-[:checked]:border-slate-900 has-[:checked]:bg-slate-900 has-[:checked]:text-white transition">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-black">Retiro en Local</span>
+                      <input type="radio" name="delivery-mode" value="RETIRO" checked class="accent-emerald-500" />
+                    </div>
+                    <span class="text-[10px] opacity-70 mt-1">Listo en 20-30 min · Sin costo</span>
                   </label>
-                  <label class="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50">
-                    <input type="radio" name="delivery-mode" value="DELIVERY" class="text-emerald-600" />
-                    <span class="text-xs font-bold text-gray-800">Envío a Domicilio</span>
+
+                  <label class="flex flex-col p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50 has-[:checked]:border-slate-900 has-[:checked]:bg-slate-900 has-[:checked]:text-white transition">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-black">Envío a Domicilio</span>
+                      <input type="radio" name="delivery-mode" value="DELIVERY" class="accent-emerald-500" />
+                    </div>
+                    <span class="text-[10px] opacity-70 mt-1">Cadete a tu puerta</span>
                   </label>
                 </div>
               </div>
 
-              <div id="delivery-address-container" class="hidden pt-2">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Dirección de entrega</label>
+              <div id="delivery-address-container" class="hidden pt-1">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Dirección exacta de entrega
+                </label>
                 <input 
                   type="text" 
                   id="delivery-address-input" 
                   value="${user.direccion || ""}" 
-                  placeholder="Calle, número, piso/depto"
-                  class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Calle, número, piso y departamento"
+                  class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:bg-white focus:ring-2 focus:ring-slate-900 transition"
                 />
               </div>
 
-              <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 mt-2 flex items-start gap-2">
-                <span class="text-base">⚖️</span>
-                <p>
-                  <strong>Nota sobre el pesaje:</strong> Este es un precio estimado. En la verdulería pesarán tus productos y te mandaremos el total exacto.
+              <div class="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3 text-xs text-amber-900 mt-2">
+                <p class="font-bold text-[11px] uppercase tracking-wider text-amber-800 mb-0.5">Pesaje en Balanza</p>
+                <p class="text-[11px] leading-relaxed opacity-90">
+                  El total indicado es una estimación. En el mostrador se pesan las unidades reales y te notificaremos el comprobante con los gramos exactos y el importe final.
                 </p>
               </div>
             </div>
 
-            <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-3xl space-y-3">
+            <div class="p-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl space-y-3">
               <div class="flex items-center justify-between">
-                <span class="font-bold text-gray-600">Total Estimado:</span>
-                <span class="font-extrabold text-2xl text-emerald-700">$${totalEstimado.toLocaleString("es-AR")}</span>
+                <div>
+                  <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Total Estimado</span>
+                  <span class="text-xs text-slate-500">Sujeto a balanza</span>
+                </div>
+                <span class="font-black text-2xl text-slate-900">$${totalEstimado.toLocaleString("es-AR")}</span>
               </div>
 
               <button 
                 id="btn-confirm-order"
-                class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-700/20 text-base transition flex items-center justify-center gap-2"
+                class="w-full bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-black py-4 rounded-xl shadow-lg shadow-slate-900/10 text-sm transition tap-feedback flex items-center justify-center gap-2"
               >
                 <span>Confirmar Pedido</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span class="text-xs font-normal">›</span>
               </button>
             </div>
           </div>
@@ -846,150 +1215,216 @@
     }
 
     function attachCartDrawerListeners(user) {
-      const btnClose = container.querySelector("#btn-close-cart");
-      if (btnClose) {
-        btnClose.addEventListener("click", () => {
-          isCartOpen = false;
-          renderCatalog();
-        });
-      }
+      container.querySelector("#btn-close-cart")?.addEventListener("click", () => {
+        isCartOpen = false;
+        renderCatalog();
+      });
 
       const radios = container.querySelectorAll('input[name="delivery-mode"]');
       const addressContainer = container.querySelector("#delivery-address-container");
       radios.forEach((radio) => {
         radio.addEventListener("change", (e) => {
           if (e.target.value === "DELIVERY") {
-            addressContainer.classList.remove("hidden");
+            addressContainer?.classList.remove("hidden");
           } else {
-            addressContainer.classList.add("hidden");
+            addressContainer?.classList.add("hidden");
           }
         });
       });
 
-      const btnConfirm = container.querySelector("#btn-confirm-order");
-      if (btnConfirm) {
-        btnConfirm.addEventListener("click", () => {
-          const mode = container.querySelector('input[name="delivery-mode"]:checked').value;
-          const addressInput = container.querySelector("#delivery-address-input");
-          const address = mode === "DELIVERY" ? addressInput.value.trim() : "Retiro en local";
-
-          if (mode === "DELIVERY" && !address) {
-            alert("Por favor ingresá tu dirección para el envío.");
-            addressInput.focus();
-            return;
-          }
-
-          const newOrder = store.createOrder({
-            cliente: user,
-            tipo_entrega: mode,
-            direccion_entrega: address
-          });
-
-          isCartOpen = false;
-          activeOrder = newOrder;
-          update();
+      container.querySelectorAll("[data-drawer-inc]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.drawerInc;
+          const product = store.getProducts().find((p) => p.id === id);
+          const step = product?.paso || 0.5;
+          store.addToCart(id, step);
         });
-      }
+      });
+
+      container.querySelectorAll("[data-drawer-dec]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.drawerDec;
+          const product = store.getProducts().find((p) => p.id === id);
+          const step = product?.paso || 0.5;
+          store.addToCart(id, -step);
+        });
+      });
+
+      const btnConfirm = container.querySelector("#btn-confirm-order");
+      btnConfirm?.addEventListener("click", () => {
+        const mode = container.querySelector('input[name="delivery-mode"]:checked')?.value || "RETIRO";
+        const addressInput = container.querySelector("#delivery-address-input");
+        const address = mode === "DELIVERY" ? addressInput?.value.trim() : "Retiro en local";
+
+        if (mode === "DELIVERY" && !address) {
+          alert("Por favor ingresá tu dirección para coordinar el envío.");
+          addressInput?.focus();
+          return;
+        }
+
+        const newOrder = store.createOrder({
+          cliente: user,
+          tipo_entrega: mode,
+          direccion_entrega: address
+        });
+
+        isCartOpen = false;
+        activeOrder = newOrder;
+        update();
+      });
     }
 
     function renderOrderTracking() {
       const currentOrder = store.getOrders().find((o) => o.id === activeOrder.id) || activeOrder;
+      const isWeighing = currentOrder.estado === "EN_PREPARACION";
       const isReady = currentOrder.estado === "LISTO" || currentOrder.estado === "ENTREGADO";
+      const isDelivered = currentOrder.estado === "ENTREGADO";
+
+      let stepNumber = 1;
+      let stepTitle = "Pedido Recibido";
+      let stepDesc = "El pedido ingresó en la cola del mostrador.";
+
+      if (isWeighing) {
+        stepNumber = 2;
+        stepTitle = "En Balanza";
+        stepDesc = "El operario está pesando cada uno de tus productos.";
+      } else if (isReady) {
+        stepNumber = 3;
+        stepTitle = "Listo para Entrega";
+        stepDesc = currentOrder.tipo_entrega === "DELIVERY"
+          ? "El pedido fue pesado y el cadete está listo para despachar."
+          : "El pedido fue pesado y podés pasar a retirarlo por el local.";
+      }
+      if (isDelivered) {
+        stepNumber = 4;
+        stepTitle = "Entregado y Cobrado";
+        stepDesc = "Pedido finalizado exitosamente. ¡Muchas gracias!";
+      }
 
       container.innerHTML = `
-        <div class="max-w-md mx-auto p-4 pt-8">
-          <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 text-center">
+        <div class="max-w-md mx-auto p-4 pt-6 pb-24">
+          <div class="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/50 border border-slate-200/80 text-left">
             
-            <div class="w-20 h-20 rounded-3xl mx-auto flex items-center justify-center text-4xl mb-4 shadow-sm ${
-              isReady ? "bg-emerald-100 text-emerald-600 animate-bounce" : "bg-amber-100 text-amber-600"
-            }">
-              ${isReady ? "🎉" : "⚖️"}
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Comprobante Digital</span>
+                <h2 class="text-xl font-black text-slate-900 tracking-tight">Pedido #${currentOrder.id}</h2>
+              </div>
+              <span class="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full ${
+                isReady
+                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                  : isWeighing
+                  ? "bg-blue-100 text-blue-800 border border-blue-300"
+                  : "bg-amber-100 text-amber-800 border border-amber-300"
+              }">
+                ${currentOrder.estado}
+              </span>
             </div>
 
-            <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full ${
-              isReady ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-            }">
-              Pedido #${currentOrder.id} • ${currentOrder.estado}
-            </span>
-
-            <h2 class="text-2xl font-black text-gray-900 mt-3">
-              ${isReady ? "¡Tu pedido está listo!" : "Estamos pesando tu pedido"}
-            </h2>
-
-            <p class="text-sm text-gray-500 mt-2">
-              ${
-                isReady
-                  ? "Ya podés pasar a retirarlo o esperar al cadete."
-                  : "Te mandaremos un WhatsApp apenas esté listo."
-              }
-            </p>
-
-            <div class="bg-gray-50 rounded-2xl p-4 my-6 text-left border border-gray-100 space-y-2">
-              <div class="flex justify-between text-xs text-gray-500">
-                <span>Tipo de Entrega:</span>
-                <strong class="text-gray-800">${currentOrder.tipo_entrega === "DELIVERY" ? "Envío a Domicilio" : "Retiro en Local"}</strong>
+            <div class="my-5">
+              <div class="grid grid-cols-3 gap-1.5 text-center">
+                <div class="h-1.5 rounded-full ${stepNumber >= 1 ? 'bg-slate-900' : 'bg-slate-200'}"></div>
+                <div class="h-1.5 rounded-full ${stepNumber >= 2 ? (isReady ? 'bg-slate-900' : 'bg-blue-600') : 'bg-slate-200'}"></div>
+                <div class="h-1.5 rounded-full ${stepNumber >= 3 ? 'bg-emerald-600' : 'bg-slate-200'}"></div>
               </div>
-              
+              <div class="mt-3">
+                <h3 class="text-sm font-extrabold text-slate-900">${stepTitle}</h3>
+                <p class="text-xs text-slate-500 mt-0.5">${stepDesc}</p>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-2">
+              <div class="flex justify-between text-xs text-slate-500">
+                <span>Entrega:</span>
+                <strong class="text-slate-800 font-semibold">
+                  ${currentOrder.tipo_entrega === "DELIVERY" ? "Envío a Domicilio" : "Retiro en Mostrador"}
+                </strong>
+              </div>
+
+              ${
+                currentOrder.tipo_entrega === "DELIVERY"
+                  ? `
+                <div class="flex justify-between text-xs text-slate-500">
+                  <span>Destino:</span>
+                  <span class="text-slate-800 font-medium text-right">${currentOrder.direccion_entrega}</span>
+                </div>
+              `
+                  : ""
+              }
+
               ${
                 isReady && currentOrder.total_real !== null
                   ? `
-                  <div class="pt-2 border-t border-gray-200">
-                    <div class="flex justify-between items-center text-sm">
-                      <span class="text-gray-500">Total Estimado original:</span>
-                      <span class="line-through text-gray-400">$${currentOrder.total_estimado.toLocaleString("es-AR")}</span>
-                    </div>
-                    <div class="flex justify-between items-center mt-1">
-                      <span class="font-extrabold text-gray-800 text-base">Total Final Pesado:</span>
-                      <span class="font-black text-2xl text-emerald-700">$${currentOrder.total_real.toLocaleString("es-AR")}</span>
-                    </div>
+                <div class="pt-2.5 border-t border-slate-200">
+                  <div class="flex justify-between items-center text-xs text-slate-400">
+                    <span>Estimado inicial:</span>
+                    <span class="line-through">$${currentOrder.total_estimado.toLocaleString("es-AR")}</span>
                   </div>
-                `
+                  <div class="flex justify-between items-center mt-1">
+                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Total Final en Balanza:</span>
+                    <span class="font-black text-2xl text-emerald-700">$${currentOrder.total_real.toLocaleString("es-AR")}</span>
+                  </div>
+                </div>
+              `
                   : `
-                  <div class="flex justify-between items-center text-sm pt-2 border-t border-gray-200">
-                    <span class="text-gray-600">Total Estimado:</span>
-                    <span class="font-bold text-gray-800 text-lg">$${currentOrder.total_estimado.toLocaleString("es-AR")}</span>
-                  </div>
-                `
+                <div class="pt-2.5 border-t border-slate-200 flex justify-between items-center">
+                  <span class="text-xs font-semibold text-slate-600">Total Estimado:</span>
+                  <span class="font-black text-xl text-slate-900">$${currentOrder.total_estimado.toLocaleString("es-AR")}</span>
+                </div>
+              `
               }
             </div>
 
-            <div class="text-left mb-6">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Detalle de productos:</h4>
-              <div class="space-y-1.5 text-xs text-gray-600 max-h-40 overflow-y-auto pr-1">
+            <div class="mt-5">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Detalle de Productos</h4>
+              <div class="divide-y divide-slate-100 text-xs">
                 ${currentOrder.items
                   .map((item) => {
                     const pesoTexto = item.peso_real !== null
                       ? `${item.peso_real} ${item.unidad_medida === "KG" ? "kg" : "u."} (pesado)`
                       : `${item.cantidad_solicitada} ${item.unidad_medida === "KG" ? "kg" : "u."} (aprox)`;
                     return `
-                      <div class="flex justify-between py-1 border-b border-gray-100 ${item.sin_stock ? "line-through text-red-400" : ""}">
-                        <span>${item.icono} ${item.nombre} <small class="text-gray-400">(${pesoTexto})</small></span>
-                        <strong class="text-gray-800">$${(item.subtotal || 0).toLocaleString("es-AR")}</strong>
+                    <div class="py-2 flex items-center justify-between gap-2 ${item.sin_stock ? "opacity-40 line-through" : ""}">
+                      <div>
+                        <span class="font-bold text-slate-800">${item.nombre}</span>
+                        <span class="text-[11px] text-slate-400 block">${pesoTexto}</span>
                       </div>
-                    `;
+                      <strong class="text-slate-900 font-bold">
+                        $${(item.subtotal || 0).toLocaleString("es-AR")}
+                      </strong>
+                    </div>
+                  `;
                   })
                   .join("")}
               </div>
             </div>
 
-            <button 
-              id="btn-new-order" 
-              class="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition"
-            >
-              Hacer un nuevo pedido
-            </button>
+            <div class="mt-6 pt-4 border-t border-slate-100 space-y-2">
+              <button 
+                id="btn-new-order" 
+                class="w-full py-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition tap-feedback"
+              >
+                Realizar Otro Pedido
+              </button>
+            </div>
           </div>
         </div>
       `;
 
-      container.querySelector("#btn-new-order").addEventListener("click", () => {
+      container.querySelector("#btn-new-order")?.addEventListener("click", () => {
         activeOrder = null;
         update();
       });
     }
 
     const unsubscribe = store.subscribe((event) => {
-      if (event === "cart_changed" || event === "products_changed" || event === "orders_changed" || event === "storage_sync") {
+      if (
+        event === "cart_changed" ||
+        event === "products_changed" ||
+        event === "orders_changed" ||
+        event === "storage_sync" ||
+        event === "user_changed"
+      ) {
         update();
       }
     });
@@ -998,7 +1433,9 @@
     return () => unsubscribe();
   }
 
-  // --- 4. VISTA OPERARIO ---
+  // ==========================================
+  // 4. VISTA OPERARIO (Mostrador & Balanza)
+  // ==========================================
   function renderOperatorView(container) {
     let activeTab = "PENDIENTE";
 
@@ -1014,41 +1451,35 @@
       };
 
       container.innerHTML = `
-        <div class="max-w-2xl mx-auto pb-24">
-          <header class="sticky top-11 z-20 bg-slate-900 text-white px-4 py-3 shadow-md">
+        <div class="max-w-xl mx-auto pb-28">
+          <header class="sticky top-0 z-20 bg-slate-950 text-white px-4 py-3 border-b border-slate-800 shadow-sm">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <span class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-lg">
-                  ⚖️
-                </span>
-                <div>
-                  <h1 class="font-extrabold text-base leading-tight">Mostrador & Pesaje</h1>
-                  <p class="text-[11px] text-slate-400 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Recepción en vivo activa
-                  </p>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h1 class="font-black text-sm tracking-widest uppercase">Mostrador & Balanza</h1>
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 </div>
+                <p class="text-[11px] text-slate-400">Recepción y control de pedidos en tiempo real</p>
               </div>
 
               <button 
                 id="btn-test-sound" 
-                title="Probar sonido de pedido" 
-                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition"
+                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-xs font-semibold border border-slate-700 transition tap-feedback"
               >
-                <span>🔔</span> Probar timbre
+                Timbre de prueba
               </button>
             </div>
 
-            <div class="grid grid-cols-4 gap-1.5 mt-3 bg-slate-800/80 p-1 rounded-xl text-center">
+            <div class="grid grid-cols-4 gap-1 mt-3 bg-slate-900 p-1 rounded-xl text-center border border-slate-800">
               <button 
                 data-tab="PENDIENTE" 
                 class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 ${
-                  activeTab === "PENDIENTE" ? "bg-amber-500 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+                  activeTab === "PENDIENTE" ? "bg-amber-400 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
                 }"
               >
                 <span>Entrantes</span>
                 <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
-                  activeTab === "PENDIENTE" ? "bg-amber-700/30 text-slate-950" : "bg-slate-700 text-slate-300"
+                  activeTab === "PENDIENTE" ? "bg-amber-600/30 text-slate-950" : "bg-slate-800 text-slate-400"
                 }">${counts.PENDIENTE}</span>
               </button>
 
@@ -1058,9 +1489,9 @@
                   activeTab === "EN_PREPARACION" ? "bg-blue-500 text-white shadow-sm" : "text-slate-400 hover:text-white"
                 }"
               >
-                <span>Pesando</span>
+                <span>En Balanza</span>
                 <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
-                  activeTab === "EN_PREPARACION" ? "bg-blue-700 text-white" : "bg-slate-700 text-slate-300"
+                  activeTab === "EN_PREPARACION" ? "bg-blue-700 text-white" : "bg-slate-800 text-slate-400"
                 }">${counts.EN_PREPARACION}</span>
               </button>
 
@@ -1072,18 +1503,18 @@
               >
                 <span>Listos</span>
                 <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
-                  activeTab === "LISTO" ? "bg-emerald-700/30 text-slate-950" : "bg-slate-700 text-slate-300"
+                  activeTab === "LISTO" ? "bg-emerald-700/30 text-slate-950" : "bg-slate-800 text-slate-400"
                 }">${counts.LISTO}</span>
               </button>
 
               <button 
                 data-tab="ENTREGADO" 
                 class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 ${
-                  activeTab === "ENTREGADO" ? "bg-slate-600 text-white" : "text-slate-400 hover:text-white"
+                  activeTab === "ENTREGADO" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
                 }"
               >
                 <span>Cobrados</span>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300">${counts.ENTREGADO}</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-400">${counts.ENTREGADO}</span>
               </button>
             </div>
           </header>
@@ -1094,7 +1525,7 @@
         </div>
       `;
 
-      container.querySelector("#btn-test-sound").addEventListener("click", () => {
+      container.querySelector("#btn-test-sound")?.addEventListener("click", () => {
         store.playAudioAlert();
       });
 
@@ -1113,10 +1544,10 @@
 
       if (tabOrders.length === 0) {
         return `
-          <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
-            <span class="text-4xl block mb-2">🌿</span>
-            <h3 class="font-bold text-gray-700 text-base">No hay pedidos en esta columna</h3>
-            <p class="text-xs text-gray-400 mt-1">Los nuevos pedidos que hagan los clientes aparecerán acá solos.</p>
+          <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 p-6">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin órdenes</span>
+            <h3 class="font-bold text-slate-700 text-sm">No hay pedidos en esta columna</h3>
+            <p class="text-xs text-slate-400 mt-1">Los nuevos pedidos ingresarán automáticamente aquí en tiempo real.</p>
           </div>
         `;
       }
@@ -1127,42 +1558,43 @@
             ${tabOrders
               .map((order) => {
                 const itemsList = order.items
-                  .map((i) => `${i.icono} ${i.cantidad_solicitada}${i.unidad_medida === "KG" ? "kg" : "u"} ${i.nombre}`)
-                  .join(", ");
+                  .map((i) => `${i.cantidad_solicitada}${i.unidad_medida === "KG" ? "kg" : "u"} ${i.nombre}`)
+                  .join(" · ");
 
                 return `
-                <div class="bg-white rounded-2xl p-4 border-2 border-amber-200 shadow-sm hover:shadow-md transition">
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm transition">
                   <div class="flex items-start justify-between">
                     <div>
                       <div class="flex items-center gap-2">
-                        <span class="text-lg font-black text-slate-900">#${order.id}</span>
-                        <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                        <span class="text-base font-black text-slate-900">#${order.id}</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
                           order.tipo_entrega === "DELIVERY"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-emerald-100 text-emerald-800"
+                            ? "bg-slate-900 text-white"
+                            : "bg-slate-100 text-slate-700"
                         }">
-                          ${order.tipo_entrega === "DELIVERY" ? "🛵 Delivery" : "🏪 Retiro"}
+                          ${order.tipo_entrega === "DELIVERY" ? "Envío a Domicilio" : "Retiro en Local"}
                         </span>
                       </div>
-                      <h3 class="font-bold text-gray-900 text-base mt-1">${order.cliente.nombre}</h3>
-                      <p class="text-xs text-gray-400">${order.cliente.telefono} • ${timeAgo(order.fecha)}</p>
+                      <h3 class="font-extrabold text-slate-900 text-sm mt-1.5">${order.cliente.nombre}</h3>
+                      <p class="text-xs text-slate-400">${order.cliente.telefono} · ${timeAgo(order.fecha)}</p>
                     </div>
                     <div class="text-right">
-                      <span class="text-xs text-gray-400 block font-medium">Estimado</span>
-                      <span class="font-black text-lg text-slate-800">$${order.total_estimado.toLocaleString("es-AR")}</span>
+                      <span class="text-[10px] text-slate-400 block font-bold uppercase">Estimado</span>
+                      <span class="font-black text-base text-slate-900">$${order.total_estimado.toLocaleString("es-AR")}</span>
                     </div>
                   </div>
 
-                  <div class="mt-3 p-2.5 bg-gray-50 rounded-xl text-xs text-gray-600 line-clamp-2">
-                    <strong>Productos:</strong> ${itemsList}
+                  <div class="mt-3 p-3 bg-slate-50 rounded-xl text-xs text-slate-600 border border-slate-100">
+                    <span class="font-bold text-slate-700 block mb-0.5 text-[11px] uppercase tracking-wider">Productos solicitados:</span>
+                    <p class="leading-relaxed">${itemsList}</p>
                   </div>
 
                   <button 
                     data-start-id="${order.id}" 
-                    class="btn-start-prep w-full mt-3 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition"
+                    class="btn-start-prep w-full mt-3 bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-sm transition tap-feedback flex items-center justify-center gap-2"
                   >
                     <span>Tomar y Pesar en Balanza</span>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    <span>›</span>
                   </button>
                 </div>
               `;
@@ -1174,7 +1606,7 @@
 
       if (activeTab === "EN_PREPARACION") {
         return `
-          <div class="space-y-6">
+          <div class="space-y-4">
             ${tabOrders
               .map((order) => {
                 const currentTotal = order.items
@@ -1182,22 +1614,22 @@
                   .reduce((sum, i) => sum + (i.peso_real !== null ? i.subtotal : i.cantidad_solicitada * i.precio_unitario), 0);
 
                 return `
-                <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-blue-200 shadow-md">
-                  <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-blue-200/80 shadow-md">
+                  <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
-                      <span class="text-xs font-black text-blue-600 tracking-wider uppercase">En Balanza</span>
-                      <h2 class="text-xl font-black text-gray-900">Pedido #${order.id} • ${order.cliente.nombre}</h2>
-                      <p class="text-xs text-gray-400">
-                        ${order.tipo_entrega === "DELIVERY" ? `🛵 ${order.direccion_entrega}` : "🏪 Retira en mostrador"}
+                      <span class="text-[10px] font-black text-blue-600 tracking-widest uppercase">Pesaje Activo</span>
+                      <h2 class="text-lg font-black text-slate-900">Pedido #${order.id} · ${order.cliente.nombre}</h2>
+                      <p class="text-xs text-slate-400">
+                        ${order.tipo_entrega === "DELIVERY" ? order.direccion_entrega : "Retira en mostrador"}
                       </p>
                     </div>
                     <div class="text-right">
-                      <span class="text-[11px] text-gray-400 uppercase font-bold block">Total Actual</span>
-                      <span class="text-2xl font-black text-emerald-700">$${Math.round(currentTotal).toLocaleString("es-AR")}</span>
+                      <span class="text-[10px] text-slate-400 uppercase font-bold block">Total en Balanza</span>
+                      <span class="text-xl font-black text-emerald-700">$${Math.round(currentTotal).toLocaleString("es-AR")}</span>
                     </div>
                   </div>
 
-                  <div class="mt-4 space-y-3">
+                  <div class="mt-4 space-y-2.5">
                     ${order.items
                       .map((item, idx) => {
                         const isWeight = item.unidad_medida === "KG";
@@ -1205,32 +1637,34 @@
                         const subtotalItem = item.peso_real !== null ? item.subtotal : Math.round(item.cantidad_solicitada * item.precio_unitario);
 
                         return `
-                        <div class="p-3.5 rounded-2xl border transition ${
+                        <div class="p-3 rounded-2xl border transition ${
                           item.sin_stock
-                            ? "bg-red-50 border-red-200 opacity-60"
+                            ? "bg-rose-50 border-rose-200 opacity-60"
                             : item.peso_real !== null
-                            ? "bg-emerald-50/60 border-emerald-300"
-                            : "bg-gray-50 border-gray-200"
+                            ? "bg-emerald-50/50 border-emerald-300"
+                            : "bg-slate-50 border-slate-200"
                         }">
                           <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-center gap-2.5">
-                              <span class="text-3xl">${item.icono}</span>
-                              <div>
-                                <h4 class="font-extrabold text-gray-900 text-sm ${item.sin_stock ? "line-through text-red-500" : ""}">${item.nombre}</h4>
-                                <p class="text-xs text-gray-500">
-                                  Pidió: <strong class="text-gray-800">${item.cantidad_solicitada} ${isWeight ? "kg" : "unid."}</strong> 
-                                  • ($${item.precio_unitario}/${isWeight ? "kg" : "u"})
-                                </p>
-                              </div>
+                            <div class="flex-1 min-w-0">
+                              <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-white text-slate-600 border border-slate-200">
+                                ${item.categoria || (isWeight ? "Por Kilo" : "Por Unidad")}
+                              </span>
+                              <h4 class="font-extrabold text-slate-900 text-sm mt-1 truncate ${item.sin_stock ? "line-through text-rose-600" : ""}">
+                                ${item.nombre}
+                              </h4>
+                              <p class="text-xs text-slate-500 mt-0.5">
+                                Solicitó: <strong class="text-slate-800">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
+                                · ($${item.precio_unitario}/${isWeight ? "kg" : "u"})
+                              </p>
                             </div>
 
                             <button 
                               data-toggle-stock-order="${order.id}"
                               data-item-index="${idx}"
-                              class="btn-toggle-stock text-[11px] font-bold px-2 py-1 rounded-lg border transition ${
+                              class="btn-toggle-stock text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition tap-feedback ${
                                 item.sin_stock
-                                  ? "bg-red-600 text-white border-red-600"
-                                  : "bg-white text-gray-500 border-gray-300 hover:text-red-600"
+                                  ? "bg-rose-600 text-white border-rose-600"
+                                  : "bg-white text-slate-600 border-slate-300 hover:text-rose-600"
                               }"
                             >
                               ${item.sin_stock ? "Anulado" : "Sin Stock"}
@@ -1240,33 +1674,34 @@
                           ${
                             !item.sin_stock
                               ? `
-                            <div class="mt-3 pt-2.5 border-t border-gray-200/60 flex items-center justify-between gap-3">
-                              <div class="flex items-center gap-1.5 flex-1">
-                                <label class="text-xs font-bold text-gray-600 shrink-0">
+                            <div class="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-3">
+                              <div class="flex items-center gap-2 flex-1">
+                                <label class="text-xs font-bold text-slate-700 shrink-0">
                                   ${isWeight ? "Peso Balanza:" : "Cantidad Real:"}
                                 </label>
-                                <div class="relative flex-1 max-w-[140px]">
+                                <div class="relative flex-1 max-w-[150px]">
                                   <input 
                                     type="number" 
+                                    inputmode="decimal"
                                     step="${isWeight ? "0.01" : "1"}"
                                     min="0"
                                     data-order-id="${order.id}"
                                     data-item-idx="${idx}"
                                     value="${currentVal}"
                                     placeholder="${item.cantidad_solicitada}"
-                                    class="input-weight w-full text-center py-1.5 px-2 bg-white border-2 rounded-xl font-black text-base text-gray-900 outline-none focus:border-blue-500 ${
-                                      item.peso_real !== null ? "border-emerald-500 text-emerald-800 bg-emerald-50/30" : "border-gray-300"
+                                    class="input-weight w-full text-center py-2 px-2 bg-white border-2 rounded-xl font-black text-sm text-slate-900 outline-none focus:border-blue-600 ${
+                                      item.peso_real !== null ? "border-emerald-500 text-emerald-800 bg-emerald-50/20" : "border-slate-300"
                                     }"
                                   />
-                                  <span class="absolute right-2 top-2 text-xs font-bold text-gray-400">
+                                  <span class="absolute right-2.5 top-2.5 text-xs font-bold text-slate-400 pointer-events-none">
                                     ${isWeight ? "kg" : "u."}
                                   </span>
                                 </div>
                               </div>
 
                               <div class="text-right shrink-0">
-                                <span class="text-[10px] text-gray-400 block">Subtotal</span>
-                                <span class="font-black text-sm text-gray-800">$${subtotalItem.toLocaleString("es-AR")}</span>
+                                <span class="text-[9px] text-slate-400 block font-bold uppercase">Subtotal</span>
+                                <span class="font-black text-sm text-slate-900">$${subtotalItem.toLocaleString("es-AR")}</span>
                               </div>
                             </div>
                           `
@@ -1278,13 +1713,13 @@
                       .join("")}
                   </div>
 
-                  <div class="mt-5 pt-3 border-t border-gray-100 flex gap-2">
+                  <div class="mt-4 pt-3 border-t border-slate-100">
                     <button 
                       data-finish-order-id="${order.id}"
-                      class="btn-finish-weighing flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-700/20 text-sm flex items-center justify-center gap-2 transition"
+                      class="btn-finish-weighing w-full bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-black py-3.5 px-4 rounded-xl shadow-lg shadow-slate-900/10 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback"
                     >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                      <span>Finalizar Pesaje y Avisar al Cliente</span>
+                      <span>Finalizar Pesaje y Notificar al Cliente</span>
+                      <span>›</span>
                     </button>
                   </div>
                 </div>
@@ -1304,22 +1739,22 @@
                 const waLink = `https://wa.me/549${order.cliente.telefono}?text=${waMessage}`;
 
                 return `
-                <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-emerald-200 shadow-sm">
-                  <div class="flex items-start justify-between">
+                <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                  <div class="flex items-start justify-between pb-3 border-b border-slate-100">
                     <div>
-                      <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                        Pesaje Completo ✓
+                      <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Pesaje Completo
                       </span>
-                      <h3 class="text-lg font-black text-gray-900 mt-1">#${order.id} - ${order.cliente.nombre}</h3>
-                      <p class="text-xs text-gray-500">${order.cliente.telefono} • ${order.tipo_entrega}</p>
+                      <h3 class="text-base font-black text-slate-900 mt-1">#${order.id} · ${order.cliente.nombre}</h3>
+                      <p class="text-xs text-slate-500">${order.cliente.telefono} · ${order.tipo_entrega}</p>
                     </div>
                     <div class="text-right">
-                      <span class="text-xs text-gray-400 block font-medium">Total Exacto</span>
+                      <span class="text-[10px] text-slate-400 block font-bold uppercase">Total Exacto</span>
                       <span class="font-black text-2xl text-emerald-700">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
                     </div>
                   </div>
 
-                  <div class="mt-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl text-xs text-gray-700 font-mono whitespace-pre-line">
+                  <div class="mt-3 p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs text-slate-700 font-mono whitespace-pre-line leading-relaxed">
                     ${generateWhatsAppSummary(order)}
                   </div>
 
@@ -1327,15 +1762,16 @@
                     <a 
                       href="${waLink}" 
                       target="_blank"
-                      class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition text-center"
+                      class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition text-center tap-feedback"
                     >
-                      <span>📲</span> Abrir WhatsApp
+                      <span>Enviar WhatsApp</span>
+                      <span>›</span>
                     </a>
                     <button 
                       data-deliver-order-id="${order.id}"
-                      class="btn-deliver-order bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition"
+                      class="btn-deliver-order bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-bold py-3 px-3 rounded-xl text-xs transition tap-feedback"
                     >
-                      Marcar Entregado / Cobrado
+                      Marcar Cobrado
                     </button>
                   </div>
                 </div>
@@ -1348,18 +1784,19 @@
 
       if (activeTab === "ENTREGADO") {
         return `
-          <div class="space-y-3">
+          <div class="space-y-2.5">
             ${tabOrders
               .map(
                 (order) => `
-              <div class="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm opacity-80 flex items-center justify-between">
+              <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
-                  <h4 class="font-bold text-gray-900 text-sm">#${order.id} - ${order.cliente.nombre}</h4>
-                  <p class="text-xs text-gray-400">${order.tipo_entrega} • ${timeAgo(order.fecha)}</p>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">#${order.id}</span>
+                  <h4 class="font-extrabold text-slate-900 text-sm">${order.cliente.nombre}</h4>
+                  <p class="text-xs text-slate-400">${order.tipo_entrega} · ${timeAgo(order.fecha)}</p>
                 </div>
                 <div class="text-right">
-                  <span class="font-black text-base text-gray-800">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
-                  <span class="block text-[10px] text-emerald-600 font-bold uppercase">Cobrado</span>
+                  <span class="font-black text-base text-slate-900">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
+                  <span class="block text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Cobrado</span>
                 </div>
               </div>
             `
@@ -1373,23 +1810,23 @@
     function generateWhatsAppSummary(order) {
       const itemsLines = order.items
         .filter((i) => !i.sin_stock)
-        .map((i) => `• ${i.nombre} (${i.peso_real} ${i.unidad_medida === "KG" ? "kg" : "u"}): $${i.subtotal}`)
+        .map((i) => `* ${i.nombre} (${i.peso_real} ${i.unidad_medida === "KG" ? "kg" : "u"}): $${i.subtotal}`)
         .join("\n");
 
       const total = order.total_real || order.total_estimado;
 
-      return `¡Hola ${order.cliente.nombre}! 🍎 Tu pedido #${order.id} ya está listo y pesado:
+      return `Hola ${order.cliente.nombre}. Tu pedido #${order.id} en Mi Huerta ya fue pesado y está listo:
 
 ${itemsLines}
 
-👉 Total exacto a abonar: $${total.toLocaleString("es-AR")}
-${order.tipo_entrega === "DELIVERY" ? "🛵 El cadete ya está en camino a tu dirección." : "🏪 Te esperamos por el local para retirar."}
+Total exacto en balanza: $${total.toLocaleString("es-AR")}
+${order.tipo_entrega === "DELIVERY" ? "El cadete está coordinado con tu dirección de entrega." : "Ya podés pasar a retirarlo por el mostrador."}
 
 Alias para transferir: mihuerta.verduras
-(O podés pagar en efectivo al recibir)`;
+(O podés abonar en efectivo al recibir).`;
     }
 
-    function attachActions() {
+    function attachActions(orders) {
       container.querySelectorAll(".btn-start-prep").forEach((btn) => {
         btn.addEventListener("click", () => {
           const id = Number(btn.dataset.startId);
@@ -1454,7 +1891,9 @@ Alias para transferir: mihuerta.verduras
     return () => unsubscribe();
   }
 
-  // --- 5. VISTA DUEÑO ---
+  // ==========================================
+  // 5. VISTA DUEÑO / ADMINISTRADOR DE PRECIOS
+  // ==========================================
   function renderAdminView(container) {
     let selectedCategory = "Todos";
 
@@ -1467,30 +1906,30 @@ Alias para transferir: mihuerta.verduras
       );
 
       container.innerHTML = `
-        <div class="max-w-2xl mx-auto p-4 pb-24">
-          <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm mb-4">
+        <div class="max-w-xl mx-auto p-4 pb-28">
+          <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm mb-4">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="text-3xl">⚙️</span>
-                <div>
-                  <h1 class="font-extrabold text-gray-900 text-lg">Administrador de Precios</h1>
-                  <p class="text-xs text-gray-500">Actualizá los precios del día y el stock en 2 minutos</p>
-                </div>
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-0.5">
+                  Panel de Administración
+                </span>
+                <h1 class="font-black text-slate-900 text-lg tracking-tight">Precios y Disponibilidad</h1>
+                <p class="text-xs text-slate-500 mt-0.5">Editá los valores del día en tiempo real.</p>
               </div>
-              <span class="text-xs font-bold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">
+              <span class="text-xs font-black px-2.5 py-1 bg-slate-100 text-slate-800 rounded-full border border-slate-200">
                 ${products.length} productos
               </span>
             </div>
 
-            <div class="mt-4 flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+            <div class="mt-4 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
               ${CATEGORIAS.map(
                 (cat) => `
                 <button 
                   data-admin-cat="${cat}"
                   class="admin-cat-pill whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition ${
                     selectedCategory === cat
-                      ? "bg-slate-900 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }"
                 >
                   ${cat}
@@ -1500,45 +1939,48 @@ Alias para transferir: mihuerta.verduras
             </div>
           </div>
 
-          <div class="space-y-2.5">
+          <div class="space-y-2">
             ${filtered
               .map((p) => {
-                const unit = p.unidad_medida === "KG" ? "kg" : "unidad/atado";
+                const unit = p.unidad_medida === "KG" ? "kg" : "unidad";
 
                 return `
-                <div class="bg-white rounded-2xl p-3.5 border border-gray-200 shadow-sm flex items-center justify-between gap-3">
-                  <div class="flex items-center gap-3 flex-1 min-w-0">
-                    <span class="text-3xl shrink-0">${p.icono}</span>
-                    <div class="min-w-0">
-                      <h3 class="font-extrabold text-gray-900 text-sm truncate">${p.nombre}</h3>
-                      <span class="text-[11px] text-gray-400 font-medium block">
-                        ${p.categoria} • Venta por ${unit}
+                <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm flex items-center justify-between gap-3 transition">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                        ${p.categoria}
                       </span>
+                      <span class="text-[10px] text-slate-400">·</span>
+                      <span class="text-[10px] text-slate-400">Por ${unit}</span>
                     </div>
+                    <h3 class="font-extrabold text-slate-900 text-sm truncate mt-0.5">${p.nombre}</h3>
+                    <p class="text-[11px] text-slate-400 truncate">${p.detalle || ""}</p>
                   </div>
 
                   <div class="flex items-center gap-2 shrink-0">
-                    <div class="relative w-28">
-                      <span class="absolute left-2.5 top-2 text-xs font-bold text-gray-400">$</span>
+                    <div class="relative w-24">
+                      <span class="absolute left-2.5 top-2 text-xs font-bold text-slate-400">$</span>
                       <input 
                         type="number" 
+                        inputmode="numeric"
                         step="50"
                         min="0"
                         data-product-id="${p.id}"
                         value="${p.precio}"
-                        class="input-price w-full pl-6 pr-2 py-1.5 bg-gray-50 border border-gray-300 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-emerald-500 focus:bg-white"
+                        class="input-price w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-xl font-black text-sm text-slate-900 outline-none focus:border-slate-900 focus:bg-white transition"
                       />
                     </div>
 
                     <button 
                       data-toggle-stock="${p.id}"
-                      class="btn-stock-toggle px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                      class="btn-stock-toggle px-3 py-1.5 rounded-xl text-xs font-bold transition tap-feedback ${
                         p.disponible
-                          ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                          : "bg-red-100 text-red-800 hover:bg-red-200"
+                          ? "bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100"
+                          : "bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200"
                       }"
                     >
-                      ${p.disponible ? "Disponible" : "Agotado"}
+                      ${p.disponible ? "Activo" : "Pausado"}
                     </button>
                   </div>
                 </div>
@@ -1582,7 +2024,9 @@ Alias para transferir: mihuerta.verduras
     return () => unsubscribe();
   }
 
-  // --- 6. APP ROUTER ---
+  // ==========================================
+  // 6. ENRUTADOR Y CONTROLADOR PRINCIPAL
+  // ==========================================
   class App {
     constructor() {
       this.container = document.getElementById("app-content");

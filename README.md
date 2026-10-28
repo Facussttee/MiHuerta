@@ -1,48 +1,76 @@
 # 🥕 Mi Huerta - Sistema Digital de Pedidos y Pesaje para Verdulerías
 
-Prototipo funcional para la gestión y pesaje de pedidos en tiempo real para verdulerías de barrio.
+> **Plataforma web mobile-first de costo cero (\$0/mes) diseñada para resolver la captura, pesaje y despacho de pedidos en verdulerías y fruterías de barrio.**
+
+[![Open Source](https://img.shields.io/badge/Open%20Source-100%25-emerald.svg)](#)
+[![Stack](https://img.shields.io/badge/Costo%20de%20Hosting-$0%2Fmes-brightgreen.svg)](#)
+[![Mobile-First](https://img.shields.io/badge/Diseño-Mobile--First%20PWA-blue.svg)](#)
+[![Realtime](https://img.shields.io/badge/Tiempo%20Real-WebSockets-orange.svg)](#)
 
 ---
 
-## 🌟 ¿Cómo probar el sistema ahora mismo?
+## 📚 Índice de Documentación Completa
 
-No necesitás instalar nada. Podés abrir directamente el archivo `index.html` en tu navegador (Google Chrome, Edge, Brave o Firefox):
+Para conocer todos los aspectos del proyecto, consultá los documentos específicos según tu rol o interés:
 
-1. Hacé doble clic en `index.html` dentro de la carpeta `d:\Escritorio\miHuerta`.
-2. En la barra superior negra podés alternar al instante entre las 3 vistas:
-   * **🛒 Cliente:** El catálogo interactivo con búsqueda, categorías, selección por peso/unidad, estimación de precios y confirmación con dirección o retiro.
-   * **⚖️ Operario (Balanza):** El tablero de mostrador con Kanban móvil (*Entrantes*, *Pesando*, *Listos*, *Cobrados*), pantalla de carga de pesos reales de balanza y cálculo automático del importe final.
-   * **⚙️ Dueño:** Panel ultra-rápido para cambiar precios y apagar/prender disponibilidad de productos al instante.
-
-### 💡 El truco del "Tiempo Real":
-Abrí dos pestañas o dos ventanas en tu navegador:
-* En una ventana poné la **Vista Cliente**.
-* En la otra ventana poné la **Vista Operario (Balanza)**.
-* Hacé un pedido como cliente: **vas a escuchar el timbre de alerta sonoro y verás cómo el pedido cae en la pantalla del operario en vivo**, ¡incluso sin servidor externo gracias a la sincronización de almacenamiento!
+| Documento | Audiencia | Descripción |
+| :--- | :--- | :--- |
+| 🤖 **[AGENT.md](file:///d:/Escritorio/miHuerta/AGENT.md)** | **Modelos de IA & Devs** | Reglas arquitectónicas, modelos de datos TypeScript, glosario del dominio y convenciones para que cualquier IA o programador trabaje sin perder contexto. |
+| 🎯 **[01 - Visión y Alcance](file:///d:/Escritorio/miHuerta/docs/01_VISION_Y_ALCANCE.md)** | **General / Negocio** | El problema de las verdulerías, por qué falla el e-commerce tradicional, propuesta de valor, alcance del MVP vs Roadmap V2 y métricas de éxito (KPIs). |
+| 🗣️ **[02 - Pitch y Comercio](file:///d:/Escritorio/miHuerta/docs/02_PITCH_Y_COMERCIO.md)** | **Comercial / Dueño** | Guion coloquial ("del mate") para explicarle la solución al verdulero en 3 minutos, respuestas a objeciones típicas y acuerdo de prueba piloto. |
+| 🏗️ **[03 - Arquitectura y Datos](file:///d:/Escritorio/miHuerta/docs/03_ARQUITECTURA_Y_DATOS.md)** | **Técnica / Arquitectura** | Diagramas de flujo C4/Mermaid, modelo Entidad-Relación (ERD), sentencias SQL completas, máquina de estados del pedido y estrategia \$0/mes. |
+| 📋 **[04 - Flujos y Casos Borde](file:///d:/Escritorio/miHuerta/docs/04_FLUJOS_Y_CASOS_BORDE.md)** | **Funcional / QA** | El "Caminito Feliz" paso a paso, manejo de mercadería sin stock, disparidad de peso en calabazas/sandías, cortes de Wi-Fi y checklist de pruebas. |
 
 ---
 
-## 🏗️ Estructura del Proyecto
+## 🌟 Cómo Probar el Simulador Interactivo
+
+No requiere instalar Node.js, compilar paquetes ni levantar servidores locales. Podés abrirlo directamente haciendo **doble clic en [index.html](file:///d:/Escritorio/miHuerta/index.html)** en cualquier navegador moderno (Brave, Chrome, Edge, Firefox):
+
+1. **Barra Superior del Simulador:** Permite conmutar con 1 clic entre los 3 roles:
+   * **🛒 Cliente:** Catálogo interactivo con filtros, búsqueda, selección por peso/unidad, estimación transparente y pedido con retiro o delivery.
+   * **⚖️ Operario (Balanza):** Tablero Kanban para mostrador (`Entrantes`, `Pesando`, `Listos`, `Cobrados`), pantalla de pesaje táctil con cálculo instantáneo y botón de "Sin stock".
+   * **⚙️ Dueño:** Panel ultra-ágil para cambiar precios y prender/apagar disponibilidad de productos al instante.
+
+### 💡 La Prueba del "Tiempo Real" (Recomendada):
+1. Abrí dos ventanas en tu pantalla (una al lado de la otra).
+2. En la ventana izquierda poné la vista **🛒 Cliente**.
+3. En la ventana derecha poné la vista **⚖️ Operario**.
+4. Confirmá un pedido como cliente: **escucharás el timbre sonoro en el mostrador y verás caer la tarjeta en vivo en la pantalla del operario sin recargar la página.**
+
+---
+
+## 🗂️ Estructura de Archivos del Repositorio
 
 ```
 d:\Escritorio\miHuerta\
-├── index.html              # Punto de entrada y barra de simulación
-├── css\
-│   └── style.css          # Tipografía, animaciones y soporte táctil
-├── js\
-│   ├── app.js             # Enrutador y controlador de vistas
-│   ├── store.js           # Estado centralizado reactivo + Alerta sonora
-│   ├── products-data.js   # Catálogo inicial con frutas, verduras y precios
-│   └── views\
-│       ├── client.js      # Catálogo, carrito y seguimiento de pesaje
-│       ├── operator.js    # Tablero Kanban y módulo de balanza
-│       └── admin.js       # Actualización de precios y stock
-└── README.md
+├── AGENT.md                 # Contexto canónico para modelos de IA y agentes autónomos
+├── README.md                # Portal de bienvenida e índice general
+├── index.html               # Punto de entrada único y barra de simulación
+├── css/
+│   └── style.css            # Tipografía Plus Jakarta Sans, animaciones y touch optimization
+├── js/
+│   ├── bundle.js            # Paquete unificado autónomo (ejecutable vía file:/// y web)
+│   ├── app.js               # Enrutador de vistas (SPA)
+│   ├── store.js             # Estado centralizado reactivo, Web Audio y localStorage
+│   ├── products-data.js     # Catálogo base estructurado de productos y precios
+│   └── views/
+│       ├── client.js        # Vista Catálogo Cliente, carrito drawer y tracking
+│       ├── operator.js      # Vista Mostrador, Kanban táctil y pesaje en balanza
+│       └── admin.js         # Vista Actualización de precios y stock del dueño
+└── docs/
+    ├── 01_VISION_Y_ALCANCE.md      # Visión de negocio, problemática y roadmap
+    ├── 02_PITCH_Y_COMERCIO.md      # Guion para hablar con el verdulero y FAQs
+    ├── 03_ARQUITECTURA_Y_DATOS.md  # Arquitectura técnica, ERD y base de datos SQL
+    └── 04_FLUJOS_Y_CASOS_BORDE.md  # Especificación funcional y casos excepcionales
 ```
 
 ---
 
-## 🚀 Próximos pasos
-1. Probar la comodidad de la carga de pesos en celulares o computadoras del local.
-2. Afinar detalles según el feedback de la verdulería.
-3. Conectar la base de datos cloud (Supabase) y el conector de WhatsApp (Baileys).
+## 🚀 Hoja de Ruta Tecnológica (Próximos Pasos)
+
+1. [x] Prototipo interactivo funcional y validación de pantallas.
+2. [x] Suite completa de documentación técnica, comercial y para IAs.
+3. [ ] Presentación y prueba piloto de 2 semanas en la verdulería local.
+4. [ ] Creación del proyecto en **Supabase** y migración de las tablas SQL.
+5. [ ] Microservicio conector de **WhatsApp** usando `@whiskeysockets/baileys` para envío automático de links y notificaciones finales.

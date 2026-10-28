@@ -13,32 +13,32 @@ export function renderAdminView(container) {
     );
 
     container.innerHTML = `
-      <div class="max-w-2xl mx-auto p-4 pb-24">
-        <!-- Header Dueño -->
-        <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm mb-4">
+      <div class="max-w-xl mx-auto p-4 pb-28">
+        <!-- Header Dueño / Admin -->
+        <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm mb-4">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <span class="text-3xl">⚙️</span>
-              <div>
-                <h1 class="font-extrabold text-gray-900 text-lg">Administrador de Precios</h1>
-                <p class="text-xs text-gray-500">Actualizá los precios del día y el stock en 2 minutos</p>
-              </div>
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-0.5">
+                Panel de Administración
+              </span>
+              <h1 class="font-black text-slate-900 text-lg tracking-tight">Precios y Disponibilidad</h1>
+              <p class="text-xs text-slate-500 mt-0.5">Editá los valores del día en tiempo real.</p>
             </div>
-            <span class="text-xs font-bold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">
+            <span class="text-xs font-black px-2.5 py-1 bg-slate-100 text-slate-800 rounded-full border border-slate-200">
               ${products.length} productos
             </span>
           </div>
 
           <!-- Filtro de Categorías -->
-          <div class="mt-4 flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+          <div class="mt-4 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-admin-cat="${cat}"
                 class="admin-cat-pill whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition ${
                   selectedCategory === cat
-                    ? "bg-slate-900 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }"
               >
                 ${cat}
@@ -49,47 +49,50 @@ export function renderAdminView(container) {
         </div>
 
         <!-- Lista de Productos y Precios -->
-        <div class="space-y-2.5">
+        <div class="space-y-2">
           ${filtered
             .map((p) => {
-              const unit = p.unidad_medida === "KG" ? "kg" : "unidad/atado";
+              const unit = p.unidad_medida === "KG" ? "kg" : "unidad";
 
               return `
-              <div class="bg-white rounded-2xl p-3.5 border border-gray-200 shadow-sm flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <span class="text-3xl shrink-0">${p.icono}</span>
-                  <div class="min-w-0">
-                    <h3 class="font-extrabold text-gray-900 text-sm truncate">${p.nombre}</h3>
-                    <span class="text-[11px] text-gray-400 font-medium block">
-                      ${p.categoria} • Venta por ${unit}
+              <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm flex items-center justify-between gap-3 transition">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                      ${p.categoria}
                     </span>
+                    <span class="text-[10px] text-slate-400">·</span>
+                    <span class="text-[10px] text-slate-400">Por ${unit}</span>
                   </div>
+                  <h3 class="font-extrabold text-slate-900 text-sm truncate mt-0.5">${p.nombre}</h3>
+                  <p class="text-[11px] text-slate-400 truncate">${p.detalle || ""}</p>
                 </div>
 
-                <!-- Campo de Precio Editable -->
+                <!-- Campo de Precio Editable y Switch de Stock -->
                 <div class="flex items-center gap-2 shrink-0">
-                  <div class="relative w-28">
-                    <span class="absolute left-2.5 top-2 text-xs font-bold text-gray-400">$</span>
+                  <div class="relative w-24">
+                    <span class="absolute left-2.5 top-2 text-xs font-bold text-slate-400">$</span>
                     <input 
                       type="number" 
+                      inputmode="numeric"
                       step="50"
                       min="0"
                       data-product-id="${p.id}"
                       value="${p.precio}"
-                      class="input-price w-full pl-6 pr-2 py-1.5 bg-gray-50 border border-gray-300 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-emerald-500 focus:bg-white"
+                      class="input-price w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-xl font-black text-sm text-slate-900 outline-none focus:border-slate-900 focus:bg-white transition"
                     />
                   </div>
 
-                  <!-- Switch Disponible / Agotado -->
+                  <!-- Botón Switch Disponible / Pausado -->
                   <button 
                     data-toggle-stock="${p.id}"
-                    class="btn-stock-toggle px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    class="btn-stock-toggle px-3 py-1.5 rounded-xl text-xs font-bold transition tap-feedback ${
                       p.disponible
-                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                        : "bg-red-100 text-red-800 hover:bg-red-200"
+                        ? "bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100"
+                        : "bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200"
                     }"
                   >
-                    ${p.disponible ? "Disponible" : "Agotado"}
+                    ${p.disponible ? "Activo" : "Pausado"}
                   </button>
                 </div>
               </div>
@@ -131,6 +134,5 @@ export function renderAdminView(container) {
   });
 
   update();
-
   return () => unsubscribe();
 }

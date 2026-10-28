@@ -2,7 +2,6 @@ import { store } from "../store.js";
 
 export function renderOperatorView(container) {
   let activeTab = "PENDIENTE"; // PENDIENTE | EN_PREPARACION | LISTO | ENTREGADO
-  let selectedOrderId = null; // Pedido abierto en pantalla de pesaje completo
 
   function update() {
     container.innerHTML = "";
@@ -16,44 +15,38 @@ export function renderOperatorView(container) {
     };
 
     container.innerHTML = `
-      <div class="max-w-2xl mx-auto pb-24">
+      <div class="max-w-xl mx-auto pb-28">
         <!-- Header del Mostrador -->
-        <header class="sticky top-0 z-20 bg-slate-900 text-white px-4 py-3 shadow-md">
+        <header class="sticky top-0 z-20 bg-slate-950 text-white px-4 py-3 border-b border-slate-800 shadow-sm">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <span class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-lg">
-                ⚖️
-              </span>
-              <div>
-                <h1 class="font-extrabold text-base leading-tight">Mostrador & Pesaje</h1>
-                <p class="text-[11px] text-slate-400 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Recepción en tiempo real activa
-                </p>
+            <div>
+              <div class="flex items-center gap-2">
+                <h1 class="font-black text-sm tracking-widest uppercase">Mostrador & Balanza</h1>
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               </div>
+              <p class="text-[11px] text-slate-400">Recepción y control de pedidos en tiempo real</p>
             </div>
 
-            <!-- Botón para probar sonido de alerta -->
+            <!-- Botón para probar timbre -->
             <button 
               id="btn-test-sound" 
-              title="Probar sonido de pedido" 
-              class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition"
+              class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-xs font-semibold border border-slate-700 transition tap-feedback"
             >
-              <span>🔔</span> Probar timbre
+              Timbre de prueba
             </button>
           </div>
 
           <!-- Pestañas del Kanban (Mobile-First) -->
-          <div class="grid grid-cols-4 gap-1.5 mt-3 bg-slate-800/80 p-1 rounded-xl text-center">
+          <div class="grid grid-cols-4 gap-1 mt-3 bg-slate-900 p-1 rounded-xl text-center border border-slate-800">
             <button 
               data-tab="PENDIENTE" 
               class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 ${
-                activeTab === "PENDIENTE" ? "bg-amber-500 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+                activeTab === "PENDIENTE" ? "bg-amber-400 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
               }"
             >
               <span>Entrantes</span>
               <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
-                activeTab === "PENDIENTE" ? "bg-amber-700/30 text-slate-950" : "bg-slate-700 text-slate-300"
+                activeTab === "PENDIENTE" ? "bg-amber-600/30 text-slate-950" : "bg-slate-800 text-slate-400"
               }">${counts.PENDIENTE}</span>
             </button>
 
@@ -63,9 +56,9 @@ export function renderOperatorView(container) {
                 activeTab === "EN_PREPARACION" ? "bg-blue-500 text-white shadow-sm" : "text-slate-400 hover:text-white"
               }"
             >
-              <span>Pesando</span>
+              <span>En Balanza</span>
               <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
-                activeTab === "EN_PREPARACION" ? "bg-blue-700 text-white" : "bg-slate-700 text-slate-300"
+                activeTab === "EN_PREPARACION" ? "bg-blue-700 text-white" : "bg-slate-800 text-slate-400"
               }">${counts.EN_PREPARACION}</span>
             </button>
 
@@ -77,23 +70,23 @@ export function renderOperatorView(container) {
             >
               <span>Listos</span>
               <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
-                activeTab === "LISTO" ? "bg-emerald-700/30 text-slate-950" : "bg-slate-700 text-slate-300"
+                activeTab === "LISTO" ? "bg-emerald-700/30 text-slate-950" : "bg-slate-800 text-slate-400"
               }">${counts.LISTO}</span>
             </button>
 
             <button 
               data-tab="ENTREGADO" 
               class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 ${
-                activeTab === "ENTREGADO" ? "bg-slate-600 text-white" : "text-slate-400 hover:text-white"
+                activeTab === "ENTREGADO" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
               }"
             >
               <span>Cobrados</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300">${counts.ENTREGADO}</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-400">${counts.ENTREGADO}</span>
             </button>
           </div>
         </header>
 
-        <!-- Contenido según la pestaña activa -->
+        <!-- Contenido de la columna activa -->
         <main class="p-4">
           ${renderTabContent(orders)}
         </main>
@@ -101,14 +94,13 @@ export function renderOperatorView(container) {
     `;
 
     // Listeners del header
-    container.querySelector("#btn-test-sound").addEventListener("click", () => {
+    container.querySelector("#btn-test-sound")?.addEventListener("click", () => {
       store.playAudioAlert();
     });
 
     container.querySelectorAll(".tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         activeTab = btn.dataset.tab;
-        selectedOrderId = null;
         update();
       });
     });
@@ -122,10 +114,10 @@ export function renderOperatorView(container) {
 
     if (tabOrders.length === 0) {
       return `
-        <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
-          <span class="text-4xl block mb-2">🌿</span>
-          <h3 class="font-bold text-gray-700 text-base">No hay pedidos en esta columna</h3>
-          <p class="text-xs text-gray-400 mt-1">Los nuevos pedidos que hagan los clientes aparecerán acá solos.</p>
+        <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 p-6">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin órdenes</span>
+          <h3 class="font-bold text-slate-700 text-sm">No hay pedidos en esta columna</h3>
+          <p class="text-xs text-slate-400 mt-1">Los nuevos pedidos ingresarán automáticamente aquí en tiempo real.</p>
         </div>
       `;
     }
@@ -137,44 +129,45 @@ export function renderOperatorView(container) {
           ${tabOrders
             .map((order) => {
               const itemsList = order.items
-                .map((i) => `${i.icono} ${i.cantidad_solicitada}${i.unidad_medida === "KG" ? "kg" : "u"} ${i.nombre}`)
-                .join(", ");
+                .map((i) => `${i.cantidad_solicitada}${i.unidad_medida === "KG" ? "kg" : "u"} ${i.nombre}`)
+                .join(" · ");
 
               return `
-              <div class="bg-white rounded-2xl p-4 border-2 border-amber-200 shadow-sm hover:shadow-md transition">
+              <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm transition">
                 <div class="flex items-start justify-between">
                   <div>
                     <div class="flex items-center gap-2">
-                      <span class="text-lg font-black text-slate-900">#${order.id}</span>
-                      <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                      <span class="text-base font-black text-slate-900">#${order.id}</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
                         order.tipo_entrega === "DELIVERY"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-emerald-100 text-emerald-800"
+                          ? "bg-slate-900 text-white"
+                          : "bg-slate-100 text-slate-700"
                       }">
-                        ${order.tipo_entrega === "DELIVERY" ? "🛵 Delivery" : "🏪 Retiro"}
+                        ${order.tipo_entrega === "DELIVERY" ? "Envío a Domicilio" : "Retiro en Local"}
                       </span>
                     </div>
-                    <h3 class="font-bold text-gray-900 text-base mt-1">${order.cliente.nombre}</h3>
-                    <p class="text-xs text-gray-400">${order.cliente.telefono} • ${timeAgo(order.fecha)}</p>
+                    <h3 class="font-extrabold text-slate-900 text-sm mt-1.5">${order.cliente.nombre}</h3>
+                    <p class="text-xs text-slate-400">${order.cliente.telefono} · ${timeAgo(order.fecha)}</p>
                   </div>
                   <div class="text-right">
-                    <span class="text-xs text-gray-400 block font-medium">Estimado</span>
-                    <span class="font-black text-lg text-slate-800">$${order.total_estimado.toLocaleString("es-AR")}</span>
+                    <span class="text-[10px] text-slate-400 block font-bold uppercase">Estimado</span>
+                    <span class="font-black text-base text-slate-900">$${order.total_estimado.toLocaleString("es-AR")}</span>
                   </div>
                 </div>
 
                 <!-- Resumen de productos -->
-                <div class="mt-3 p-2.5 bg-gray-50 rounded-xl text-xs text-gray-600 line-clamp-2">
-                  <strong>Productos:</strong> ${itemsList}
+                <div class="mt-3 p-3 bg-slate-50 rounded-xl text-xs text-slate-600 border border-slate-100">
+                  <span class="font-bold text-slate-700 block mb-0.5 text-[11px] uppercase tracking-wider">Productos solicitados:</span>
+                  <p class="leading-relaxed">${itemsList}</p>
                 </div>
 
                 <!-- Botón de Acción -->
                 <button 
                   data-start-id="${order.id}" 
-                  class="btn-start-prep w-full mt-3 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition"
+                  class="btn-start-prep w-full mt-3 bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-sm transition tap-feedback flex items-center justify-center gap-2"
                 >
                   <span>Tomar y Pesar en Balanza</span>
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                  <span>›</span>
                 </button>
               </div>
             `;
@@ -187,7 +180,7 @@ export function renderOperatorView(container) {
     // 2. Pestaña EN PREPARACIÓN (Módulo de Pesaje en Balanza)
     if (activeTab === "EN_PREPARACION") {
       return `
-        <div class="space-y-6">
+        <div class="space-y-4">
           ${tabOrders
             .map((order) => {
               const currentTotal = order.items
@@ -195,24 +188,24 @@ export function renderOperatorView(container) {
                 .reduce((sum, i) => sum + (i.peso_real !== null ? i.subtotal : i.cantidad_solicitada * i.precio_unitario), 0);
 
               return `
-              <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-blue-200 shadow-md">
+              <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-blue-200/80 shadow-md">
                 <!-- Header de la tarjeta -->
-                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div>
-                    <span class="text-xs font-black text-blue-600 tracking-wider uppercase">En Balanza</span>
-                    <h2 class="text-xl font-black text-gray-900">Pedido #${order.id} • ${order.cliente.nombre}</h2>
-                    <p class="text-xs text-gray-400">
-                      ${order.tipo_entrega === "DELIVERY" ? `🛵 ${order.direccion_entrega}` : "🏪 Retira en mostrador"}
+                    <span class="text-[10px] font-black text-blue-600 tracking-widest uppercase">Pesaje Activo</span>
+                    <h2 class="text-lg font-black text-slate-900">Pedido #${order.id} · ${order.cliente.nombre}</h2>
+                    <p class="text-xs text-slate-400">
+                      ${order.tipo_entrega === "DELIVERY" ? order.direccion_entrega : "Retira en mostrador"}
                     </p>
                   </div>
                   <div class="text-right">
-                    <span class="text-[11px] text-gray-400 uppercase font-bold block">Total Actual</span>
-                    <span class="text-2xl font-black text-emerald-700">$${Math.round(currentTotal).toLocaleString("es-AR")}</span>
+                    <span class="text-[10px] text-slate-400 uppercase font-bold block">Total en Balanza</span>
+                    <span class="text-xl font-black text-emerald-700">$${Math.round(currentTotal).toLocaleString("es-AR")}</span>
                   </div>
                 </div>
 
                 <!-- Lista de Pesaje Ítem por Ítem -->
-                <div class="mt-4 space-y-3">
+                <div class="mt-4 space-y-2.5">
                   ${order.items
                     .map((item, idx) => {
                       const isWeight = item.unidad_medida === "KG";
@@ -220,33 +213,35 @@ export function renderOperatorView(container) {
                       const subtotalItem = item.peso_real !== null ? item.subtotal : Math.round(item.cantidad_solicitada * item.precio_unitario);
 
                       return `
-                      <div class="p-3.5 rounded-2xl border transition ${
+                      <div class="p-3 rounded-2xl border transition ${
                         item.sin_stock
-                          ? "bg-red-50 border-red-200 opacity-60"
+                          ? "bg-rose-50 border-rose-200 opacity-60"
                           : item.peso_real !== null
-                          ? "bg-emerald-50/60 border-emerald-300"
-                          : "bg-gray-50 border-gray-200"
+                          ? "bg-emerald-50/50 border-emerald-300"
+                          : "bg-slate-50 border-slate-200"
                       }">
                         <div class="flex items-start justify-between gap-2">
-                          <div class="flex items-center gap-2.5">
-                            <span class="text-3xl">${item.icono}</span>
-                            <div>
-                              <h4 class="font-extrabold text-gray-900 text-sm ${item.sin_stock ? "line-through text-red-500" : ""}">${item.nombre}</h4>
-                              <p class="text-xs text-gray-500">
-                                Pidió: <strong class="text-gray-800">${item.cantidad_solicitada} ${isWeight ? "kg" : "unid."}</strong> 
-                                • ($${item.precio_unitario}/${isWeight ? "kg" : "u"})
-                              </p>
-                            </div>
+                          <div class="flex-1 min-w-0">
+                            <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-white text-slate-600 border border-slate-200">
+                              ${item.categoria || (isWeight ? "Por Kilo" : "Por Unidad")}
+                            </span>
+                            <h4 class="font-extrabold text-slate-900 text-sm mt-1 truncate ${item.sin_stock ? "line-through text-rose-600" : ""}">
+                              ${item.nombre}
+                            </h4>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                              Solicitó: <strong class="text-slate-800">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
+                              · ($${item.precio_unitario}/${isWeight ? "kg" : "u"})
+                            </p>
                           </div>
 
                           <!-- Botón Sin Stock -->
                           <button 
                             data-toggle-stock-order="${order.id}"
                             data-item-index="${idx}"
-                            class="btn-toggle-stock text-[11px] font-bold px-2 py-1 rounded-lg border transition ${
+                            class="btn-toggle-stock text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition tap-feedback ${
                               item.sin_stock
-                                ? "bg-red-600 text-white border-red-600"
-                                : "bg-white text-gray-500 border-gray-300 hover:text-red-600"
+                                ? "bg-rose-600 text-white border-rose-600"
+                                : "bg-white text-slate-600 border-slate-300 hover:text-rose-600"
                             }"
                           >
                             ${item.sin_stock ? "Anulado" : "Sin Stock"}
@@ -256,35 +251,34 @@ export function renderOperatorView(container) {
                         ${
                           !item.sin_stock
                             ? `
-                          <!-- Controles de Pesaje -->
-                          <div class="mt-3 pt-2.5 border-t border-gray-200/60 flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-1.5 flex-1">
-                              <label class="text-xs font-bold text-gray-600 shrink-0">
+                          <div class="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2 flex-1">
+                              <label class="text-xs font-bold text-slate-700 shrink-0">
                                 ${isWeight ? "Peso Balanza:" : "Cantidad Real:"}
                               </label>
-                              <div class="relative flex-1 max-w-[140px]">
+                              <div class="relative flex-1 max-w-[150px]">
                                 <input 
                                   type="number" 
+                                  inputmode="decimal"
                                   step="${isWeight ? "0.01" : "1"}"
                                   min="0"
                                   data-order-id="${order.id}"
                                   data-item-idx="${idx}"
                                   value="${currentVal}"
                                   placeholder="${item.cantidad_solicitada}"
-                                  class="input-weight w-full text-center py-1.5 px-2 bg-white border-2 rounded-xl font-black text-base text-gray-900 outline-none focus:border-blue-500 ${
-                                    item.peso_real !== null ? "border-emerald-500 text-emerald-800 bg-emerald-50/30" : "border-gray-300"
+                                  class="input-weight w-full text-center py-2 px-2 bg-white border-2 rounded-xl font-black text-sm text-slate-900 outline-none focus:border-blue-600 ${
+                                    item.peso_real !== null ? "border-emerald-500 text-emerald-800 bg-emerald-50/20" : "border-slate-300"
                                   }"
                                 />
-                                <span class="absolute right-2 top-2 text-xs font-bold text-gray-400">
+                                <span class="absolute right-2.5 top-2.5 text-xs font-bold text-slate-400 pointer-events-none">
                                   ${isWeight ? "kg" : "u."}
                                 </span>
                               </div>
                             </div>
 
-                            <!-- Subtotal de este producto -->
                             <div class="text-right shrink-0">
-                              <span class="text-[10px] text-gray-400 block">Subtotal</span>
-                              <span class="font-black text-sm text-gray-800">$${subtotalItem.toLocaleString("es-AR")}</span>
+                              <span class="text-[9px] text-slate-400 block font-bold uppercase">Subtotal</span>
+                              <span class="font-black text-sm text-slate-900">$${subtotalItem.toLocaleString("es-AR")}</span>
                             </div>
                           </div>
                         `
@@ -296,14 +290,14 @@ export function renderOperatorView(container) {
                     .join("")}
                 </div>
 
-                <!-- Botón de Cierre de Pesaje -->
-                <div class="mt-5 pt-3 border-t border-gray-100 flex gap-2">
+                <!-- Cierre de Pesaje -->
+                <div class="mt-4 pt-3 border-t border-slate-100">
                   <button 
                     data-finish-order-id="${order.id}"
-                    class="btn-finish-weighing flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-700/20 text-sm flex items-center justify-center gap-2 transition"
+                    class="btn-finish-weighing w-full bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-black py-3.5 px-4 rounded-xl shadow-lg shadow-slate-900/10 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback"
                   >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    <span>Finalizar Pesaje y Avisar al Cliente</span>
+                    <span>Finalizar Pesaje y Notificar al Cliente</span>
+                    <span>›</span>
                   </button>
                 </div>
               </div>
@@ -314,7 +308,7 @@ export function renderOperatorView(container) {
       `;
     }
 
-    // 3. Pestaña LISTOS (Esperando retiro o envío + WhatsApp simulado)
+    // 3. Pestaña LISTOS
     if (activeTab === "LISTO") {
       return `
         <div class="space-y-4">
@@ -324,23 +318,23 @@ export function renderOperatorView(container) {
               const waLink = `https://wa.me/549${order.cliente.telefono}?text=${waMessage}`;
 
               return `
-              <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-emerald-200 shadow-sm">
-                <div class="flex items-start justify-between">
+              <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                <div class="flex items-start justify-between pb-3 border-b border-slate-100">
                   <div>
-                    <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                      Pesaje Completo ✓
+                    <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      Pesaje Completo
                     </span>
-                    <h3 class="text-lg font-black text-gray-900 mt-1">#${order.id} - ${order.cliente.nombre}</h3>
-                    <p class="text-xs text-gray-500">${order.cliente.telefono} • ${order.tipo_entrega}</p>
+                    <h3 class="text-base font-black text-slate-900 mt-1">#${order.id} · ${order.cliente.nombre}</h3>
+                    <p class="text-xs text-slate-500">${order.cliente.telefono} · ${order.tipo_entrega}</p>
                   </div>
                   <div class="text-right">
-                    <span class="text-xs text-gray-400 block font-medium">Total Exacto</span>
+                    <span class="text-[10px] text-slate-400 block font-bold uppercase">Total Exacto</span>
                     <span class="font-black text-2xl text-emerald-700">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
                   </div>
                 </div>
 
                 <!-- Vista previa del mensaje de WhatsApp -->
-                <div class="mt-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl text-xs text-gray-700 font-mono whitespace-pre-line">
+                <div class="mt-3 p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs text-slate-700 font-mono whitespace-pre-line leading-relaxed">
                   ${generateWhatsAppSummary(order)}
                 </div>
 
@@ -348,15 +342,16 @@ export function renderOperatorView(container) {
                   <a 
                     href="${waLink}" 
                     target="_blank"
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition text-center"
+                    class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition text-center tap-feedback"
                   >
-                    <span>📲</span> Abrir WhatsApp
+                    <span>Enviar WhatsApp</span>
+                    <span>›</span>
                   </a>
                   <button 
                     data-deliver-order-id="${order.id}"
-                    class="btn-deliver-order bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition"
+                    class="btn-deliver-order bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-bold py-3 px-3 rounded-xl text-xs transition tap-feedback"
                   >
-                    Marcar Entregado / Cobrado
+                    Marcar Cobrado
                   </button>
                 </div>
               </div>
@@ -370,18 +365,19 @@ export function renderOperatorView(container) {
     // 4. Pestaña ENTREGADOS
     if (activeTab === "ENTREGADO") {
       return `
-        <div class="space-y-3">
+        <div class="space-y-2.5">
           ${tabOrders
             .map(
               (order) => `
-            <div class="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm opacity-80 flex items-center justify-between">
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
               <div>
-                <h4 class="font-bold text-gray-900 text-sm">#${order.id} - ${order.cliente.nombre}</h4>
-                <p class="text-xs text-gray-400">${order.tipo_entrega} • ${timeAgo(order.fecha)}</p>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">#${order.id}</span>
+                <h4 class="font-extrabold text-slate-900 text-sm">${order.cliente.nombre}</h4>
+                <p class="text-xs text-slate-400">${order.tipo_entrega} · ${timeAgo(order.fecha)}</p>
               </div>
               <div class="text-right">
-                <span class="font-black text-base text-gray-800">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
-                <span class="block text-[10px] text-emerald-600 font-bold uppercase">Cobrado</span>
+                <span class="font-black text-base text-slate-900">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
+                <span class="block text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Cobrado</span>
               </div>
             </div>
           `
@@ -392,29 +388,28 @@ export function renderOperatorView(container) {
     }
   }
 
-  // Generador del texto que el robot o el verdulero manda por WhatsApp
+  // Generador de mensaje de WhatsApp (sin emojis, profesional y directo)
   function generateWhatsAppSummary(order) {
     const itemsLines = order.items
       .filter((i) => !i.sin_stock)
-      .map((i) => `• ${i.nombre} (${i.peso_real} ${i.unidad_medida === "KG" ? "kg" : "u"}): $${i.subtotal}`)
+      .map((i) => `* ${i.nombre} (${i.peso_real} ${i.unidad_medida === "KG" ? "kg" : "u"}): $${i.subtotal}`)
       .join("\n");
 
     const total = order.total_real || order.total_estimado;
 
-    return `¡Hola ${order.cliente.nombre}! 🍎 Tu pedido #${order.id} ya está listo y pesado:
+    return `Hola ${order.cliente.nombre}. Tu pedido #${order.id} en Mi Huerta ya fue pesado y está listo:
 
 ${itemsLines}
 
-👉 Total exacto a abonar: $${total.toLocaleString("es-AR")}
-${order.tipo_entrega === "DELIVERY" ? "🛵 El cadete ya está en camino a tu dirección." : "🏪 Te esperamos por el local para retirar."}
+Total exacto en balanza: $${total.toLocaleString("es-AR")}
+${order.tipo_entrega === "DELIVERY" ? "El cadete está coordinado con tu dirección de entrega." : "Ya podés pasar a retirarlo por el mostrador."}
 
 Alias para transferir: mihuerta.verduras
-(O podés pagar en efectivo al recibir)`;
+(O podés abonar en efectivo al recibir).`;
   }
 
   // --- Attach Event Listeners ---
   function attachActions(orders) {
-    // Pasar a preparación
     container.querySelectorAll(".btn-start-prep").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = Number(btn.dataset.startId);
@@ -424,7 +419,6 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
-    // Inputs de peso en balanza
     container.querySelectorAll(".input-weight").forEach((input) => {
       input.addEventListener("change", (e) => {
         const orderId = Number(e.target.dataset.orderId);
@@ -436,7 +430,6 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
-    // Toggle Sin Stock
     container.querySelectorAll(".btn-toggle-stock").forEach((btn) => {
       btn.addEventListener("click", () => {
         const orderId = Number(btn.dataset.toggleStockOrder);
@@ -445,7 +438,6 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
-    // Finalizar pesaje
     container.querySelectorAll(".btn-finish-weighing").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = Number(btn.dataset.finishOrderId);
@@ -455,7 +447,6 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
-    // Entregar / Cobrar
     container.querySelectorAll(".btn-deliver-order").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = Number(btn.dataset.deliverOrderId);
@@ -473,7 +464,6 @@ Alias para transferir: mihuerta.verduras
     return `Hace ${Math.floor(diff / 60)} hs`;
   }
 
-  // Suscripción al store
   const unsubscribe = store.subscribe((event) => {
     if (event === "orders_changed" || event === "order_created" || event === "storage_sync") {
       update();
@@ -481,6 +471,5 @@ Alias para transferir: mihuerta.verduras
   });
 
   update();
-
   return () => unsubscribe();
 }
