@@ -1,4 +1,4 @@
-# 01 - Visión del Proyecto y Alcance (Project Charter)
+﻿# 01 - Visión del Proyecto y Alcance (Project Charter)
 
 ## 1. Contexto de Mercado y Oportunidad
 
@@ -80,7 +80,7 @@ Para garantizar un lanzamiento rápido, ágil y sin complicaciones técnicas, se
 5. **Panel del Dueño:**
    * Modificación ágil de precios unitarios y switch de disponibilidad on/off.
 
-### ❌ Fuera del MVP (Roadmap Futuro):
+###  Fuera del MVP (Roadmap Futuro):
 * Integración directa con balanzas electrónicas mediante Bluetooth o puerto serie RS232.
 * Pasarela de cobro automatizada (Mercado Pago Checkout Pro / Webhooks automáticos); en el MVP se comparte el Alias/CBU y cobro en efectivo.
 * Algoritmos de ruteo de entregas para cadetes.

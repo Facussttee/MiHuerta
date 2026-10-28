@@ -6,7 +6,8 @@ const STORAGE_KEYS = {
   ORDERS: "mihuerta_orders_v3",
   CUSTOMERS: "mihuerta_customers_v3",
   CURRENT_USER: "mihuerta_current_user_v3",
-  CART: "mihuerta_cart_v3"
+  CART: "mihuerta_cart_v3",
+  ACTIVE_ORDER: "mihuerta_active_order_v3"
 };
 
 // Fallback en memoria en caso de bloqueo de localStorage en file:///
@@ -309,6 +310,26 @@ class Store {
     return safeGet(STORAGE_KEYS.ORDERS, []);
   }
 
+  getActiveOrderId() {
+    return safeGet(STORAGE_KEYS.ACTIVE_ORDER, null);
+  }
+
+  setActiveOrderId(orderId) {
+    if (orderId) {
+      safeSet(STORAGE_KEYS.ACTIVE_ORDER, Number(orderId));
+    } else {
+      safeRemove(STORAGE_KEYS.ACTIVE_ORDER);
+    }
+    this.notify("active_order_changed", orderId);
+  }
+
+  getActiveOrder() {
+    const activeId = this.getActiveOrderId();
+    if (!activeId) return null;
+    const orders = this.getOrders();
+    return orders.find((o) => o.id === activeId) || null;
+  }
+
   createOrder({ cliente, tipo_entrega, direccion_entrega }) {
     const { items, totalEstimado } = this.getCartSummary();
     if (items.length === 0) return null;
@@ -340,6 +361,7 @@ class Store {
 
     orders.unshift(newOrder);
     safeSet(STORAGE_KEYS.ORDERS, orders);
+    this.setActiveOrderId(newOrder.id);
     this.clearCart();
     this.playAudioAlert();
     this.notify("order_created", newOrder);
@@ -441,6 +463,81 @@ class Store {
     safeSet(STORAGE_KEYS.ORDERS, orders);
     this.notify("orders_changed");
     this.notify("order_ready", orderId);
+  }
+
+  // Eliminar o cancelar completamente un pedido
+  deleteOrder(orderId) {
+    const orders = this.getOrders().filter((o) => o.id !== orderId);
+    safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (this.getActiveOrderId() === orderId) {
+      this.setActiveOrderId(null);
+    }
+    this.notify("orders_changed");
+  }
+
+  // Quitar un producto específico del pedido
+  removeItemFromOrder(orderId, itemIndex) {
+    const orders = this.getOrders().map((order) => {
+      if (order.id === orderId) {
+        const items = order.items.filter((_, idx) => idx !== itemIndex);
+        const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
+        return { ...order, items, total_estimado: totalEstimado };
+      }
+      return order;
+    });
+    safeSet(STORAGE_KEYS.ORDERS, orders);
+    this.notify("orders_changed");
+  }
+
+  // Agregar un producto al pedido en preparación
+  addProductToOrder(orderId, productId, cantidad) {
+    const product = this.getProducts().find((p) => p.id === productId);
+    if (!product) return;
+    const qty = Math.max(0.1, Number(cantidad));
+    const subtotal = Math.round(qty * product.precio);
+
+    const orders = this.getOrders().map((order) => {
+      if (order.id === orderId) {
+        const newItem = {
+          producto_id: product.id,
+          nombre: product.nombre,
+          categoria: product.categoria,
+          unidad_medida: product.unidad_medida,
+          precio_unitario: product.precio,
+          cantidad_solicitada: qty,
+          peso_real: product.unidad_medida === "UNIDAD" ? qty : null,
+          subtotal: subtotal,
+          sin_stock: false
+        };
+        const items = [...order.items, newItem];
+        const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
+        return { ...order, items, total_estimado: totalEstimado };
+      }
+      return order;
+    });
+    safeSet(STORAGE_KEYS.ORDERS, orders);
+    this.notify("orders_changed");
+  }
+
+  // Modificar datos de entrega y contacto del pedido
+  updateOrderDetails(orderId, details) {
+    const orders = this.getOrders().map((order) => {
+      if (order.id === orderId) {
+        return {
+          ...order,
+          cliente: {
+            ...order.cliente,
+            nombre: details.nombre !== undefined ? details.nombre : order.cliente.nombre,
+            telefono: details.telefono !== undefined ? details.telefono : order.cliente.telefono
+          },
+          tipo_entrega: details.tipo_entrega || order.tipo_entrega,
+          direccion_entrega: details.direccion_entrega || order.direccion_entrega
+        };
+      }
+      return order;
+    });
+    safeSet(STORAGE_KEYS.ORDERS, orders);
+    this.notify("orders_changed");
   }
 
   playAudioAlert() {

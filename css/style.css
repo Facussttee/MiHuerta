@@ -1,8 +1,14 @@
+/* ========================================================
+   Mi Huerta - Estilos Base Mobile-First
+   Enfoque: Minimalista, sobrio, tipográfico y táctil.
+   ======================================================== */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 :root {
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 * {
@@ -14,6 +20,14 @@ body {
   -webkit-tap-highlight-color: transparent;
   background-color: #f8fafc;
   color: #0f172a;
+  overscroll-behavior-y: none;
+}
+
+/* Prevenir auto-zoom intrusivo en iOS Safari (requiere font-size >= 16px en inputs) */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* Ocultar barra de scroll en contenedores horizontales */
@@ -27,8 +41,8 @@ body {
 
 /* Transiciones y animaciones fluidas */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
@@ -36,32 +50,52 @@ body {
   to { transform: translateY(0); }
 }
 
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .animate-fade-in {
-  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-slide-up {
-  animation: slideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Deshabilitar zoom accidental de doble toque en celulares */
-button, input, select {
+.animate-pulse-subtle {
+  animation: pulseSubtle 2s ease-in-out infinite;
+}
+
+/* Deshabilitar zoom accidental de doble toque */
+button, input, select, a {
   touch-action: manipulation;
 }
 
 /* Micro-interacciones táctiles */
 .tap-feedback {
-  transition: transform 0.1s ease, opacity 0.1s ease;
+  transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), opacity 0.12s ease;
+  user-select: none;
 }
 .tap-feedback:active {
-  transform: scale(0.97);
-  opacity: 0.92;
+  transform: scale(0.96);
+  opacity: 0.9;
 }
 
-/* Soporte para áreas seguras en mobile (iPhone / Android notches) */
+/* Áreas seguras en dispositivos con notch / Home Bar (iPhone / Android) */
 .safe-pb {
   padding-bottom: max(1rem, var(--sab));
+}
+.safe-floating-bottom {
+  bottom: max(1rem, calc(1rem + var(--sab)));
 }
 .safe-mb {
   margin-bottom: max(1rem, var(--sab));
 }
+
+/* Altura mínima accesible para toques con pulgar */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+

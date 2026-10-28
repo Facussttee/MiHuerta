@@ -136,6 +136,7 @@ Cualquier IA o desarrollador que modifique el código debe respetar estrictament
 2. **Compatibilidad Local Directa:** El prototipo debe poder ejecutarse haciendo doble clic en `index.html` (protocolo `file:///`) sin requerir un build step previo obligatorio ni servidores externos para demostraciones. Por esta razón se mantiene `js/bundle.js` actualizado junto a los módulos.
 3. **Resiliencia de Pesaje:** El sistema **nunca** debe asumir que el cliente pagará el total estimado. Toda la arquitectura está pensada alrededor del evento de pesaje en mostrador.
 4. **Costo Cero (\$0/mes):** No introducir dependencias comerciales pagas (como Twilio o WhatsApp Cloud API de pago). Las integraciones cloud deben mantenerse dentro de las capas gratuitas de **Supabase** y **Vercel**, y la integración con WhatsApp mediante librerías de conexión Web QR (**Baileys**).
+5. **Flexibilidad Operativa de Pedidos:** El operario en mostrador debe poder cancelar o eliminar pedidos cancelados, quitar ítems individuales que el cliente se arrepienta de llevar, sumar productos de último momento y corregir la dirección o modalidad de entrega.
 
 ---
 
