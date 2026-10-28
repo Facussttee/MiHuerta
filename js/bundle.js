@@ -847,7 +847,7 @@
               />
               ${
                 searchQuery
-                  ? `<button id="btn-clear-search" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>`
+                  ? `<button id="btn-clear-search" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 text-xs font-bold">X</button>`
                   : ""
               }
             </div>
@@ -1095,7 +1095,7 @@
                 id="btn-close-cart" 
                 class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-xs tap-feedback"
               >
-                ✕
+                X
               </button>
             </div>
 
