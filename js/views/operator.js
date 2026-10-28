@@ -1,5 +1,23 @@
 import { store } from "../store.js";
 
+// Convierte automáticamente entradas en gramos sin punto (ej: 2150 -> 2.15 kg, 850 -> 0.85 kg)
+function parseOperatorWeight(rawInput, isWeight = true) {
+  if (rawInput === undefined || rawInput === null) return null;
+  const str = String(rawInput).trim().replace(",", ".");
+  if (str === "") return null;
+  const num = Number(str);
+  if (isNaN(num) || num <= 0) return null;
+
+  if (!isWeight) return Math.round(num);
+
+  // Si es producto pesable y el operario tipeó un entero >= 50 sin punto decimal (ej: 2150, 850, 500)
+  // lo interpretamos automáticamente como gramos y lo convertimos a kilos (2150 g -> 2.15 kg)
+  if (!str.includes(".") && num >= 50) {
+    return Number((num / 1000).toFixed(3));
+  }
+  return Number(num.toFixed(3));
+}
+
 export function renderOperatorView(container) {
   let activeTab = "PENDIENTE"; // PENDIENTE | EN_PREPARACION | LISTO | ENTREGADO
   let editingOrderId = null; // ID del pedido que se está editando en modal
@@ -332,20 +350,20 @@ export function renderOperatorView(container) {
                                 −
                               </button>
 
-                              <div class="relative flex-1 max-w-[110px]">
+                              <div class="relative flex-1 max-w-[120px]">
                                 <input 
-                                  type="number" 
+                                  type="text" 
                                   inputmode="decimal"
-                                  step="${isWeight ? "0.01" : "1"}"
-                                  min="0"
                                   data-order-id="${order.id}"
                                   data-item-idx="${idx}"
+                                  data-unit="${item.unidad_medida}"
                                   data-price-unit="${item.precio_unitario}"
                                   value="${currentVal}"
-                                  placeholder="${item.cantidad_solicitada}"
+                                  placeholder="${isWeight ? 'ej: 2150' : item.cantidad_solicitada}"
                                   class="input-weight w-full text-center py-2 px-2 bg-white border-2 rounded-xl font-black text-base text-slate-900 outline-none focus:border-blue-600 transition ${
                                     item.peso_real !== null ? "border-emerald-500 text-emerald-800 bg-emerald-50/20" : "border-slate-300"
                                   }"
+                                  title="${isWeight ? 'Podés ingresar en gramos (ej: 2150) o con punto (2.15)' : 'Cantidad'}"
                                 />
                                 <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 pointer-events-none select-none">
                                   ${isWeight ? "kg" : "u."}
@@ -842,15 +860,17 @@ Alias para transferir: mihuerta.verduras
       }
     }
 
-    // Inputs de pesaje
+    // Inputs de pesaje con conversión automática de gramos a kilos (ej: 2150 -> 2.15 kg)
     container.querySelectorAll(".input-weight").forEach((input) => {
       input.addEventListener("input", (e) => {
         const orderId = Number(e.target.dataset.orderId);
         const itemIdx = Number(e.target.dataset.itemIdx);
+        const isWeight = e.target.dataset.unit === "KG";
         const priceUnit = Number(e.target.dataset.priceUnit) || 0;
         const val = e.target.value.trim();
 
-        const numVal = val !== "" ? Math.max(0, Number(val)) : 0;
+        const parsed = parseOperatorWeight(val, isWeight);
+        const numVal = parsed !== null ? parsed : (val !== "" ? Math.max(0, Number(val.replace(",", "."))) : 0);
         const subtotal = Math.round(numVal * priceUnit);
 
         const subtotalEl = container.querySelector(`#item-subtotal-${orderId}-${itemIdx}`);
@@ -862,7 +882,9 @@ Alias para transferir: mihuerta.verduras
         let runningTotal = 0;
         orderInputs.forEach((inp) => {
           const p = Number(inp.dataset.priceUnit) || 0;
-          const v = inp.value.trim() !== "" ? Number(inp.value) : Number(inp.placeholder || 0);
+          const inpIsWeight = inp.dataset.unit === "KG";
+          const parsedInp = parseOperatorWeight(inp.value.trim(), inpIsWeight);
+          const v = parsedInp !== null ? parsedInp : Number(inp.placeholder || 0);
           runningTotal += Math.round(v * p);
         });
 
@@ -875,9 +897,13 @@ Alias para transferir: mihuerta.verduras
       input.addEventListener("change", (e) => {
         const orderId = Number(e.target.dataset.orderId);
         const itemIdx = Number(e.target.dataset.itemIdx);
+        const isWeight = e.target.dataset.unit === "KG";
         const val = e.target.value.trim();
-        if (val !== "") {
-          store.updateItemWeight(orderId, itemIdx, Number(val), { notify: false });
+        const parsed = parseOperatorWeight(val, isWeight);
+
+        if (parsed !== null) {
+          e.target.value = parsed; // Auto-formatea visualmente a kilos
+          store.updateItemWeight(orderId, itemIdx, parsed, { notify: false });
         }
       });
     });
@@ -900,9 +926,10 @@ Alias para transferir: mihuerta.verduras
         const currentInputs = container.querySelectorAll(`.input-weight[data-order-id="${id}"]`);
         currentInputs.forEach((input) => {
           const itemIdx = Number(input.dataset.itemIdx);
-          const val = input.value.trim();
-          if (val !== "") {
-            weightsMap[itemIdx] = Number(val);
+          const isWeight = input.dataset.unit === "KG";
+          const parsed = parseOperatorWeight(input.value.trim(), isWeight);
+          if (parsed !== null) {
+            weightsMap[itemIdx] = parsed;
           }
         });
 
