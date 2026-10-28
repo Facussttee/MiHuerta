@@ -360,6 +360,17 @@ class Store {
   async syncOrderToSupabase(order) {
     if (!this.supabase || !order) return;
     try {
+      // Garantizar que el cliente exista en Supabase antes de insertar el pedido para satisfacer la Foreign Key
+      if (order.cliente && order.cliente.telefono) {
+        const cleanPhone = String(order.cliente.telefono).replace(/\D/g, "");
+        await this.supabase.from("clientes").upsert({
+          telefono: cleanPhone,
+          nombre: order.cliente.nombre || "Cliente",
+          direccion: order.cliente.direccion || "",
+          updated_at: new Date().toISOString()
+        });
+      }
+
       await this.supabase.from("pedidos").upsert({
         id: order.id,
         cliente_telefono: order.cliente.telefono,
@@ -369,10 +380,7 @@ class Store {
         estado: order.estado,
         total_estimado: order.total_estimado,
         total_real: order.total_real,
-        items: order.items,
-        fecha: order.fecha,
-        finalizado_at: order.finalizado_at || null,
-        updated_at: new Date().toISOString()
+        items: order.items
       });
     } catch (err) {
       console.warn("Error guardando pedido en Supabase:", err);
