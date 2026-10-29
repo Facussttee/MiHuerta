@@ -475,13 +475,17 @@ class Store {
   }
 
   getCustomer(phone) {
+    if (!phone) return null;
     const cleanPhone = String(phone).replace(/\D/g, "");
+    if (!cleanPhone) return null;
     const customers = this.getCustomers();
     return customers[cleanPhone] || null;
   }
 
   saveCustomer(customer) {
+    if (!customer || !customer.telefono) return null;
     const cleanPhone = String(customer.telefono).replace(/\D/g, "");
+    if (!cleanPhone) return null;
     const customers = this.getCustomers();
     customers[cleanPhone] = { ...customer, telefono: cleanPhone };
     safeSet(STORAGE_KEYS.CUSTOMERS, customers);

@@ -79,11 +79,17 @@ export function renderClientView(container) {
                   id="phone-input" 
                   required 
                   inputmode="numeric" 
+                  pattern="[0-9]{8,15}"
+                  maxlength="15"
+                  autocomplete="tel"
                   placeholder="11 2345 6789" 
-                  value="${store.prefilledPhone || ""}"
+                  value="${(store.prefilledPhone || "").replace(/\D/g, "")}"
                   class="w-full pl-20 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white font-bold text-base outline-none transition"
                 />
               </div>
+              <p id="phone-error" class="hidden text-xs text-rose-500 dark:text-rose-400 font-semibold mt-1.5">
+                Ingresá un número de WhatsApp válido (sólo números, mín. 8 dígitos).
+              </p>
               <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
                 Usamos tu teléfono para enviarte el comprobante de pesaje real por WhatsApp.
               </p>
@@ -151,19 +157,77 @@ export function renderClientView(container) {
     const addressInput = container.querySelector("#address-input");
     const btnQuickDemo = container.querySelector("#btn-quick-demo-user");
 
+    const phoneError = container.querySelector("#phone-error");
+
     function syncUserFields(phoneVal) {
-      const match = store.getCustomer(phoneVal);
+      if (!phoneVal) return;
+      const clean = String(phoneVal).replace(/\D/g, "");
+      const match = store.getCustomer(clean);
       if (match) {
         if (nameInput) nameInput.value = match.nombre || "";
         if (addressInput) addressInput.value = match.direccion || "";
       }
     }
 
+    const clearPhoneError = () => {
+      if (phoneError && !phoneError.classList.contains("hidden")) {
+        phoneError.classList.add("hidden");
+        phoneInput?.classList.remove("border-rose-500", "focus:ring-rose-500");
+      }
+    };
+
+    // Bloquear teclas no numéricas en keydown para teclado físico
+    phoneInput?.addEventListener("keydown", (e) => {
+      const allowedKeys = [
+        "Backspace", "Tab", "Enter", "Escape", "Delete",
+        "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+        "Home", "End"
+      ];
+      if (allowedKeys.includes(e.key)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+
+    // Sanitizar en evento input (captura dictado, autocompletar y teclados virtuales móviles)
     phoneInput?.addEventListener("input", (e) => {
-      syncUserFields(e.target.value);
+      const raw = e.target.value;
+      const clean = raw.replace(/\D/g, "");
+      if (raw !== clean) {
+        const curPos = e.target.selectionStart || 0;
+        e.target.value = clean;
+        try {
+          const newPos = Math.max(0, curPos - (raw.length - clean.length));
+          e.target.setSelectionRange(newPos, newPos);
+        } catch {}
+      }
+      clearPhoneError();
+      syncUserFields(clean);
+    });
+
+    // Sanitizar en evento paste para admitir sólo dígitos
+    phoneInput?.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const pasteText = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+      const digits = pasteText.replace(/\D/g, "");
+      if (!digits) return;
+
+      const start = phoneInput.selectionStart || 0;
+      const end = phoneInput.selectionEnd || 0;
+      const current = phoneInput.value;
+      const updated = (current.slice(0, start) + digits + current.slice(end)).slice(0, 15);
+      phoneInput.value = updated;
+      const targetPos = Math.min(start + digits.length, updated.length);
+      try {
+        phoneInput.setSelectionRange(targetPos, targetPos);
+      } catch {}
+      clearPhoneError();
+      syncUserFields(updated);
     });
 
     if (phoneInput?.value) {
+      phoneInput.value = phoneInput.value.replace(/\D/g, "");
       syncUserFields(phoneInput.value);
     }
 
@@ -180,7 +244,18 @@ export function renderClientView(container) {
 
     phoneForm?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const phone = phoneInput.value.trim();
+      const phone = phoneInput.value.replace(/\D/g, "").trim();
+
+      if (!phone || phone.length < 8) {
+        if (phoneError) {
+          phoneError.textContent = "Ingresá un número de WhatsApp válido (sólo números, mín. 8 dígitos).";
+          phoneError.classList.remove("hidden");
+        }
+        phoneInput?.classList.add("border-rose-500", "focus:ring-rose-500");
+        phoneInput?.focus();
+        return;
+      }
+
       const name = nameInput.value.trim() || "Cliente";
       const address = addressInput.value.trim();
 
