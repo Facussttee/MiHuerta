@@ -21,3 +21,6 @@ bot/auth_info_baileys/
 bot/.env
 .cooldowns.json
 bot/.cooldowns.json
+
+# Metadatos de agentes
+.agents/

@@ -1,29 +1,65 @@
-# Script para ensamblar bundle.js autónomo con codificación UTF-8 estricta
-$prod = Get-Content 'd:\Escritorio\miHuerta\js\products-data.js' -Raw -Encoding UTF8
-$prod = $prod -replace 'export const ', 'const '
+# ==============================================================================
+# Mi Huerta - Script de Empaquetado Autónomo (build-bundle.ps1)
+# Genera js/bundle.js con codificación UTF-8 estricta SIN BOM y validación de sintaxis
+# ==============================================================================
 
-$store = Get-Content 'd:\Escritorio\miHuerta\js\store.js' -Raw -Encoding UTF8
-$store = $store -replace 'import \{ INITIAL_PRODUCTS \} from "\./products-data\.js";', ''
-$store = $store -replace 'export const store = new Store\(\);', 'const store = new Store();'
-$store = $store -replace 'export \{ STORAGE_KEYS, safeGet, safeSet, safeRemove \};', ''
+$ErrorActionPreference = "Stop"
 
-$client = Get-Content 'd:\Escritorio\miHuerta\js\views\client.js' -Raw -Encoding UTF8
-$client = $client -replace 'import \{ store \} from "\.\./store\.js";', ''
-$client = $client -replace 'import \{ CATEGORIAS \} from "\.\./products-data\.js";', ''
-$client = $client -replace 'export function renderClientView', 'function renderClientView'
+# 1. Resolución dinámica de rutas relativas al script
+$baseDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+$jsDir = Join-Path $baseDir "js"
+$viewsDir = Join-Path $jsDir "views"
+$bundlePath = Join-Path $jsDir "bundle.js"
 
-$operator = Get-Content 'd:\Escritorio\miHuerta\js\views\operator.js' -Raw -Encoding UTF8
-$operator = $operator -replace 'import \{ store \} from "\.\./store\.js";', ''
-$operator = $operator -replace 'export function renderOperatorView', 'function renderOperatorView'
+Write-Host "Iniciando compilacion de bundle en: $bundlePath"
 
-$admin = Get-Content 'd:\Escritorio\miHuerta\js\views\admin.js' -Raw -Encoding UTF8
-$admin = $admin -replace 'import \{ store \} from "\.\./store\.js";', ''
-$admin = $admin -replace 'import \{ CATEGORIAS \} from "\.\./products-data\.js";', ''
-$admin = $admin -replace 'export function renderAdminView', 'function renderAdminView'
+# 2. Verificación de existencia de archivos fuente
+$sourceFiles = @(
+  (Join-Path $jsDir "products-data.js"),
+  (Join-Path $jsDir "store.js"),
+  (Join-Path $viewsDir "client.js"),
+  (Join-Path $viewsDir "operator.js"),
+  (Join-Path $viewsDir "admin.js"),
+  (Join-Path $jsDir "app.js")
+)
 
-$app = Get-Content 'd:\Escritorio\miHuerta\js\app.js' -Raw -Encoding UTF8
-$app = $app -replace 'import .*?;(\r?\n)?', ''
-$app = $app -replace 'document\.addEventListener\("DOMContentLoaded", \(\) => \{\s*new App\(\);\s*\}\);', @'
+foreach ($file in $sourceFiles) {
+  if (-not (Test-Path $file)) {
+    throw "Error crítico: No se encontró el archivo requerido: $file"
+  }
+}
+
+# 3. Lectura con UTF-8 estricto y despojamiento de módulos ESM
+
+# 3.1 products-data.js
+$prod = Get-Content (Join-Path $jsDir "products-data.js") -Raw -Encoding UTF8
+$prod = $prod -replace '(?m)^\s*export\s+const\s+', 'const '
+
+# 3.2 store.js
+$store = Get-Content (Join-Path $jsDir "store.js") -Raw -Encoding UTF8
+$store = $store -replace '(?m)^\s*import\s+.*?;?\s*$', ''
+$store = $store -replace 'export\s+const\s+store\s*=\s*new\s+Store\(\);', 'const store = new Store();'
+$store = $store -replace 'export\s*\{\s*STORAGE_KEYS,\s*safeGet,\s*safeSet,\s*safeRemove\s*\};?', ''
+
+# 3.3 client.js
+$client = Get-Content (Join-Path $viewsDir "client.js") -Raw -Encoding UTF8
+$client = $client -replace '(?m)^\s*import\s+.*?;?\s*$', ''
+$client = $client -replace 'export\s+function\s+renderClientView', 'function renderClientView'
+
+# 3.4 operator.js
+$operator = Get-Content (Join-Path $viewsDir "operator.js") -Raw -Encoding UTF8
+$operator = $operator -replace '(?m)^\s*import\s+.*?;?\s*$', ''
+$operator = $operator -replace 'export\s+function\s+renderOperatorView', 'function renderOperatorView'
+
+# 3.5 admin.js
+$admin = Get-Content (Join-Path $viewsDir "admin.js") -Raw -Encoding UTF8
+$admin = $admin -replace '(?m)^\s*import\s+.*?;?\s*$', ''
+$admin = $admin -replace 'export\s+function\s+renderAdminView', 'function renderAdminView'
+
+# 3.6 app.js
+$app = Get-Content (Join-Path $jsDir "app.js") -Raw -Encoding UTF8
+$app = $app -replace '(?m)^\s*import\s+.*?;?\s*$', ''
+$app = $app -replace 'document\.addEventListener\("DOMContentLoaded",\s*\(\)\s*=>\s*\{\s*new App\(\);\s*\}\);?', @'
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => new App());
 } else {
@@ -31,35 +67,64 @@ if (document.readyState === "loading") {
 }
 '@
 
+# 4. Ensamble secuencial dentro de IIFE
 $parts = @(
   "(function () {`n  `"use strict`";`n",
   "  // ==========================================",
   "  // 1. CATALOGO DE PRODUCTOS",
   "  // ==========================================",
-  $prod,
+  $prod.Trim(),
   "  // ==========================================",
   "  // 2. STORE Y PERSISTENCIA LOCAL + SUPABASE",
   "  // ==========================================",
-  $store,
+  $store.Trim(),
   "  // ==========================================",
   "  // 3. VISTA CLIENTE",
   "  // ==========================================",
-  $client,
+  $client.Trim(),
   "  // ==========================================",
   "  // 4. VISTA OPERARIO (BALANZA Y MOSTRADOR)",
   "  // ==========================================",
-  $operator,
+  $operator.Trim(),
   "  // ==========================================",
   "  // 5. VISTA ADMIN / DUENO",
   "  // ==========================================",
-  $admin,
+  $admin.Trim(),
   "  // ==========================================",
   "  // 6. ENRUTADOR Y CONTROL DE ACCESO POR PIN",
   "  // ==========================================",
-  $app,
+  $app.Trim(),
   "})();`n"
 )
 
 $bundleContent = $parts -join "`n`n"
-[System.IO.File]::WriteAllText('d:\Escritorio\miHuerta\js\bundle.js', $bundleContent, [System.Text.Encoding]::UTF8)
-Write-Output "Bundle generado con exito. Caracteres: $($bundleContent.Length)"
+
+# 5. Validación de integridad: asegurar que no queden declaraciones import/export residuales
+$residualImports = [regex]::Matches($bundleContent, '(?m)^\s*import\s+.*?$')
+if ($residualImports.Count -gt 0) {
+  throw "Error de compilacion: Se detectaron $($residualImports.Count) clausulas 'import' residuales en el bundle."
+}
+
+$residualExports = [regex]::Matches($bundleContent, '(?m)^\s*export\s+.*?$')
+if ($residualExports.Count -gt 0) {
+  throw "Error de compilacion: Se detectaron $($residualExports.Count) clausulas 'export' residuales en el bundle."
+}
+
+if ($bundleContent.Length -lt 50000) {
+  throw "Error de compilacion: El tamano del bundle es sospechosamente bajo ($($bundleContent.Length) caracteres)."
+}
+
+# 6. Escritura con UTF-8 Estricto SIN BOM
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($bundlePath, $bundleContent, $utf8NoBom)
+
+# 7. Verificación de firma de bytes (asegurar que los primeros bytes sean '(function' y NO 0xEF 0xBB 0xBF)
+$bytes = [System.IO.File]::ReadAllBytes($bundlePath)
+if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+  throw "Error de codificacion: El archivo bundle.js contiene un BOM no deseado."
+}
+
+Write-Host "✅ Bundle generado exitosamente con UTF-8 estricto SIN BOM." -ForegroundColor Green
+Write-Host "   Ruta: $bundlePath"
+Write-Host "   Tamano: $($bytes.Length) bytes ($($bundleContent.Length) caracteres)"
+Write-Host "   Primeros bytes: $([System.Text.Encoding]::ASCII.GetString($bytes[0..15]))"

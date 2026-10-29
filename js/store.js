@@ -305,9 +305,14 @@ class Store {
   async pullFromSupabase() {
     if (!this.supabase) return;
     try {
+      const currentUser = this.getCurrentUser();
+      const clientQuery = currentUser?.telefono
+        ? this.supabase.from("clientes").select("*").eq("telefono", String(currentUser.telefono).replace(/\D/g, ""))
+        : null;
+
       const [prodRes, cliRes, ordRes] = await Promise.all([
         this.supabase.from("productos").select("*").order("id"),
-        this.supabase.from("clientes").select("*"),
+        clientQuery ? clientQuery : Promise.resolve({ data: [] }),
         this.supabase.from("pedidos").select("*").order("id", { ascending: false }).limit(50)
       ]);
 
@@ -320,8 +325,8 @@ class Store {
         safeSet(STORAGE_KEYS.PRODUCTS, mappedProducts);
       }
 
-      if (cliRes.data && cliRes.data.length > 0) {
-        const customerMap = {};
+      if (cliRes && cliRes.data && cliRes.data.length > 0) {
+        const customerMap = safeGet(STORAGE_KEYS.CUSTOMERS, {}) || {};
         cliRes.data.forEach((c) => {
           customerMap[c.telefono] = {
             telefono: c.telefono,
@@ -505,7 +510,8 @@ class Store {
   addToCart(productId, quantityDelta) {
     const cart = this.getCart();
     const product = this.getProducts().find((p) => p.id === productId);
-    if (!product || !product.disponible) return;
+    if (!product) return;
+    if (quantityDelta > 0 && !product.disponible) return;
 
     const currentQty = cart[productId]?.cantidad || 0;
     const newQty = Math.max(0, Number((currentQty + quantityDelta).toFixed(2)));
@@ -805,6 +811,28 @@ class Store {
     this.notify("orders_changed");
   }
 
+  // Cancelar un pedido de forma lógica (soft cancellation)
+  cancelOrder(orderId) {
+    let targetOrder = null;
+    const orders = this.getOrders().map((order) => {
+      if (order.id === orderId) {
+        targetOrder = {
+          ...order,
+          estado: "CANCELADO",
+          cancelado_at: new Date().toISOString()
+        };
+        return targetOrder;
+      }
+      return order;
+    });
+    safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
+    if (this.getActiveOrderId() === orderId) {
+      this.setActiveOrderId(null);
+    }
+    this.notify("orders_changed");
+  }
+
   // Quitar un producto específico del pedido
   removeItemFromOrder(orderId, itemIndex) {
     let targetOrder = null;
@@ -812,7 +840,14 @@ class Store {
       if (order.id === orderId) {
         const items = order.items.filter((_, idx) => idx !== itemIndex);
         const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
-        targetOrder = { ...order, items, total_estimado: totalEstimado };
+
+        // Recalcular total_real si habia pesaje en curso o total_real existente
+        const hasWeighedItems = items.some((i) => i.peso_real !== null);
+        const totalReal = hasWeighedItems
+          ? items.filter((i) => !i.sin_stock && i.peso_real !== null).reduce((sum, i) => sum + (i.subtotal || 0), 0)
+          : null;
+
+        targetOrder = { ...order, items, total_estimado: totalEstimado, total_real: totalReal };
         return targetOrder;
       }
       return order;
@@ -845,7 +880,20 @@ class Store {
         };
         const items = [...order.items, newItem];
         const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
-        targetOrder = { ...order, items, total_estimado: totalEstimado };
+
+        // Si el pedido ya estaba en preparación o tenía pesaje, recalcular total_real
+        const allWeighed = items.every((i) => i.sin_stock || i.peso_real !== null);
+        let totalReal = order.total_real;
+        if (allWeighed) {
+          totalReal = items.filter((i) => !i.sin_stock).reduce((sum, i) => sum + (i.subtotal || 0), 0);
+        } else if (order.total_real !== null) {
+          const hasWeighedItems = items.some((i) => i.peso_real !== null);
+          totalReal = hasWeighedItems
+            ? items.filter((i) => !i.sin_stock && i.peso_real !== null).reduce((sum, i) => sum + (i.subtotal || 0), 0)
+            : null;
+        }
+
+        targetOrder = { ...order, items, total_estimado: totalEstimado, total_real: totalReal };
         return targetOrder;
       }
       return order;

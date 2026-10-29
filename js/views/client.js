@@ -750,55 +750,55 @@ export function renderClientView(container) {
                     .map(
                       (item) => `
                 <div class="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3">
-                  <div class="flex-1 min-w-0">
+                  <div class="flex-1 min-w-0 pr-1">
                     <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                       ${item.categoria || "Producto"}
                     </span>
                     <h4 class="font-extrabold text-slate-900 dark:text-white text-sm truncate mt-0.5">${item.nombre}</h4>
-                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                      $${item.precio_unitario.toLocaleString("es-AR")} / ${item.unidad_medida === "KG" ? "kg" : "u."}
-                    </p>
+                    <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span class="font-black text-sm text-slate-900 dark:text-white">$${item.subtotal_estimado.toLocaleString("es-AR")}</span>
+                      <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">($${item.precio_unitario.toLocaleString("es-AR")}/${item.unidad_medida === "KG" ? "kg" : "u."})</span>
+                    </div>
                   </div>
 
-                  <!-- Stepper en Carrito con botones cómodos (36px) y botón eliminar -->
-                  <div class="flex items-center gap-2">
-                    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 shadow-xs">
+                  <!-- Stepper en Carrito y Botón con la cruz (✕) accesible (>=44x44px) -->
+                  <div class="flex items-center gap-2 shrink-0">
+                    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 shadow-xs min-h-[44px]">
                       <button 
+                        type="button"
                         data-drawer-dec="${item.producto_id}" 
-                        class="w-8 h-8 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-sm tap-feedback"
-                        title="Restar"
+                        class="w-9 h-10 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
+                        title="Restar cantidad"
+                        aria-label="Restar cantidad"
                       >
                         −
                       </button>
-                      <span class="px-2 text-xs font-black min-w-[38px] text-center text-slate-900 dark:text-white select-none">
+                      <span class="px-1.5 text-xs font-black min-w-[36px] text-center text-slate-900 dark:text-white select-none">
                         ${item.cantidad}
                       </span>
                       <button 
+                        type="button"
                         data-drawer-inc="${item.producto_id}" 
-                        class="w-8 h-8 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-sm tap-feedback"
-                        title="Sumar"
+                        class="w-9 h-10 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
+                        title="Sumar cantidad"
+                        aria-label="Sumar cantidad"
                       >
                         +
                       </button>
                     </div>
 
-                    <div class="text-right min-w-[65px]">
-                      <span class="font-black text-sm text-slate-900 dark:text-white block">
-                        $${item.subtotal_estimado.toLocaleString("es-AR")}
-                      </span>
-                      <button 
-                        type="button"
-                        data-drawer-remove="${item.producto_id}"
-                        class="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 underline tap-feedback"
-                        title="Quitar ${item.nombre} del pedido"
-                        aria-label="Quitar ${item.nombre} del pedido"
-                      >
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        <span>Quitar</span>
-                      </button>
-                    </div>
+                    <!-- Botón con la cruz (✕) para eliminar el ítem completo de una vez -->
+                    <button 
+                      type="button"
+                      data-drawer-remove="${item.producto_id}"
+                      class="min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:active:bg-rose-900/80 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 transition tap-feedback shadow-xs shrink-0 touch-target"
+                      title="Eliminar ${item.nombre} del pedido"
+                      aria-label="Eliminar ${item.nombre} del pedido"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               `

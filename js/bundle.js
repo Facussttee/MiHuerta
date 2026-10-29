@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   "use strict";
 
 
@@ -188,17 +188,13 @@ const INITIAL_PRODUCTS = [
     detalle: "Caja seleccionada x 12 u."
   }
 ];
-
 const CATEGORIAS = ["Todos", "Frutas", "Verduras", "Hojas Verdes", "Almacén"];
-
 
   // ==========================================
 
   // 2. STORE Y PERSISTENCIA LOCAL + SUPABASE
 
   // ==========================================
-
-
 
 // Claves de almacenamiento local (versión 3 sin emojis)
 const STORAGE_KEYS = {
@@ -505,9 +501,14 @@ class Store {
   async pullFromSupabase() {
     if (!this.supabase) return;
     try {
+      const currentUser = this.getCurrentUser();
+      const clientQuery = currentUser?.telefono
+        ? this.supabase.from("clientes").select("*").eq("telefono", String(currentUser.telefono).replace(/\D/g, ""))
+        : null;
+
       const [prodRes, cliRes, ordRes] = await Promise.all([
         this.supabase.from("productos").select("*").order("id"),
-        this.supabase.from("clientes").select("*"),
+        clientQuery ? clientQuery : Promise.resolve({ data: [] }),
         this.supabase.from("pedidos").select("*").order("id", { ascending: false }).limit(50)
       ]);
 
@@ -520,8 +521,8 @@ class Store {
         safeSet(STORAGE_KEYS.PRODUCTS, mappedProducts);
       }
 
-      if (cliRes.data && cliRes.data.length > 0) {
-        const customerMap = {};
+      if (cliRes && cliRes.data && cliRes.data.length > 0) {
+        const customerMap = safeGet(STORAGE_KEYS.CUSTOMERS, {}) || {};
         cliRes.data.forEach((c) => {
           customerMap[c.telefono] = {
             telefono: c.telefono,
@@ -705,7 +706,8 @@ class Store {
   addToCart(productId, quantityDelta) {
     const cart = this.getCart();
     const product = this.getProducts().find((p) => p.id === productId);
-    if (!product || !product.disponible) return;
+    if (!product) return;
+    if (quantityDelta > 0 && !product.disponible) return;
 
     const currentQty = cart[productId]?.cantidad || 0;
     const newQty = Math.max(0, Number((currentQty + quantityDelta).toFixed(2)));
@@ -1005,6 +1007,28 @@ class Store {
     this.notify("orders_changed");
   }
 
+  // Cancelar un pedido de forma lógica (soft cancellation)
+  cancelOrder(orderId) {
+    let targetOrder = null;
+    const orders = this.getOrders().map((order) => {
+      if (order.id === orderId) {
+        targetOrder = {
+          ...order,
+          estado: "CANCELADO",
+          cancelado_at: new Date().toISOString()
+        };
+        return targetOrder;
+      }
+      return order;
+    });
+    safeSet(STORAGE_KEYS.ORDERS, orders);
+    if (targetOrder) this.syncOrderToSupabase(targetOrder);
+    if (this.getActiveOrderId() === orderId) {
+      this.setActiveOrderId(null);
+    }
+    this.notify("orders_changed");
+  }
+
   // Quitar un producto específico del pedido
   removeItemFromOrder(orderId, itemIndex) {
     let targetOrder = null;
@@ -1012,7 +1036,14 @@ class Store {
       if (order.id === orderId) {
         const items = order.items.filter((_, idx) => idx !== itemIndex);
         const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
-        targetOrder = { ...order, items, total_estimado: totalEstimado };
+
+        // Recalcular total_real si habia pesaje en curso o total_real existente
+        const hasWeighedItems = items.some((i) => i.peso_real !== null);
+        const totalReal = hasWeighedItems
+          ? items.filter((i) => !i.sin_stock && i.peso_real !== null).reduce((sum, i) => sum + (i.subtotal || 0), 0)
+          : null;
+
+        targetOrder = { ...order, items, total_estimado: totalEstimado, total_real: totalReal };
         return targetOrder;
       }
       return order;
@@ -1045,7 +1076,20 @@ class Store {
         };
         const items = [...order.items, newItem];
         const totalEstimado = items.reduce((sum, i) => sum + (i.subtotal || Math.round(i.cantidad_solicitada * i.precio_unitario)), 0);
-        targetOrder = { ...order, items, total_estimado: totalEstimado };
+
+        // Si el pedido ya estaba en preparación o tenía pesaje, recalcular total_real
+        const allWeighed = items.every((i) => i.sin_stock || i.peso_real !== null);
+        let totalReal = order.total_real;
+        if (allWeighed) {
+          totalReal = items.filter((i) => !i.sin_stock).reduce((sum, i) => sum + (i.subtotal || 0), 0);
+        } else if (order.total_real !== null) {
+          const hasWeighedItems = items.some((i) => i.peso_real !== null);
+          totalReal = hasWeighedItems
+            ? items.filter((i) => !i.sin_stock && i.peso_real !== null).reduce((sum, i) => sum + (i.subtotal || 0), 0)
+            : null;
+        }
+
+        targetOrder = { ...order, items, total_estimado: totalEstimado, total_real: totalReal };
         return targetOrder;
       }
       return order;
@@ -1155,16 +1199,11 @@ class Store {
 
 const store = new Store();
 
-
-
   // ==========================================
 
   // 3. VISTA CLIENTE
 
   // ==========================================
-
-
-
 
 function renderClientView(container) {
   let selectedCategory = "Todos";
@@ -1915,55 +1954,55 @@ function renderClientView(container) {
                     .map(
                       (item) => `
                 <div class="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3">
-                  <div class="flex-1 min-w-0">
+                  <div class="flex-1 min-w-0 pr-1">
                     <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                       ${item.categoria || "Producto"}
                     </span>
                     <h4 class="font-extrabold text-slate-900 dark:text-white text-sm truncate mt-0.5">${item.nombre}</h4>
-                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                      $${item.precio_unitario.toLocaleString("es-AR")} / ${item.unidad_medida === "KG" ? "kg" : "u."}
-                    </p>
+                    <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span class="font-black text-sm text-slate-900 dark:text-white">$${item.subtotal_estimado.toLocaleString("es-AR")}</span>
+                      <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">($${item.precio_unitario.toLocaleString("es-AR")}/${item.unidad_medida === "KG" ? "kg" : "u."})</span>
+                    </div>
                   </div>
 
-                  <!-- Stepper en Carrito con botones cómodos (36px) y botón eliminar -->
-                  <div class="flex items-center gap-2">
-                    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 shadow-xs">
+                  <!-- Stepper en Carrito y Botón con la cruz (✕) accesible (>=44x44px) -->
+                  <div class="flex items-center gap-2 shrink-0">
+                    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 shadow-xs min-h-[44px]">
                       <button 
+                        type="button"
                         data-drawer-dec="${item.producto_id}" 
-                        class="w-8 h-8 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-sm tap-feedback"
-                        title="Restar"
+                        class="w-9 h-10 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
+                        title="Restar cantidad"
+                        aria-label="Restar cantidad"
                       >
                         −
                       </button>
-                      <span class="px-2 text-xs font-black min-w-[38px] text-center text-slate-900 dark:text-white select-none">
+                      <span class="px-1.5 text-xs font-black min-w-[36px] text-center text-slate-900 dark:text-white select-none">
                         ${item.cantidad}
                       </span>
                       <button 
+                        type="button"
                         data-drawer-inc="${item.producto_id}" 
-                        class="w-8 h-8 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-sm tap-feedback"
-                        title="Sumar"
+                        class="w-9 h-10 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
+                        title="Sumar cantidad"
+                        aria-label="Sumar cantidad"
                       >
                         +
                       </button>
                     </div>
 
-                    <div class="text-right min-w-[65px]">
-                      <span class="font-black text-sm text-slate-900 dark:text-white block">
-                        $${item.subtotal_estimado.toLocaleString("es-AR")}
-                      </span>
-                      <button 
-                        type="button"
-                        data-drawer-remove="${item.producto_id}"
-                        class="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 underline tap-feedback"
-                        title="Quitar ${item.nombre} del pedido"
-                        aria-label="Quitar ${item.nombre} del pedido"
-                      >
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        <span>Quitar</span>
-                      </button>
-                    </div>
+                    <!-- Botón con la cruz (✕) para eliminar el ítem completo de una vez -->
+                    <button 
+                      type="button"
+                      data-drawer-remove="${item.producto_id}"
+                      class="min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:active:bg-rose-900/80 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 transition tap-feedback shadow-xs shrink-0 touch-target"
+                      title="Eliminar ${item.nombre} del pedido"
+                      aria-label="Eliminar ${item.nombre} del pedido"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               `
@@ -2415,14 +2454,11 @@ function renderClientView(container) {
   return () => unsubscribe();
 }
 
-
   // ==========================================
 
   // 4. VISTA OPERARIO (BALANZA Y MOSTRADOR)
 
   // ==========================================
-
-
 
 // Convierte automáticamente entradas en gramos sin punto (ej: 2150 -> 2.15 kg, 850 -> 0.85 kg)
 function parseOperatorWeight(rawInput, isWeight = true) {
@@ -3416,15 +3452,11 @@ Alias para transferir: mihuerta.verduras
   return () => unsubscribe();
 }
 
-
   // ==========================================
 
   // 5. VISTA ADMIN / DUENO
 
   // ==========================================
-
-
-
 
 function renderAdminView(container) {
   let selectedCategory = "Todos";
@@ -3816,13 +3848,11 @@ function renderAdminView(container) {
   return () => unsubscribe();
 }
 
-
   // ==========================================
 
   // 6. ENRUTADOR Y CONTROL DE ACCESO POR PIN
 
   // ==========================================
-
 
 class App {
   constructor() {
@@ -4045,6 +4075,5 @@ if (document.readyState === "loading") {
 } else {
   new App();
 }
-
 
 })();
