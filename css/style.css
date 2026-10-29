@@ -314,6 +314,19 @@ button, input, select, a {
 .safe-pb {
   padding-bottom: max(1.25rem, calc(1.25rem + env(safe-area-inset-bottom, 0px)));
 }
+.pb-24.safe-pb {
+  padding-bottom: max(6rem, calc(6rem + env(safe-area-inset-bottom, 0px)));
+}
+.pb-28.safe-pb {
+  padding-bottom: max(7rem, calc(7rem + env(safe-area-inset-bottom, 0px)));
+}
+.pb-32.safe-pb {
+  padding-bottom: max(8rem, calc(8rem + env(safe-area-inset-bottom, 0px)));
+}
+.pb-36.safe-pb,
+.sm\:pb-36.safe-pb {
+  padding-bottom: max(9rem, calc(9rem + env(safe-area-inset-bottom, 0px)));
+}
 .safe-floating-bottom {
   bottom: max(1rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
 }
@@ -326,6 +339,7 @@ button, input, select, a {
 .admin-cat-pill {
   flex-shrink: 0 !important;
   white-space: nowrap !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Altura mínima accesible para toques con pulgar (WCAG Touch Targets) */

@@ -174,6 +174,7 @@ export function renderAdminView(container) {
               </button>
             `
             ).join("")}
+            <div class="w-2 shrink-0 select-none pointer-events-none" aria-hidden="true"></div>
           </div>
         </header>
 
