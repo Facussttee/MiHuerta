@@ -3388,28 +3388,36 @@ function renderAdminView(container) {
     container.innerHTML = `
       <div class="max-w-xl mx-auto p-4 pb-32">
         <!-- Header del Panel -->
-        <header class="sticky sticky-header-offset z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/90 pt-3 pb-3 mb-4 -mx-4 px-4 shadow-xs">
+        <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 pt-3 pb-3 mb-4 -mx-4 px-4 shadow-xs">
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-0.5">
+              <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 block mb-0.5">
                 Panel de Administración
               </span>
-              <h1 class="font-black text-slate-900 text-lg tracking-tight">Precios y Catálogo</h1>
-              <p class="text-xs text-slate-500 mt-0.5">Ajustá los valores del día en tiempo real.</p>
+              <h1 class="font-black text-slate-900 dark:text-white text-lg tracking-tight">Precios y Catálogo</h1>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Ajustá los valores del día en tiempo real.</p>
             </div>
             <div class="flex flex-col items-end gap-1.5">
               <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                isConnected ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                isConnected ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
               }">
                 ${isConnected ? "Cloud Online" : "Modo Local"}
               </span>
               <div class="flex items-center gap-1.5">
                 <button 
+                  type="button"
+                  class="theme-toggle-btn text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition tap-feedback"
+                  title="Cambiar tema claro / oscuro"
+                >
+                  <span>Tema:</span>
+                  <span class="theme-label font-bold">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+                </button>
+                <button 
                   id="btn-toggle-cloud"
                   class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition tap-feedback ${
                     isConnected
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }"
                 >
                   ${showCloudSettings ? "Cerrar Config" : "Config Cloud"}
@@ -3417,7 +3425,7 @@ function renderAdminView(container) {
                 <button 
                   id="btn-admin-logout" 
                   title="Salir y bloquear panel" 
-                  class="text-[11px] font-bold px-2 py-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition tap-feedback"
+                  class="text-[11px] font-bold px-2 py-1 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition tap-feedback"
                 >
                   Salir
                 </button>
@@ -3432,11 +3440,11 @@ function renderAdminView(container) {
               id="admin-search-input" 
               placeholder="Buscar producto por nombre..." 
               value="${searchQuery}"
-              class="w-full pl-3.5 pr-16 py-2.5 bg-slate-100 focus:bg-white border border-transparent focus:border-slate-300 rounded-xl text-base font-medium outline-none transition"
+              class="w-full pl-3.5 pr-16 py-2.5 bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-transparent focus:border-slate-300 dark:focus:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
             />
             ${
               searchQuery
-                ? `<button id="btn-admin-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 hover:text-slate-700 text-xs font-bold tap-feedback">Borrar</button>`
+                ? `<button id="btn-admin-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback">Borrar</button>`
                 : ""
             }
           </div>
@@ -3510,13 +3518,13 @@ function renderAdminView(container) {
                 data-admin-cat="${cat}"
                 class="admin-cat-pill whitespace-nowrap min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition tap-feedback flex items-center gap-1.5 ${
                   selectedCategory === cat
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
+                    : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
                 }"
               >
                 <span>${cat}</span>
                 <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
-                  selectedCategory === cat ? "bg-slate-800 text-slate-200 font-black" : "bg-slate-200 text-slate-600"
+                  selectedCategory === cat ? "bg-slate-800 dark:bg-emerald-800 text-slate-200 dark:text-white font-black" : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                 }">
                   ${categoryCounts[cat] || 0}
                 </span>
@@ -3539,9 +3547,9 @@ function renderAdminView(container) {
   function renderAdminProductsListHTML(filtered) {
     if (filtered.length === 0) {
       return `
-        <div class="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 p-6">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin resultados</span>
-          <p class="text-sm font-semibold text-slate-700">No encontramos productos con ese nombre</p>
+        <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 p-6">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">Sin resultados</span>
+          <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">No encontramos productos con ese nombre</p>
         </div>
       `;
     }
@@ -3551,15 +3559,15 @@ function renderAdminView(container) {
         const unit = p.unidad_medida === "KG" ? "kg" : "u.";
 
         return `
-          <div id="product-card-${p.id}" class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-3 transition">
+          <div id="product-card-${p.id}" class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3 transition">
             <div class="flex-1 min-w-[160px]">
               <div class="flex items-center gap-1.5 mb-0.5">
-                <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                   ${p.categoria}
                 </span>
-                <span class="text-[10px] text-slate-400 font-medium">${p.unidad_medida === "KG" ? "Por kilo" : "Por unidad"}</span>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">${p.unidad_medida === "KG" ? "Por kilo" : "Por unidad"}</span>
               </div>
-              <h3 class="font-extrabold text-slate-900 text-sm leading-tight">${p.nombre}</h3>
+              <h3 class="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">${p.nombre}</h3>
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
@@ -3568,14 +3576,14 @@ function renderAdminView(container) {
                 type="button"
                 data-step-price="${p.id}"
                 data-delta="-100"
-                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold rounded-lg text-xs transition tap-feedback"
+                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition tap-feedback"
                 title="Bajar $100"
               >
                 −
               </button>
 
               <div class="relative w-28">
-                <span class="absolute left-2.5 top-2.5 text-xs font-bold text-slate-400 select-none pointer-events-none">$</span>
+                <span class="absolute left-2.5 top-2.5 text-xs font-bold text-slate-400 dark:text-slate-500 select-none pointer-events-none">$</span>
                 <input 
                   type="number" 
                   data-product-id="${p.id}"
@@ -3583,16 +3591,16 @@ function renderAdminView(container) {
                   step="50"
                   min="0"
                   inputmode="numeric"
-                  class="input-price w-full pl-6 pr-6 py-2 bg-slate-50 border border-slate-300 rounded-xl text-center font-black text-base text-slate-900 outline-none focus:bg-white focus:border-slate-900 transition"
+                  class="input-price w-full pl-6 pr-6 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-black text-base text-slate-900 dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-900 dark:focus:border-slate-400 transition"
                 />
-                <span class="absolute right-2 top-2.5 text-[11px] font-semibold text-slate-400 select-none pointer-events-none">${unit}</span>
+                <span class="absolute right-2 top-2.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500 select-none pointer-events-none">${unit}</span>
               </div>
 
               <button 
                 type="button"
                 data-step-price="${p.id}"
                 data-delta="100"
-                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold rounded-lg text-xs transition tap-feedback"
+                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition tap-feedback"
                 title="Subir $100"
               >
                 +
@@ -3603,8 +3611,8 @@ function renderAdminView(container) {
                 data-toggle-stock="${p.id}"
                 class="btn-stock-toggle min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold transition tap-feedback ${
                   p.disponible
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100"
-                    : "bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200"
+                    ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
                 }"
               >
                 ${p.disponible ? "Activo" : "Pausado"}
