@@ -343,7 +343,7 @@ class Store {
           tipo_entrega: o.tipo_entrega,
           direccion_entrega: o.direccion_entrega,
           estado: o.estado,
-          fecha: o.fecha,
+          fecha: o.fecha || o.created_at || new Date().toISOString(),
           total_estimado: Number(o.total_estimado),
           total_real: o.total_real !== null ? Number(o.total_real) : null,
           items: Array.isArray(o.items) ? o.items : []
@@ -920,11 +920,16 @@ class Store {
     }
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute("content", isDark ? "#020617" : "#059669");
+      metaThemeColor.setAttribute("content", isDark ? "#020617" : "#f8fafc");
     }
     const labels = document.querySelectorAll(".theme-label");
     labels.forEach((el) => {
       el.textContent = isDark ? "Oscuro" : "Claro";
+    });
+    const btns = document.querySelectorAll(".theme-toggle-btn");
+    btns.forEach((btn) => {
+      btn.setAttribute("aria-label", isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro");
+      btn.setAttribute("title", isDark ? "Cambiar a tema claro (atajo: T)" : "Cambiar a tema oscuro (atajo: T)");
     });
   }
 

@@ -614,9 +614,19 @@ export function renderOperatorView(container) {
               <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Modificar</span>
               <h3 class="font-black text-base text-slate-900 dark:text-white">Pedido #${order.id}</h3>
             </div>
-            <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold text-xs tap-feedback border border-transparent dark:border-slate-700">
-              Cerrar
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button 
+                type="button"
+                class="theme-toggle-btn min-h-[36px] px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1 text-xs font-bold"
+                title="Cambiar tema claro / oscuro"
+              >
+                <span>Tema:</span>
+                <span class="theme-label font-bold">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+              </button>
+              <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold text-xs tap-feedback border border-transparent dark:border-slate-700">
+                Cerrar
+              </button>
+            </div>
           </div>
 
           <form id="edit-order-form" class="space-y-3 text-left">
@@ -960,7 +970,10 @@ Alias para transferir: mihuerta.verduras
   }
 
   function timeAgo(dateString) {
-    const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 60000);
+    if (!dateString) return "Hace instantes";
+    const timestamp = new Date(dateString).getTime();
+    if (isNaN(timestamp)) return "Hace instantes";
+    const diff = Math.floor((Date.now() - timestamp) / 60000);
     if (diff < 1) return "Hace instantes";
     if (diff === 1) return "Hace 1 min";
     if (diff < 60) return `Hace ${diff} min`;

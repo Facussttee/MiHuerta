@@ -57,7 +57,7 @@ export function renderClientView(container) {
             </div>
             <button 
               type="button"
-              class="theme-toggle-btn shrink-0 text-[11px] font-bold tracking-wider px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1.5"
+              class="theme-toggle-btn shrink-0 min-h-[44px] text-[11px] font-bold tracking-wider px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1.5 touch-target"
               title="Cambiar tema claro / oscuro"
             >
               <span>Tema:</span>
@@ -523,7 +523,7 @@ export function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="0.5" 
-                    class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
                       currentQty === 0.5 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -532,7 +532,7 @@ export function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="1" 
-                    class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
                       currentQty === 1 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -541,7 +541,7 @@ export function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="2" 
-                    class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
                       currentQty === 2 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -670,19 +670,29 @@ export function renderClientView(container) {
           <!-- Handle bar táctil -->
           <div class="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-3"></div>
 
-          <!-- Header Carrito con botón de cierre accesible (44x44px) -->
+          <!-- Header Carrito con botón de cierre accesible (44x44px) y toggle de tema -->
           <div class="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
               <h2 class="font-black text-slate-900 dark:text-white text-lg tracking-tight">Tu Pedido</h2>
               <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Revisá las cantidades antes de confirmar</p>
             </div>
-            <button 
-              id="btn-close-cart" 
-              class="min-h-[44px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 flex items-center justify-center font-bold text-xs tap-feedback touch-target border border-transparent dark:border-slate-700"
-              title="Cerrar pedido"
-            >
-              Cerrar
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button 
+                type="button"
+                class="theme-toggle-btn min-h-[44px] px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1 text-xs font-bold"
+                title="Cambiar tema claro / oscuro"
+              >
+                <span>Tema:</span>
+                <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+              </button>
+              <button 
+                id="btn-close-cart" 
+                class="min-h-[44px] px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 flex items-center justify-center font-bold text-xs tap-feedback touch-target border border-transparent dark:border-slate-700"
+                title="Cerrar pedido"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
 
           <!-- Lista de Ítems en Carrito con Controles Directos -->

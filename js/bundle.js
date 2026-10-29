@@ -543,7 +543,7 @@ class Store {
           tipo_entrega: o.tipo_entrega,
           direccion_entrega: o.direccion_entrega,
           estado: o.estado,
-          fecha: o.fecha,
+          fecha: o.fecha || o.created_at || new Date().toISOString(),
           total_estimado: Number(o.total_estimado),
           total_real: o.total_real !== null ? Number(o.total_real) : null,
           items: Array.isArray(o.items) ? o.items : []
@@ -1120,11 +1120,16 @@ class Store {
     }
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute("content", isDark ? "#020617" : "#059669");
+      metaThemeColor.setAttribute("content", isDark ? "#020617" : "#f8fafc");
     }
     const labels = document.querySelectorAll(".theme-label");
     labels.forEach((el) => {
       el.textContent = isDark ? "Oscuro" : "Claro";
+    });
+    const btns = document.querySelectorAll(".theme-toggle-btn");
+    btns.forEach((btn) => {
+      btn.setAttribute("aria-label", isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro");
+      btn.setAttribute("title", isDark ? "Cambiar a tema claro (atajo: T)" : "Cambiar a tema oscuro (atajo: T)");
     });
   }
 
@@ -1217,7 +1222,7 @@ function renderClientView(container) {
             </div>
             <button 
               type="button"
-              class="theme-toggle-btn shrink-0 text-[11px] font-bold tracking-wider px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1.5"
+              class="theme-toggle-btn shrink-0 min-h-[44px] text-[11px] font-bold tracking-wider px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1.5 touch-target"
               title="Cambiar tema claro / oscuro"
             >
               <span>Tema:</span>
@@ -1683,7 +1688,7 @@ function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="0.5" 
-                    class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
                       currentQty === 0.5 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -1692,7 +1697,7 @@ function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="1" 
-                    class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
                       currentQty === 1 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -1701,7 +1706,7 @@ function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="2" 
-                    class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
                       currentQty === 2 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -1830,19 +1835,29 @@ function renderClientView(container) {
           <!-- Handle bar táctil -->
           <div class="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-3"></div>
 
-          <!-- Header Carrito con botón de cierre accesible (44x44px) -->
+          <!-- Header Carrito con botón de cierre accesible (44x44px) y toggle de tema -->
           <div class="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
               <h2 class="font-black text-slate-900 dark:text-white text-lg tracking-tight">Tu Pedido</h2>
               <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Revisá las cantidades antes de confirmar</p>
             </div>
-            <button 
-              id="btn-close-cart" 
-              class="min-h-[44px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 flex items-center justify-center font-bold text-xs tap-feedback touch-target border border-transparent dark:border-slate-700"
-              title="Cerrar pedido"
-            >
-              Cerrar
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button 
+                type="button"
+                class="theme-toggle-btn min-h-[44px] px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1 text-xs font-bold"
+                title="Cambiar tema claro / oscuro"
+              >
+                <span>Tema:</span>
+                <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+              </button>
+              <button 
+                id="btn-close-cart" 
+                class="min-h-[44px] px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 flex items-center justify-center font-bold text-xs tap-feedback touch-target border border-transparent dark:border-slate-700"
+                title="Cerrar pedido"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
 
           <!-- Lista de Ítems en Carrito con Controles Directos -->
@@ -2984,9 +2999,19 @@ function renderOperatorView(container) {
               <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Modificar</span>
               <h3 class="font-black text-base text-slate-900 dark:text-white">Pedido #${order.id}</h3>
             </div>
-            <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold text-xs tap-feedback border border-transparent dark:border-slate-700">
-              Cerrar
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button 
+                type="button"
+                class="theme-toggle-btn min-h-[36px] px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1 text-xs font-bold"
+                title="Cambiar tema claro / oscuro"
+              >
+                <span>Tema:</span>
+                <span class="theme-label font-bold">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+              </button>
+              <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold text-xs tap-feedback border border-transparent dark:border-slate-700">
+                Cerrar
+              </button>
+            </div>
           </div>
 
           <form id="edit-order-form" class="space-y-3 text-left">
@@ -3330,7 +3355,10 @@ Alias para transferir: mihuerta.verduras
   }
 
   function timeAgo(dateString) {
-    const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 60000);
+    if (!dateString) return "Hace instantes";
+    const timestamp = new Date(dateString).getTime();
+    if (isNaN(timestamp)) return "Hace instantes";
+    const diff = Math.floor((Date.now() - timestamp) / 60000);
     if (diff < 1) return "Hace instantes";
     if (diff === 1) return "Hace 1 min";
     if (diff < 60) return `Hace ${diff} min`;
@@ -3822,11 +3850,13 @@ class App {
       }
     });
 
-    // Atajo de teclado 'T' para alternar tema rápidamente en escritorio
+    // Atajo de teclado 'T' para alternar tema rápidamente en escritorio (sin interferir con Ctrl+T o Alt+T)
     window.addEventListener("keydown", (e) => {
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
       if (
         (e.key === "t" || e.key === "T") &&
-        !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)
+        !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName) &&
+        !document.activeElement?.isContentEditable
       ) {
         store.toggleTheme();
       }

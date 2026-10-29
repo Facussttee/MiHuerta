@@ -68,11 +68,13 @@ class App {
       }
     });
 
-    // Atajo de teclado 'T' para alternar tema rápidamente en escritorio
+    // Atajo de teclado 'T' para alternar tema rápidamente en escritorio (sin interferir con Ctrl+T o Alt+T)
     window.addEventListener("keydown", (e) => {
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
       if (
         (e.key === "t" || e.key === "T") &&
-        !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)
+        !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName) &&
+        !document.activeElement?.isContentEditable
       ) {
         store.toggleTheme();
       }
