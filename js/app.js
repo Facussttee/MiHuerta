@@ -92,6 +92,12 @@ class App {
 
     const initialView = urlParams.get("view") || window.location.hash.replace("#", "") || "client";
     this.navigate(initialView);
+
+    // Reaccionar a cambios manuales del hash (#operador, #admin) sin recargar
+    window.addEventListener("hashchange", () => {
+      const target = this.normalizeView(window.location.hash.replace("#", ""));
+      if (target !== this.currentView) this.navigate(target);
+    });
   }
 
   renderPinGate(targetView) {
@@ -173,7 +179,21 @@ class App {
     }
   }
 
+  // Normaliza alias de URL (#operador, #precios, #administrador...) a vistas canónicas
+  normalizeView(name) {
+    const key = String(name || "").toLowerCase().trim();
+    const aliases = {
+      operator: "operator", operario: "operator", operador: "operator",
+      mostrador: "operator", balanza: "operator",
+      admin: "admin", administrador: "admin", dueno: "admin", "dueño": "admin",
+      precios: "admin", owner: "admin",
+      client: "client", cliente: "client", catalogo: "client", "catálogo": "client"
+    };
+    return aliases[key] || "client";
+  }
+
   navigate(viewName) {
+    viewName = this.normalizeView(viewName);
     if (this.currentViewCleanup) {
       this.currentViewCleanup();
       this.currentViewCleanup = null;
