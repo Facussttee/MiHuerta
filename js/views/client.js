@@ -230,7 +230,7 @@ export function renderClientView(container) {
     const savedDrawerScroll = prevScrollEl ? prevScrollEl.scrollTop : 0;
 
     container.innerHTML = `
-      <div class="max-w-md mx-auto pb-36">
+      <div class="max-w-md mx-auto pb-36 w-full overflow-x-hidden">
         
         <!-- Banner de Pedido Activo en Curso (si existe) -->
         ${
@@ -282,7 +282,7 @@ export function renderClientView(container) {
             <div class="flex items-center gap-1.5">
               <button 
                 type="button"
-                class="theme-toggle-btn min-h-[44px] px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 tap-feedback"
+                class="theme-toggle-btn min-h-[44px] px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
                 title="Cambiar tema claro / oscuro"
               >
                 <span>Tema:</span>
@@ -291,7 +291,7 @@ export function renderClientView(container) {
 
               <button 
                 id="btn-header-cart" 
-                class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 tap-feedback"
+                class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
               >
                 <span>Pedido</span>
                 <span class="px-2 py-0.5 rounded-full ${totalItems > 0 ? "bg-emerald-600 text-white font-black" : "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold"} text-xs">
@@ -312,18 +312,18 @@ export function renderClientView(container) {
             />
             ${
               searchQuery
-                ? `<button id="btn-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback">Borrar</button>`
+                ? `<button id="btn-clear-search" class="absolute right-1 top-1 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback rounded-xl touch-target" title="Borrar búsqueda" aria-label="Borrar búsqueda">Borrar</button>`
                 : ""
             }
           </div>
 
           <!-- Píldoras de Categorías con conteo (Horizontal Scroll Táctil) -->
-          <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar py-1">
+          <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar overscroll-x-contain py-1">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-category="${cat}"
-                class="category-pill whitespace-nowrap min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition tap-feedback flex items-center gap-1.5 ${
+                class="category-pill whitespace-nowrap min-h-[44px] px-4 py-2.5 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
                   selectedCategory === cat
                     ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
@@ -348,7 +348,7 @@ export function renderClientView(container) {
 
         <!-- Footer discreto para acceso a personal del local -->
         <footer class="mt-8 mb-16 text-center text-xs text-slate-400 dark:text-slate-500">
-          <p>Verdulería Mi Huerta • Catálogo y Pesaje en Balanza</p>
+          <p>Verdulería Mi Huerta <span class="opacity-40 font-light">|</span> Catálogo y Pesaje en Balanza</p>
           <a href="?view=operario" class="inline-block mt-2 text-[11px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline">
             Acceso Personal del Local
           </a>
@@ -427,18 +427,35 @@ export function renderClientView(container) {
         const itemSubtotal = inCart ? Math.round(currentQty * product.precio) : 0;
 
         return `
-          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border transition ${
-            inCart ? "border-emerald-500/50 bg-emerald-50/10 dark:bg-emerald-950/20 shadow-xs" : "border-slate-200/80 dark:border-slate-800 shadow-xs"
+          <div class="relative bg-white dark:bg-slate-900 rounded-2xl p-4 border transition ${
+            inCart ? "border-emerald-500/60 bg-emerald-50/15 dark:bg-emerald-950/20 shadow-xs" : "border-slate-200/80 dark:border-slate-800 shadow-xs"
           } ${!product.disponible ? "opacity-40 grayscale pointer-events-none" : ""}">
             
-            <div class="flex items-start justify-between gap-3">
+            <!-- Botón de Descarte Rápido '×' (Visible sólo si Qty > 0, 44x44px táctil) -->
+            ${
+              inCart && product.disponible
+                ? `
+              <button 
+                type="button"
+                data-quick-discard-id="${product.id}"
+                class="btn-quick-discard absolute top-2.5 right-2.5 min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 active:bg-rose-100 dark:active:bg-rose-900/60 transition tap-feedback touch-target z-10"
+                title="Quitar ${product.nombre} del pedido"
+                aria-label="Quitar ${product.nombre} del pedido"
+              >
+                <span class="text-xl font-bold leading-none select-none" aria-hidden="true">×</span>
+              </button>
+            `
+                : ""
+            }
+
+            <div class="flex items-start justify-between gap-3 ${inCart ? "pr-11" : ""}">
               <!-- Info Producto -->
               <div class="flex-1 min-w-0 pr-1">
                 <div class="flex items-center flex-wrap gap-1 mb-1">
                   <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                     ${product.categoria}
                   </span>
-                  <span class="text-[10px] text-slate-300 dark:text-slate-600">·</span>
+                  <span class="text-[10px] text-slate-300 dark:text-slate-600 font-bold select-none">/</span>
                   <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
                     ${unitSubtitle}
                   </span>
@@ -485,51 +502,37 @@ export function renderClientView(container) {
                       <button 
                         data-add-id="${product.id}"
                         data-step="${step}"
-                        class="btn-add-initial min-h-[44px] min-w-[96px] bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border dark:border-slate-700 text-white font-bold px-3 py-2.5 rounded-xl text-xs transition tap-feedback flex items-center justify-center gap-1.5 shadow-xs"
+                        class="btn-add-initial min-h-[44px] min-w-[96px] bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border dark:border-slate-700 text-white font-bold px-3 py-2.5 rounded-xl text-xs transition tap-feedback touch-target flex items-center justify-center gap-1.5 shadow-xs"
                       >
                         <span>Agregar</span>
                         <span class="text-xs font-bold">+</span>
                       </button>
                     `
                       : `
-                      <div class="flex items-center gap-1.5">
+                      <div class="flex items-center bg-emerald-600 text-white rounded-xl p-0.5 shadow-xs min-h-[44px]">
                         <button 
                           type="button"
-                          data-remove-id="${product.id}"
-                          class="btn-remove-item min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:active:bg-rose-900/80 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 transition tap-feedback shadow-xs shrink-0"
-                          title="Eliminar ${product.nombre} del pedido"
-                          aria-label="Eliminar ${product.nombre} del pedido"
+                          data-dec-id="${product.id}"
+                          data-step="${step}"
+                          class="btn-qty-dec min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback touch-target"
+                          title="Restar"
+                          aria-label="Restar cantidad"
                         >
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          −
                         </button>
-
-                        <div class="flex items-center bg-emerald-600 text-white rounded-xl p-0.5 shadow-xs min-h-[44px]">
-                          <button 
-                            type="button"
-                            data-dec-id="${product.id}"
-                            data-step="${step}"
-                            class="btn-qty-dec w-9 h-10 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback"
-                            title="Restar"
-                            aria-label="Restar cantidad"
-                          >
-                            −
-                          </button>
-                          <span class="px-1.5 text-xs font-black min-w-[38px] text-center tracking-tight select-none">
-                            ${currentQty} ${unitLabel}
-                          </span>
-                          <button 
-                            type="button"
-                            data-inc-id="${product.id}"
-                            data-step="${step}"
-                            class="btn-qty-inc w-9 h-10 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback"
-                            title="Sumar"
-                            aria-label="Sumar cantidad"
-                          >
-                            +
-                          </button>
-                        </div>
+                        <span class="px-2 text-xs font-black min-w-[40px] text-center tracking-tight select-none">
+                          ${currentQty} ${unitLabel}
+                        </span>
+                        <button 
+                          type="button"
+                          data-inc-id="${product.id}"
+                          data-step="${step}"
+                          class="btn-qty-inc min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback touch-target"
+                          title="Sumar"
+                          aria-label="Sumar cantidad"
+                        >
+                          +
+                        </button>
                       </div>
                     `
                     : ""
@@ -547,7 +550,7 @@ export function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="0.5" 
-                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold transition tap-feedback touch-target ${
                       currentQty === 0.5 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -556,7 +559,7 @@ export function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="1" 
-                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold transition tap-feedback touch-target ${
                       currentQty === 1 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -565,7 +568,7 @@ export function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="2" 
-                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold transition tap-feedback touch-target ${
                       currentQty === 2 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -667,11 +670,11 @@ export function renderClientView(container) {
       });
     });
 
-    container.querySelectorAll(".btn-remove-item").forEach((btn) => {
+    container.querySelectorAll(".btn-quick-discard, .btn-remove-item").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
-        const id = btn.dataset.removeId;
+        const id = btn.dataset.quickDiscardId || btn.dataset.removeId;
         store.removeFromCart(id);
       });
     });
@@ -761,25 +764,25 @@ export function renderClientView(container) {
                     </div>
                   </div>
 
-                  <!-- Stepper en Carrito y Botón con la cruz (✕) accesible (>=44x44px) -->
+                  <!-- Stepper en Carrito y Botón con la cruz '×' accesible (44x44px touch-target) -->
                   <div class="flex items-center gap-2 shrink-0">
                     <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 shadow-xs min-h-[44px]">
                       <button 
                         type="button"
                         data-drawer-dec="${item.producto_id}" 
-                        class="w-9 h-10 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
+                        class="min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
                         title="Restar cantidad"
                         aria-label="Restar cantidad"
                       >
                         −
                       </button>
-                      <span class="px-1.5 text-xs font-black min-w-[36px] text-center text-slate-900 dark:text-white select-none">
+                      <span class="px-1 text-xs font-black min-w-[32px] text-center text-slate-900 dark:text-white select-none">
                         ${item.cantidad}
                       </span>
                       <button 
                         type="button"
                         data-drawer-inc="${item.producto_id}" 
-                        class="w-9 h-10 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
+                        class="min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
                         title="Sumar cantidad"
                         aria-label="Sumar cantidad"
                       >
@@ -787,17 +790,15 @@ export function renderClientView(container) {
                       </button>
                     </div>
 
-                    <!-- Botón con la cruz (✕) para eliminar el ítem completo de una vez -->
+                    <!-- Botón tipográfico con cruz '×' para eliminar el ítem completo de 1 toque (44x44px touch-target) -->
                     <button 
                       type="button"
                       data-drawer-remove="${item.producto_id}"
                       class="min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:active:bg-rose-900/80 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 transition tap-feedback shadow-xs shrink-0 touch-target"
-                      title="Eliminar ${item.nombre} del pedido"
-                      aria-label="Eliminar ${item.nombre} del pedido"
+                      title="Quitar ${item.nombre} del pedido"
+                      aria-label="Quitar ${item.nombre} del pedido"
                     >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <span class="text-xl font-bold leading-none select-none" aria-hidden="true">×</span>
                     </button>
                   </div>
                 </div>
@@ -824,7 +825,7 @@ export function renderClientView(container) {
                     <span class="text-xs font-black">Retiro en Local</span>
                     <input type="radio" name="delivery-mode" value="RETIRO" ${!isDelivery ? "checked" : ""} class="accent-emerald-500" />
                   </div>
-                  <span class="text-[10px] opacity-75 mt-1">Listo en 20-30 min · Sin costo</span>
+                  <span class="text-[10px] opacity-75 mt-1">Listo en 20-30 min <span class="opacity-60">|</span> Sin costo</span>
                 </label>
 
                 <label id="delivery-card-delivery" class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
@@ -984,7 +985,8 @@ export function renderClientView(container) {
     });
 
     container.querySelectorAll("[data-drawer-remove]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
         if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
         const id = btn.dataset.drawerRemove;
         store.removeFromCart(id);

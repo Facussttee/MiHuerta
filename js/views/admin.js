@@ -28,7 +28,7 @@ export function renderAdminView(container) {
     });
 
     container.innerHTML = `
-      <div class="max-w-xl mx-auto p-4 pb-32">
+      <div class="max-w-xl mx-auto p-4 pb-32 overflow-x-hidden">
         <!-- Header del Panel -->
         <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 pt-3 pb-3 mb-4 -mx-4 px-4 shadow-xs">
           <div class="flex items-center justify-between">
@@ -48,15 +48,16 @@ export function renderAdminView(container) {
               <div class="flex items-center gap-1.5">
                 <button 
                   type="button"
-                  class="theme-toggle-btn text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition tap-feedback"
+                  class="theme-toggle-btn min-h-[44px] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition tap-feedback touch-target flex items-center gap-1"
                   title="Cambiar tema claro / oscuro"
+                  aria-label="Cambiar tema claro u oscuro"
                 >
                   <span>Tema:</span>
-                  <span class="theme-label font-bold">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+                  <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
                 </button>
                 <button 
                   id="btn-toggle-cloud"
-                  class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition tap-feedback ${
+                  class="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border transition tap-feedback touch-target flex items-center justify-center ${
                     isConnected
                       ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                       : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -67,7 +68,7 @@ export function renderAdminView(container) {
                 <button 
                   id="btn-admin-logout" 
                   title="Salir y bloquear panel" 
-                  class="text-[11px] font-bold px-2 py-1 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition tap-feedback"
+                  class="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition tap-feedback touch-target flex items-center justify-center"
                 >
                   Salir
                 </button>
@@ -82,11 +83,11 @@ export function renderAdminView(container) {
               id="admin-search-input" 
               placeholder="Buscar producto por nombre..." 
               value="${searchQuery}"
-              class="w-full pl-3.5 pr-16 py-2.5 bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-transparent focus:border-slate-300 dark:focus:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
+              class="w-full pl-3.5 pr-14 py-2.5 min-h-[44px] bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-transparent focus:border-slate-300 dark:focus:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
             />
             ${
               searchQuery
-                ? `<button id="btn-admin-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback">Borrar</button>`
+                ? `<button id="btn-admin-clear-search" class="absolute right-1 top-1 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback touch-target">Borrar</button>`
                 : ""
             }
           </div>
@@ -112,7 +113,7 @@ export function renderAdminView(container) {
                     id="cfg-pin" 
                     maxlength="6"
                     value="${cloudConfig.staffPin || "1234"}" 
-                    class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-base font-bold outline-none focus:border-emerald-500"
+                    class="w-full min-h-[44px] p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-base font-bold outline-none focus:border-emerald-500"
                   />
                 </div>
 
@@ -123,7 +124,7 @@ export function renderAdminView(container) {
                     id="cfg-url" 
                     value="${cloudConfig.supabaseUrl || ""}" 
                     placeholder="https://xyz.supabase.co"
-                    class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-base outline-none focus:border-emerald-500"
+                    class="w-full min-h-[44px] p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-base outline-none focus:border-emerald-500"
                   />
                 </div>
 
@@ -134,14 +135,14 @@ export function renderAdminView(container) {
                     id="cfg-key" 
                     value="${cloudConfig.supabaseAnonKey || ""}" 
                     placeholder="eyJhbG..."
-                    class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-base outline-none focus:border-emerald-500"
+                    class="w-full min-h-[44px] p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-base outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 <div class="pt-1 flex gap-2">
                   <button 
                     type="submit" 
-                    class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition"
+                    class="w-full min-h-[44px] py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition tap-feedback touch-target flex items-center justify-center"
                   >
                     Guardar y Conectar
                   </button>
@@ -158,7 +159,7 @@ export function renderAdminView(container) {
               (cat) => `
               <button 
                 data-admin-cat="${cat}"
-                class="admin-cat-pill whitespace-nowrap min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition tap-feedback flex items-center gap-1.5 ${
+                class="admin-cat-pill whitespace-nowrap min-h-[44px] px-4 py-2 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
                   selectedCategory === cat
                     ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
@@ -201,31 +202,54 @@ export function renderAdminView(container) {
         const unit = p.unidad_medida === "KG" ? "kg" : "u.";
 
         return `
-          <div id="product-card-${p.id}" class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3 transition">
-            <div class="flex-1 min-w-[160px]">
-              <div class="flex items-center gap-1.5 mb-0.5">
-                <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  ${p.categoria}
-                </span>
-                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">${p.unidad_medida === "KG" ? "Por kilo" : "Por unidad"}</span>
+          <div id="product-card-${p.id}" class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 shadow-xs transition space-y-3">
+            <!-- Row 1: Category, Unit, Name, and Stock Status Toggle -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    ${p.categoria}
+                  </span>
+                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                    ${p.unidad_medida === "KG" ? "Por kilo" : "Por unidad"}
+                  </span>
+                </div>
+                <h3 class="font-extrabold text-slate-900 dark:text-white text-base leading-snug truncate">
+                  ${p.nombre}
+                </h3>
               </div>
-              <h3 class="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">${p.nombre}</h3>
+
+              <!-- Stock availability button (min 44x44px) -->
+              <button 
+                type="button"
+                data-toggle-stock="${p.id}"
+                class="btn-stock-toggle min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition tap-feedback touch-target shrink-0 flex items-center justify-center ${
+                  p.disponible
+                    ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }"
+              >
+                ${p.disponible ? "Activo" : "Pausado"}
+              </button>
             </div>
 
-            <div class="flex items-center gap-2 shrink-0">
-              <!-- Stepper rápido -100 / +100 -->
+            <!-- Row 2: Price Stepper Controls (min 44x44px) -->
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span class="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">Precio:</span>
+
               <button 
                 type="button"
                 data-step-price="${p.id}"
                 data-delta="-100"
-                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition tap-feedback"
+                class="btn-step-price min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 font-black rounded-xl text-base transition tap-feedback touch-target shrink-0 border border-slate-200 dark:border-slate-700"
                 title="Bajar $100"
+                aria-label="Bajar $100"
               >
                 −
               </button>
 
-              <div class="relative w-28">
-                <span class="absolute left-2.5 top-2.5 text-xs font-bold text-slate-400 dark:text-slate-500 select-none pointer-events-none">$</span>
+              <div class="relative flex-1">
+                <span class="absolute left-3 top-3 text-sm font-bold text-slate-400 dark:text-slate-500 select-none pointer-events-none">$</span>
                 <input 
                   type="number" 
                   data-product-id="${p.id}"
@@ -233,31 +257,20 @@ export function renderAdminView(container) {
                   step="50"
                   min="0"
                   inputmode="numeric"
-                  class="input-price w-full pl-6 pr-6 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-black text-base text-slate-900 dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-900 dark:focus:border-slate-400 transition"
+                  class="input-price w-full min-h-[44px] h-11 pl-7 pr-8 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-black text-lg text-slate-900 dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-900 dark:focus:border-emerald-500 transition"
                 />
-                <span class="absolute right-2 top-2.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500 select-none pointer-events-none">${unit}</span>
+                <span class="absolute right-3 top-3 text-xs font-bold text-slate-400 dark:text-slate-500 select-none pointer-events-none">${unit}</span>
               </div>
 
               <button 
                 type="button"
                 data-step-price="${p.id}"
                 data-delta="100"
-                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition tap-feedback"
+                class="btn-step-price min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 font-black rounded-xl text-base transition tap-feedback touch-target shrink-0 border border-slate-200 dark:border-slate-700"
                 title="Subir $100"
+                aria-label="Subir $100"
               >
                 +
-              </button>
-
-              <!-- Botón Switch Activo / Pausado (44px min) -->
-              <button 
-                data-toggle-stock="${p.id}"
-                class="btn-stock-toggle min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold transition tap-feedback ${
-                  p.disponible
-                    ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
-                }"
-              >
-                ${p.disponible ? "Activo" : "Pausado"}
               </button>
             </div>
           </div>

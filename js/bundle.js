@@ -214,9 +214,14 @@ const memoryFallback = {};
 function safeGet(key, def) {
   try {
     const val = localStorage.getItem(key);
-    return val ? JSON.parse(val) : (memoryFallback[key] || def);
+    if (val === null || val === undefined) return memoryFallback[key] !== undefined ? memoryFallback[key] : def;
+    try {
+      return JSON.parse(val);
+    } catch {
+      return val;
+    }
   } catch {
-    return memoryFallback[key] || def;
+    return memoryFallback[key] !== undefined ? memoryFallback[key] : def;
   }
 }
 function safeSet(key, val) {
@@ -242,7 +247,7 @@ class Store {
     // Sincronización en tiempo real entre pestañas
     if (typeof window !== "undefined") {
       window.addEventListener("storage", (e) => {
-        if (e.key === STORAGE_KEYS.THEME) {
+        if (e.key === "theme" || e.key === STORAGE_KEYS.THEME) {
           this.applyTheme(this.getTheme());
           this.notify("theme_changed");
         } else if (Object.values(STORAGE_KEYS).includes(e.key)) {
@@ -250,16 +255,22 @@ class Store {
         }
       });
 
-      // Escuchar cambios en la preferencia del sistema operativo
+      // Escuchar cambios reactivos en la preferencia del sistema operativo si no hay override explícito
       if (window.matchMedia) {
         try {
-          window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
-            const saved = safeGet(STORAGE_KEYS.THEME, null);
+          const mq = window.matchMedia("(prefers-color-scheme: dark)");
+          const handler = (e) => {
+            const saved = safeGet("theme", null) || safeGet(STORAGE_KEYS.THEME, null);
             if (!saved) {
               this.applyTheme(e.matches ? "dark" : "light");
               this.notify("theme_changed");
             }
-          });
+          };
+          if (mq.addEventListener) {
+            mq.addEventListener("change", handler);
+          } else if (mq.addListener) {
+            mq.addListener(handler);
+          }
         } catch {}
       }
     }
@@ -1127,7 +1138,7 @@ class Store {
   // GESTION DE MODO OSCURO / CLARO
   // ========================================================
   getTheme() {
-    const saved = safeGet(STORAGE_KEYS.THEME, null);
+    const saved = safeGet("theme", null) || safeGet(STORAGE_KEYS.THEME, null);
     if (saved === "dark" || saved === "light") {
       return saved;
     }
@@ -1143,6 +1154,7 @@ class Store {
 
   setTheme(theme) {
     const validTheme = theme === "dark" ? "dark" : "light";
+    safeSet("theme", validTheme);
     safeSet(STORAGE_KEYS.THEME, validTheme);
     this.applyTheme(validTheme);
     this.notify("theme_changed");
@@ -1158,10 +1170,12 @@ class Store {
   applyTheme(theme) {
     if (typeof document === "undefined") return;
     const isDark = theme === "dark";
+    const themeName = isDark ? "dark" : "light";
     document.documentElement.classList.toggle("dark", isDark);
     if (document.body) {
       document.body.classList.toggle("dark", isDark);
     }
+    document.documentElement.setAttribute("data-theme", themeName);
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
       metaThemeColor.setAttribute("content", isDark ? "#020617" : "#f8fafc");
@@ -1434,7 +1448,7 @@ function renderClientView(container) {
     const savedDrawerScroll = prevScrollEl ? prevScrollEl.scrollTop : 0;
 
     container.innerHTML = `
-      <div class="max-w-md mx-auto pb-36">
+      <div class="max-w-md mx-auto pb-36 w-full overflow-x-hidden">
         
         <!-- Banner de Pedido Activo en Curso (si existe) -->
         ${
@@ -1486,7 +1500,7 @@ function renderClientView(container) {
             <div class="flex items-center gap-1.5">
               <button 
                 type="button"
-                class="theme-toggle-btn min-h-[44px] px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 tap-feedback"
+                class="theme-toggle-btn min-h-[44px] px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
                 title="Cambiar tema claro / oscuro"
               >
                 <span>Tema:</span>
@@ -1495,7 +1509,7 @@ function renderClientView(container) {
 
               <button 
                 id="btn-header-cart" 
-                class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 tap-feedback"
+                class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
               >
                 <span>Pedido</span>
                 <span class="px-2 py-0.5 rounded-full ${totalItems > 0 ? "bg-emerald-600 text-white font-black" : "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold"} text-xs">
@@ -1516,18 +1530,18 @@ function renderClientView(container) {
             />
             ${
               searchQuery
-                ? `<button id="btn-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback">Borrar</button>`
+                ? `<button id="btn-clear-search" class="absolute right-1 top-1 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback rounded-xl touch-target" title="Borrar búsqueda" aria-label="Borrar búsqueda">Borrar</button>`
                 : ""
             }
           </div>
 
           <!-- Píldoras de Categorías con conteo (Horizontal Scroll Táctil) -->
-          <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar py-1">
+          <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar overscroll-x-contain py-1">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-category="${cat}"
-                class="category-pill whitespace-nowrap min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition tap-feedback flex items-center gap-1.5 ${
+                class="category-pill whitespace-nowrap min-h-[44px] px-4 py-2.5 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
                   selectedCategory === cat
                     ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
@@ -1552,7 +1566,7 @@ function renderClientView(container) {
 
         <!-- Footer discreto para acceso a personal del local -->
         <footer class="mt-8 mb-16 text-center text-xs text-slate-400 dark:text-slate-500">
-          <p>Verdulería Mi Huerta • Catálogo y Pesaje en Balanza</p>
+          <p>Verdulería Mi Huerta <span class="opacity-40 font-light">|</span> Catálogo y Pesaje en Balanza</p>
           <a href="?view=operario" class="inline-block mt-2 text-[11px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline">
             Acceso Personal del Local
           </a>
@@ -1631,18 +1645,35 @@ function renderClientView(container) {
         const itemSubtotal = inCart ? Math.round(currentQty * product.precio) : 0;
 
         return `
-          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border transition ${
-            inCart ? "border-emerald-500/50 bg-emerald-50/10 dark:bg-emerald-950/20 shadow-xs" : "border-slate-200/80 dark:border-slate-800 shadow-xs"
+          <div class="relative bg-white dark:bg-slate-900 rounded-2xl p-4 border transition ${
+            inCart ? "border-emerald-500/60 bg-emerald-50/15 dark:bg-emerald-950/20 shadow-xs" : "border-slate-200/80 dark:border-slate-800 shadow-xs"
           } ${!product.disponible ? "opacity-40 grayscale pointer-events-none" : ""}">
             
-            <div class="flex items-start justify-between gap-3">
+            <!-- Botón de Descarte Rápido '×' (Visible sólo si Qty > 0, 44x44px táctil) -->
+            ${
+              inCart && product.disponible
+                ? `
+              <button 
+                type="button"
+                data-quick-discard-id="${product.id}"
+                class="btn-quick-discard absolute top-2.5 right-2.5 min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 active:bg-rose-100 dark:active:bg-rose-900/60 transition tap-feedback touch-target z-10"
+                title="Quitar ${product.nombre} del pedido"
+                aria-label="Quitar ${product.nombre} del pedido"
+              >
+                <span class="text-xl font-bold leading-none select-none" aria-hidden="true">×</span>
+              </button>
+            `
+                : ""
+            }
+
+            <div class="flex items-start justify-between gap-3 ${inCart ? "pr-11" : ""}">
               <!-- Info Producto -->
               <div class="flex-1 min-w-0 pr-1">
                 <div class="flex items-center flex-wrap gap-1 mb-1">
                   <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                     ${product.categoria}
                   </span>
-                  <span class="text-[10px] text-slate-300 dark:text-slate-600">·</span>
+                  <span class="text-[10px] text-slate-300 dark:text-slate-600 font-bold select-none">/</span>
                   <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
                     ${unitSubtitle}
                   </span>
@@ -1689,51 +1720,37 @@ function renderClientView(container) {
                       <button 
                         data-add-id="${product.id}"
                         data-step="${step}"
-                        class="btn-add-initial min-h-[44px] min-w-[96px] bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border dark:border-slate-700 text-white font-bold px-3 py-2.5 rounded-xl text-xs transition tap-feedback flex items-center justify-center gap-1.5 shadow-xs"
+                        class="btn-add-initial min-h-[44px] min-w-[96px] bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border dark:border-slate-700 text-white font-bold px-3 py-2.5 rounded-xl text-xs transition tap-feedback touch-target flex items-center justify-center gap-1.5 shadow-xs"
                       >
                         <span>Agregar</span>
                         <span class="text-xs font-bold">+</span>
                       </button>
                     `
                       : `
-                      <div class="flex items-center gap-1.5">
+                      <div class="flex items-center bg-emerald-600 text-white rounded-xl p-0.5 shadow-xs min-h-[44px]">
                         <button 
                           type="button"
-                          data-remove-id="${product.id}"
-                          class="btn-remove-item min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:active:bg-rose-900/80 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 transition tap-feedback shadow-xs shrink-0"
-                          title="Eliminar ${product.nombre} del pedido"
-                          aria-label="Eliminar ${product.nombre} del pedido"
+                          data-dec-id="${product.id}"
+                          data-step="${step}"
+                          class="btn-qty-dec min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback touch-target"
+                          title="Restar"
+                          aria-label="Restar cantidad"
                         >
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          −
                         </button>
-
-                        <div class="flex items-center bg-emerald-600 text-white rounded-xl p-0.5 shadow-xs min-h-[44px]">
-                          <button 
-                            type="button"
-                            data-dec-id="${product.id}"
-                            data-step="${step}"
-                            class="btn-qty-dec w-9 h-10 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback"
-                            title="Restar"
-                            aria-label="Restar cantidad"
-                          >
-                            −
-                          </button>
-                          <span class="px-1.5 text-xs font-black min-w-[38px] text-center tracking-tight select-none">
-                            ${currentQty} ${unitLabel}
-                          </span>
-                          <button 
-                            type="button"
-                            data-inc-id="${product.id}"
-                            data-step="${step}"
-                            class="btn-qty-inc w-9 h-10 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback"
-                            title="Sumar"
-                            aria-label="Sumar cantidad"
-                          >
-                            +
-                          </button>
-                        </div>
+                        <span class="px-2 text-xs font-black min-w-[40px] text-center tracking-tight select-none">
+                          ${currentQty} ${unitLabel}
+                        </span>
+                        <button 
+                          type="button"
+                          data-inc-id="${product.id}"
+                          data-step="${step}"
+                          class="btn-qty-inc min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback touch-target"
+                          title="Sumar"
+                          aria-label="Sumar cantidad"
+                        >
+                          +
+                        </button>
                       </div>
                     `
                     : ""
@@ -1751,7 +1768,7 @@ function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="0.5" 
-                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold transition tap-feedback touch-target ${
                       currentQty === 0.5 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -1760,7 +1777,7 @@ function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="1" 
-                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold transition tap-feedback touch-target ${
                       currentQty === 1 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -1769,7 +1786,7 @@ function renderClientView(container) {
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="2" 
-                    class="btn-quick-weight min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition tap-feedback ${
+                    class="btn-quick-weight min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold transition tap-feedback touch-target ${
                       currentQty === 2 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
@@ -1871,11 +1888,11 @@ function renderClientView(container) {
       });
     });
 
-    container.querySelectorAll(".btn-remove-item").forEach((btn) => {
+    container.querySelectorAll(".btn-quick-discard, .btn-remove-item").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
-        const id = btn.dataset.removeId;
+        const id = btn.dataset.quickDiscardId || btn.dataset.removeId;
         store.removeFromCart(id);
       });
     });
@@ -1965,25 +1982,25 @@ function renderClientView(container) {
                     </div>
                   </div>
 
-                  <!-- Stepper en Carrito y Botón con la cruz (✕) accesible (>=44x44px) -->
+                  <!-- Stepper en Carrito y Botón con la cruz '×' accesible (44x44px touch-target) -->
                   <div class="flex items-center gap-2 shrink-0">
                     <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 shadow-xs min-h-[44px]">
                       <button 
                         type="button"
                         data-drawer-dec="${item.producto_id}" 
-                        class="w-9 h-10 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
+                        class="min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
                         title="Restar cantidad"
                         aria-label="Restar cantidad"
                       >
                         −
                       </button>
-                      <span class="px-1.5 text-xs font-black min-w-[36px] text-center text-slate-900 dark:text-white select-none">
+                      <span class="px-1 text-xs font-black min-w-[32px] text-center text-slate-900 dark:text-white select-none">
                         ${item.cantidad}
                       </span>
                       <button 
                         type="button"
                         data-drawer-inc="${item.producto_id}" 
-                        class="w-9 h-10 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
+                        class="min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-base tap-feedback touch-target"
                         title="Sumar cantidad"
                         aria-label="Sumar cantidad"
                       >
@@ -1991,17 +2008,15 @@ function renderClientView(container) {
                       </button>
                     </div>
 
-                    <!-- Botón con la cruz (✕) para eliminar el ítem completo de una vez -->
+                    <!-- Botón tipográfico con cruz '×' para eliminar el ítem completo de 1 toque (44x44px touch-target) -->
                     <button 
                       type="button"
                       data-drawer-remove="${item.producto_id}"
                       class="min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:active:bg-rose-900/80 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 transition tap-feedback shadow-xs shrink-0 touch-target"
-                      title="Eliminar ${item.nombre} del pedido"
-                      aria-label="Eliminar ${item.nombre} del pedido"
+                      title="Quitar ${item.nombre} del pedido"
+                      aria-label="Quitar ${item.nombre} del pedido"
                     >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <span class="text-xl font-bold leading-none select-none" aria-hidden="true">×</span>
                     </button>
                   </div>
                 </div>
@@ -2028,7 +2043,7 @@ function renderClientView(container) {
                     <span class="text-xs font-black">Retiro en Local</span>
                     <input type="radio" name="delivery-mode" value="RETIRO" ${!isDelivery ? "checked" : ""} class="accent-emerald-500" />
                   </div>
-                  <span class="text-[10px] opacity-75 mt-1">Listo en 20-30 min · Sin costo</span>
+                  <span class="text-[10px] opacity-75 mt-1">Listo en 20-30 min <span class="opacity-60">|</span> Sin costo</span>
                 </label>
 
                 <label id="delivery-card-delivery" class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
@@ -2188,7 +2203,8 @@ function renderClientView(container) {
     });
 
     container.querySelectorAll("[data-drawer-remove]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
         if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
         const id = btn.dataset.drawerRemove;
         store.removeFromCart(id);
@@ -2495,7 +2511,7 @@ function renderOperatorView(container) {
     };
 
     container.innerHTML = `
-      <div class="max-w-2xl mx-auto pb-24">
+      <div class="max-w-2xl mx-auto pb-24 overflow-x-hidden">
         <!-- Header del Mostrador con sticky-header-offset -->
         <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md border-b border-slate-800">
           <div class="flex items-center justify-between">
@@ -2512,23 +2528,24 @@ function renderOperatorView(container) {
             <div class="flex items-center gap-1.5">
               <button 
                 type="button"
-                class="theme-toggle-btn px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-700 transition tap-feedback"
+                class="theme-toggle-btn min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 text-xs font-bold flex items-center gap-1 border border-slate-700 transition tap-feedback touch-target"
                 title="Cambiar tema claro / oscuro"
+                aria-label="Cambiar tema claro u oscuro"
               >
                 <span>Tema:</span>
-                <span class="theme-label font-bold">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+                <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
               </button>
               <button 
                 id="btn-test-sound" 
                 title="Probar timbre de pedido" 
-                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition tap-feedback"
+                class="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-700 transition tap-feedback touch-target"
               >
                 <span>Timbre</span>
               </button>
               <button 
                 id="btn-operator-logout" 
                 title="Salir y bloquear" 
-                class="px-2.5 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-semibold border border-rose-800/60 transition tap-feedback"
+                class="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-bold border border-rose-800/60 transition tap-feedback touch-target flex items-center justify-center"
               >
                 Salir
               </button>
@@ -2536,51 +2553,51 @@ function renderOperatorView(container) {
           </div>
 
           <!-- Pestañas del Kanban (Mobile-First) -->
-          <div class="grid grid-cols-4 gap-1.5 mt-3 bg-slate-800/80 p-1 rounded-xl text-center">
+          <div class="grid grid-cols-4 gap-1 mt-3 bg-slate-800/90 p-1 rounded-2xl text-center">
             <button 
               data-tab="PENDIENTE" 
-              class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "PENDIENTE" ? "bg-amber-400 text-slate-950 shadow-xs" : "text-slate-400 hover:text-white"
+              class="tab-btn min-h-[48px] py-1.5 px-1 rounded-xl text-[11px] sm:text-xs font-bold transition flex flex-col items-center justify-center leading-tight tap-feedback touch-target ${
+                activeTab === "PENDIENTE" ? "bg-amber-400 text-slate-950 font-black shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>Entrantes</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full mt-0.5 ${
                 activeTab === "PENDIENTE" ? "bg-amber-600/30 text-slate-950 font-black" : "bg-slate-700 text-slate-300"
               }">${counts.PENDIENTE}</span>
             </button>
 
             <button 
               data-tab="EN_PREPARACION" 
-              class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "EN_PREPARACION" ? "bg-blue-600 text-white shadow-xs" : "text-slate-400 hover:text-white"
+              class="tab-btn min-h-[48px] py-1.5 px-1 rounded-xl text-[11px] sm:text-xs font-bold transition flex flex-col items-center justify-center leading-tight tap-feedback touch-target ${
+                activeTab === "EN_PREPARACION" ? "bg-blue-600 text-white font-black shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>En Balanza</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full mt-0.5 ${
                 activeTab === "EN_PREPARACION" ? "bg-blue-800 text-white font-black" : "bg-slate-700 text-slate-300"
               }">${counts.EN_PREPARACION}</span>
             </button>
 
             <button 
               data-tab="LISTO" 
-              class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "LISTO" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-400 hover:text-white"
+              class="tab-btn min-h-[48px] py-1.5 px-1 rounded-xl text-[11px] sm:text-xs font-bold transition flex flex-col items-center justify-center leading-tight tap-feedback touch-target ${
+                activeTab === "LISTO" ? "bg-emerald-600 text-white font-black shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>Listos</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full mt-0.5 ${
                 activeTab === "LISTO" ? "bg-emerald-800 text-white font-black" : "bg-slate-700 text-slate-300"
               }">${counts.LISTO}</span>
             </button>
 
             <button 
               data-tab="ENTREGADO" 
-              class="tab-btn py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 tap-feedback ${
-                activeTab === "ENTREGADO" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
+              class="tab-btn min-h-[48px] py-1.5 px-1 rounded-xl text-[11px] sm:text-xs font-bold transition flex flex-col items-center justify-center leading-tight tap-feedback touch-target ${
+                activeTab === "ENTREGADO" ? "bg-slate-700 text-white font-black shadow-xs" : "text-slate-400 hover:text-white"
               }"
             >
               <span>Cobrados</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">${counts.ENTREGADO}</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full mt-0.5 bg-slate-700 text-slate-300">${counts.ENTREGADO}</span>
             </button>
           </div>
         </header>
@@ -2673,7 +2690,7 @@ function renderOperatorView(container) {
                 <div class="mt-3 space-y-2">
                   <button 
                     data-start-id="${order.id}" 
-                    class="btn-start-prep w-full min-h-[46px] bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-xs transition tap-feedback flex items-center justify-center gap-2"
+                    class="btn-start-prep w-full min-h-[48px] bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-xs transition tap-feedback touch-target flex items-center justify-center gap-2"
                   >
                     <span>Tomar y Pesar en Balanza</span>
                   </button>
@@ -2681,13 +2698,14 @@ function renderOperatorView(container) {
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[40px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-slate-700"
+                      class="btn-open-edit min-h-[44px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback touch-target border border-transparent dark:border-slate-700"
                     >
                       <span>Editar datos</span>
                     </button>
                     <button 
+                      data-cancel-order-id="${order.id}"
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[40px] bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-rose-900/50"
+                      class="btn-cancel-order min-h-[44px] bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback touch-target border border-transparent dark:border-rose-900/50"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -2750,36 +2768,42 @@ function renderOperatorView(container) {
                             const stepFine = isWeight ? 0.1 : 1;
 
                             return `
-                      <div class="item-weigh-card p-3 rounded-2xl border transition ${
+                      <div class="item-weigh-card p-3.5 rounded-2xl border transition space-y-3 ${
                         item.sin_stock
                           ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 opacity-60"
                           : item.peso_real !== null
                           ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800"
                           : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
                       }">
+                        <!-- Tier 1: Product info and Sin Stock / Quitar actions -->
                         <div class="flex items-start justify-between gap-2">
                           <div class="flex-1 min-w-0">
-                            <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                              ${item.categoria || (isWeight ? "Por Kilo" : "Por Unidad")}
-                            </span>
-                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm mt-1 truncate ${item.sin_stock ? "line-through text-rose-600 dark:text-rose-400" : ""}">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                              <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                ${item.categoria || (isWeight ? "Por Kilo" : "Por Unidad")}
+                              </span>
+                              <span class="text-xs text-slate-500 dark:text-slate-400">
+                                ($${item.precio_unitario.toLocaleString("es-AR")} / ${isWeight ? "kg" : "u"})
+                              </span>
+                            </div>
+                            <h4 class="font-extrabold text-slate-900 dark:text-white text-base truncate ${item.sin_stock ? "line-through text-rose-600 dark:text-rose-400" : ""}">
                               ${item.nombre}
                             </h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              Solicitó: <strong class="text-slate-800 dark:text-slate-200 font-bold">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
-                              · ($${item.precio_unitario.toLocaleString("es-AR")} / ${isWeight ? "kg" : "u"})
+                            <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                              Solicitó: <strong class="text-slate-900 dark:text-white font-black">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
                             </p>
                           </div>
 
                           <!-- Acciones por ítem: Sin Stock y Quitar -->
                           <div class="flex items-center gap-1.5 shrink-0">
                             <button 
+                              type="button"
                               data-toggle-stock-order="${order.id}"
                               data-item-index="${idx}"
-                              class="btn-toggle-stock min-h-[36px] text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition tap-feedback ${
+                              class="btn-toggle-stock min-h-[44px] px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border transition tap-feedback touch-target ${
                                 item.sin_stock
                                   ? "bg-rose-600 text-white border-rose-600"
-                                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:text-rose-600 dark:hover:text-rose-400"
+                                  : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:text-rose-600 dark:hover:text-rose-400"
                               }"
                               title="Marcar sin disponibilidad en el cajón"
                             >
@@ -2787,9 +2811,10 @@ function renderOperatorView(container) {
                             </button>
 
                             <button 
+                              type="button"
                               data-remove-item-order="${order.id}"
                               data-item-index="${idx}"
-                              class="btn-remove-item min-h-[36px] px-2.5 py-1 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition tap-feedback"
+                              class="btn-remove-item min-h-[44px] min-w-[44px] px-3 py-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 text-xs font-bold rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition tap-feedback touch-target flex items-center justify-center"
                               title="Eliminar este ítem del pedido"
                             >
                               Quitar
@@ -2797,28 +2822,26 @@ function renderOperatorView(container) {
                           </div>
                         </div>
 
+                        <!-- Tier 2: Weight controls, steppers (>=44x44px), copy button and subtotal -->
                         ${
                           !item.sin_stock
                             ? `
-                          <div class="mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
-                            <div class="flex items-center gap-1.5 flex-1 min-w-[200px]">
-                              <label class="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">
-                                ${isWeight ? "Peso:" : "Cant:"}
-                              </label>
-
-                              <!-- Controles de ajuste fino (-0.1 / +0.1) -->
+                          <div class="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-1.5">
+                              <!-- Controles de ajuste fino (-0.1 / +0.1 o -1 / +1) -->
                               <button
                                 type="button"
                                 data-adjust-order="${order.id}"
                                 data-item-idx="${idx}"
                                 data-delta="${-stepFine}"
-                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg text-sm font-black transition tap-feedback shrink-0 border border-transparent dark:border-slate-700"
+                                class="btn-adjust-weight min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 active:bg-slate-400 dark:active:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-xl text-lg font-black transition tap-feedback touch-target shrink-0 border border-transparent dark:border-slate-700"
                                 title="Restar ${stepFine}"
+                                aria-label="Restar ${stepFine}"
                               >
                                 −
                               </button>
 
-                              <div class="relative flex-1 max-w-[120px]">
+                              <div class="relative w-28">
                                 <input 
                                   type="text" 
                                   inputmode="decimal"
@@ -2828,14 +2851,14 @@ function renderOperatorView(container) {
                                   data-price-unit="${item.precio_unitario}"
                                   value="${currentVal}"
                                   placeholder="${isWeight ? 'ej: 2150' : item.cantidad_solicitada}"
-                                  class="input-weight w-full text-center py-2 px-2 border-2 rounded-xl font-black text-base outline-none focus:border-blue-600 transition ${
+                                  class="input-weight w-full min-h-[44px] h-11 text-center py-2 px-2 border-2 rounded-xl font-black text-lg outline-none focus:border-blue-600 transition ${
                                     item.peso_real !== null
                                       ? "border-emerald-500 text-emerald-800 dark:text-emerald-300 bg-emerald-50/20 dark:bg-emerald-950/40"
                                       : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                                   }"
                                   title="${isWeight ? 'Podés ingresar en gramos (ej: 2150) o con punto (2.15)' : 'Cantidad'}"
                                 />
-                                <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 dark:text-slate-500 pointer-events-none select-none">
+                                <span class="absolute right-2.5 top-3 text-xs font-bold text-slate-400 dark:text-slate-500 pointer-events-none select-none">
                                   ${isWeight ? "kg" : "u."}
                                 </span>
                               </div>
@@ -2845,8 +2868,9 @@ function renderOperatorView(container) {
                                 data-adjust-order="${order.id}"
                                 data-item-idx="${idx}"
                                 data-delta="${stepFine}"
-                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg text-sm font-black transition tap-feedback shrink-0 border border-transparent dark:border-slate-700"
+                                class="btn-adjust-weight min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 active:bg-slate-400 dark:active:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-xl text-lg font-black transition tap-feedback touch-target shrink-0 border border-transparent dark:border-slate-700"
                                 title="Sumar ${stepFine}"
+                                aria-label="Sumar ${stepFine}"
                               >
                                 +
                               </button>
@@ -2857,16 +2881,16 @@ function renderOperatorView(container) {
                                 data-copy-requested-order="${order.id}"
                                 data-item-idx="${idx}"
                                 data-requested-val="${item.cantidad_solicitada}"
-                                class="btn-copy-requested text-[10px] font-bold px-2 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition tap-feedback shrink-0 border border-transparent dark:border-slate-700"
+                                class="btn-copy-requested min-h-[44px] px-2.5 py-2 text-xs font-bold bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 active:bg-slate-400 text-slate-800 dark:text-slate-200 rounded-xl transition tap-feedback touch-target shrink-0 border border-transparent dark:border-slate-700 flex items-center justify-center"
                                 title="Copiar cantidad solicitada"
                               >
                                 = ${item.cantidad_solicitada}
                               </button>
                             </div>
 
-                            <div class="text-right shrink-0">
-                              <span class="text-[9px] text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider">Subtotal</span>
-                              <span id="item-subtotal-${order.id}-${idx}" class="font-black text-sm text-slate-900 dark:text-white">$${subtotalItem.toLocaleString("es-AR")}</span>
+                            <div class="text-right ml-auto">
+                              <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider">Subtotal</span>
+                              <span id="item-subtotal-${order.id}-${idx}" class="font-black text-base text-slate-900 dark:text-white">$${subtotalItem.toLocaleString("es-AR")}</span>
                             </div>
                           </div>
                         `
@@ -2887,7 +2911,7 @@ function renderOperatorView(container) {
                     <div class="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
                       <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Sumar producto al pedido</span>
-                        <button id="btn-close-add-product" class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-bold px-2 py-1">Cerrar</button>
+                        <button id="btn-close-add-product" class="min-h-[44px] min-w-[44px] px-3 py-2 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-bold flex items-center justify-center tap-feedback touch-target">Cerrar</button>
                       </div>
 
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -2919,7 +2943,7 @@ function renderOperatorView(container) {
                             />
                             <button 
                               data-confirm-add-order="${order.id}"
-                              class="btn-confirm-add-item bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 rounded-xl text-xs transition tap-feedback shrink-0"
+                              class="btn-confirm-add-item min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 rounded-xl text-xs transition tap-feedback touch-target shrink-0 flex items-center justify-center"
                             >
                               Agregar
                             </button>
@@ -2931,7 +2955,7 @@ function renderOperatorView(container) {
                       : `
                     <button 
                       data-toggle-add-order="${order.id}"
-                      class="btn-open-add-product w-full py-2.5 px-3 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 tap-feedback"
+                      class="btn-open-add-product w-full min-h-[44px] py-2.5 px-3 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 tap-feedback touch-target"
                     >
                       <span>Agregar producto que olvidó el cliente</span>
                     </button>
@@ -2943,7 +2967,7 @@ function renderOperatorView(container) {
                 <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
                   <button 
                     data-finish-order-id="${order.id}"
-                    class="btn-finish-weighing w-full min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black py-3 px-4 rounded-xl shadow-lg shadow-slate-950/15 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback"
+                    class="btn-finish-weighing w-full min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black py-3 px-4 rounded-xl shadow-lg shadow-slate-950/15 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback touch-target"
                   >
                     <span>Finalizar Pesaje y Notificar al Cliente</span>
                   </button>
@@ -2951,14 +2975,15 @@ function renderOperatorView(container) {
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[40px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-slate-700"
+                      class="btn-open-edit min-h-[44px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback touch-target border border-transparent dark:border-slate-700"
                     >
                       <span>Cambiar entrega/datos</span>
                     </button>
 
                     <button 
+                      data-cancel-order-id="${order.id}"
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[40px] bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-rose-900/50"
+                      class="btn-cancel-order min-h-[44px] bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback touch-target border border-transparent dark:border-rose-900/50"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -3007,13 +3032,13 @@ function renderOperatorView(container) {
                   <a 
                     href="${waLink}" 
                     target="_blank"
-                    class="min-h-[46px] bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition text-center tap-feedback"
+                    class="min-h-[48px] bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition text-center tap-feedback touch-target"
                   >
                     <span>Enviar WhatsApp</span>
                   </a>
                   <button 
                     data-deliver-order-id="${order.id}"
-                    class="btn-deliver-order min-h-[46px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold py-3 px-3 rounded-xl text-xs transition tap-feedback border border-transparent dark:border-slate-700"
+                    class="btn-deliver-order min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold py-3 px-3 rounded-xl text-xs transition tap-feedback touch-target border border-transparent dark:border-slate-700 flex items-center justify-center"
                   >
                     Marcar Cobrado
                   </button>
@@ -3022,8 +3047,9 @@ function renderOperatorView(container) {
                 <!-- Opción de Cancelar / Eliminar Pedido Listo -->
                 <div class="mt-2 text-right">
                   <button 
+                    data-cancel-order-id="${order.id}"
                     data-delete-order-id="${order.id}"
-                    class="btn-cancel-order text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 p-1 transition"
+                    class="btn-cancel-order min-h-[44px] px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition tap-feedback touch-target inline-flex items-center justify-center"
                   >
                     Cancelar / Anular pedido
                   </button>
@@ -3077,13 +3103,14 @@ function renderOperatorView(container) {
             <div class="flex items-center gap-1.5">
               <button 
                 type="button"
-                class="theme-toggle-btn min-h-[36px] px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1 text-xs font-bold"
+                class="theme-toggle-btn min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback touch-target flex items-center gap-1 text-xs font-bold"
                 title="Cambiar tema claro / oscuro"
+                aria-label="Cambiar tema claro u oscuro"
               >
                 <span>Tema:</span>
-                <span class="theme-label font-bold">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+                <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
               </button>
-              <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold text-xs tap-feedback border border-transparent dark:border-slate-700">
+              <button id="btn-close-edit-modal" class="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold text-xs tap-feedback touch-target border border-transparent dark:border-slate-700">
                 Cerrar
               </button>
             </div>
@@ -3115,11 +3142,11 @@ function renderOperatorView(container) {
             <div>
               <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Forma de entrega</label>
               <div class="grid grid-cols-2 gap-2">
-                <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer has-[:checked]:border-slate-900 dark:has-[:checked]:border-emerald-500 has-[:checked]:bg-slate-50 dark:has-[:checked]:bg-slate-800">
+                <label class="min-h-[44px] flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer has-[:checked]:border-slate-900 dark:has-[:checked]:border-emerald-500 has-[:checked]:bg-slate-50 dark:has-[:checked]:bg-slate-800">
                   <input type="radio" name="edit-delivery-mode" value="RETIRO" ${order.tipo_entrega === "RETIRO" ? "checked" : ""} class="accent-emerald-500" />
                   <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Retiro Local</span>
                 </label>
-                <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer has-[:checked]:border-slate-900 dark:has-[:checked]:border-emerald-500 has-[:checked]:bg-slate-50 dark:has-[:checked]:bg-slate-800">
+                <label class="min-h-[44px] flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer has-[:checked]:border-slate-900 dark:has-[:checked]:border-emerald-500 has-[:checked]:bg-slate-50 dark:has-[:checked]:bg-slate-800">
                   <input type="radio" name="edit-delivery-mode" value="DELIVERY" ${order.tipo_entrega === "DELIVERY" ? "checked" : ""} class="accent-emerald-500" />
                   <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Envío Domicilio</span>
                 </label>
@@ -3141,13 +3168,13 @@ function renderOperatorView(container) {
               <button 
                 type="button" 
                 id="btn-cancel-edit-modal"
-                class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition border border-transparent dark:border-slate-700"
+                class="flex-1 min-h-[44px] py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition border border-transparent dark:border-slate-700 tap-feedback touch-target flex items-center justify-center"
               >
                 Volver
               </button>
               <button 
                 type="submit" 
-                class="flex-1 py-3 bg-slate-900 hover:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-md"
+                class="flex-1 min-h-[44px] py-3 bg-slate-900 hover:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-md tap-feedback touch-target flex items-center justify-center"
               >
                 Guardar cambios
               </button>
@@ -3191,16 +3218,16 @@ Alias para transferir: mihuerta.verduras
       });
     });
 
-    // Cancelar / Eliminar Pedido
+    // Cancelar Pedido (Cancelación lógica / soft cancellation preservando historial)
     container.querySelectorAll(".btn-cancel-order").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const id = Number(btn.dataset.deleteOrderId);
+        const id = Number(btn.dataset.cancelOrderId || btn.dataset.deleteOrderId);
         const order = orders.find((o) => o.id === id);
         const clientName = order ? order.cliente.nombre : "este cliente";
-        const confirmCancel = confirm(`¿Estás seguro de que querés cancelar y eliminar el pedido #${id} de ${clientName}?`);
+        const confirmCancel = confirm(`¿Estás seguro de que querés cancelar el pedido #${id} de ${clientName}?`);
         if (confirmCancel) {
           if (navigator.vibrate) { try { navigator.vibrate(25); } catch {} }
-          store.deleteOrder(id);
+          store.cancelOrder(id);
         }
       });
     });
@@ -3485,7 +3512,7 @@ function renderAdminView(container) {
     });
 
     container.innerHTML = `
-      <div class="max-w-xl mx-auto p-4 pb-32">
+      <div class="max-w-xl mx-auto p-4 pb-32 overflow-x-hidden">
         <!-- Header del Panel -->
         <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 pt-3 pb-3 mb-4 -mx-4 px-4 shadow-xs">
           <div class="flex items-center justify-between">
@@ -3505,15 +3532,16 @@ function renderAdminView(container) {
               <div class="flex items-center gap-1.5">
                 <button 
                   type="button"
-                  class="theme-toggle-btn text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition tap-feedback"
+                  class="theme-toggle-btn min-h-[44px] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition tap-feedback touch-target flex items-center gap-1"
                   title="Cambiar tema claro / oscuro"
+                  aria-label="Cambiar tema claro u oscuro"
                 >
                   <span>Tema:</span>
-                  <span class="theme-label font-bold">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+                  <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
                 </button>
                 <button 
                   id="btn-toggle-cloud"
-                  class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition tap-feedback ${
+                  class="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border transition tap-feedback touch-target flex items-center justify-center ${
                     isConnected
                       ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                       : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -3524,7 +3552,7 @@ function renderAdminView(container) {
                 <button 
                   id="btn-admin-logout" 
                   title="Salir y bloquear panel" 
-                  class="text-[11px] font-bold px-2 py-1 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition tap-feedback"
+                  class="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition tap-feedback touch-target flex items-center justify-center"
                 >
                   Salir
                 </button>
@@ -3539,11 +3567,11 @@ function renderAdminView(container) {
               id="admin-search-input" 
               placeholder="Buscar producto por nombre..." 
               value="${searchQuery}"
-              class="w-full pl-3.5 pr-16 py-2.5 bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-transparent focus:border-slate-300 dark:focus:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
+              class="w-full pl-3.5 pr-14 py-2.5 min-h-[44px] bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-transparent focus:border-slate-300 dark:focus:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
             />
             ${
               searchQuery
-                ? `<button id="btn-admin-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback">Borrar</button>`
+                ? `<button id="btn-admin-clear-search" class="absolute right-1 top-1 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback touch-target">Borrar</button>`
                 : ""
             }
           </div>
@@ -3569,7 +3597,7 @@ function renderAdminView(container) {
                     id="cfg-pin" 
                     maxlength="6"
                     value="${cloudConfig.staffPin || "1234"}" 
-                    class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-base font-bold outline-none focus:border-emerald-500"
+                    class="w-full min-h-[44px] p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-base font-bold outline-none focus:border-emerald-500"
                   />
                 </div>
 
@@ -3580,7 +3608,7 @@ function renderAdminView(container) {
                     id="cfg-url" 
                     value="${cloudConfig.supabaseUrl || ""}" 
                     placeholder="https://xyz.supabase.co"
-                    class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-base outline-none focus:border-emerald-500"
+                    class="w-full min-h-[44px] p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-base outline-none focus:border-emerald-500"
                   />
                 </div>
 
@@ -3591,14 +3619,14 @@ function renderAdminView(container) {
                     id="cfg-key" 
                     value="${cloudConfig.supabaseAnonKey || ""}" 
                     placeholder="eyJhbG..."
-                    class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-base outline-none focus:border-emerald-500"
+                    class="w-full min-h-[44px] p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-base outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 <div class="pt-1 flex gap-2">
                   <button 
                     type="submit" 
-                    class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition"
+                    class="w-full min-h-[44px] py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition tap-feedback touch-target flex items-center justify-center"
                   >
                     Guardar y Conectar
                   </button>
@@ -3615,7 +3643,7 @@ function renderAdminView(container) {
               (cat) => `
               <button 
                 data-admin-cat="${cat}"
-                class="admin-cat-pill whitespace-nowrap min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition tap-feedback flex items-center gap-1.5 ${
+                class="admin-cat-pill whitespace-nowrap min-h-[44px] px-4 py-2 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
                   selectedCategory === cat
                     ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
@@ -3658,31 +3686,54 @@ function renderAdminView(container) {
         const unit = p.unidad_medida === "KG" ? "kg" : "u.";
 
         return `
-          <div id="product-card-${p.id}" class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3 transition">
-            <div class="flex-1 min-w-[160px]">
-              <div class="flex items-center gap-1.5 mb-0.5">
-                <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  ${p.categoria}
-                </span>
-                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">${p.unidad_medida === "KG" ? "Por kilo" : "Por unidad"}</span>
+          <div id="product-card-${p.id}" class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 shadow-xs transition space-y-3">
+            <!-- Row 1: Category, Unit, Name, and Stock Status Toggle -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    ${p.categoria}
+                  </span>
+                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                    ${p.unidad_medida === "KG" ? "Por kilo" : "Por unidad"}
+                  </span>
+                </div>
+                <h3 class="font-extrabold text-slate-900 dark:text-white text-base leading-snug truncate">
+                  ${p.nombre}
+                </h3>
               </div>
-              <h3 class="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">${p.nombre}</h3>
+
+              <!-- Stock availability button (min 44x44px) -->
+              <button 
+                type="button"
+                data-toggle-stock="${p.id}"
+                class="btn-stock-toggle min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition tap-feedback touch-target shrink-0 flex items-center justify-center ${
+                  p.disponible
+                    ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }"
+              >
+                ${p.disponible ? "Activo" : "Pausado"}
+              </button>
             </div>
 
-            <div class="flex items-center gap-2 shrink-0">
-              <!-- Stepper rápido -100 / +100 -->
+            <!-- Row 2: Price Stepper Controls (min 44x44px) -->
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span class="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">Precio:</span>
+
               <button 
                 type="button"
                 data-step-price="${p.id}"
                 data-delta="-100"
-                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition tap-feedback"
+                class="btn-step-price min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 font-black rounded-xl text-base transition tap-feedback touch-target shrink-0 border border-slate-200 dark:border-slate-700"
                 title="Bajar $100"
+                aria-label="Bajar $100"
               >
                 −
               </button>
 
-              <div class="relative w-28">
-                <span class="absolute left-2.5 top-2.5 text-xs font-bold text-slate-400 dark:text-slate-500 select-none pointer-events-none">$</span>
+              <div class="relative flex-1">
+                <span class="absolute left-3 top-3 text-sm font-bold text-slate-400 dark:text-slate-500 select-none pointer-events-none">$</span>
                 <input 
                   type="number" 
                   data-product-id="${p.id}"
@@ -3690,31 +3741,20 @@ function renderAdminView(container) {
                   step="50"
                   min="0"
                   inputmode="numeric"
-                  class="input-price w-full pl-6 pr-6 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-black text-base text-slate-900 dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-900 dark:focus:border-slate-400 transition"
+                  class="input-price w-full min-h-[44px] h-11 pl-7 pr-8 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-black text-lg text-slate-900 dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-900 dark:focus:border-emerald-500 transition"
                 />
-                <span class="absolute right-2 top-2.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500 select-none pointer-events-none">${unit}</span>
+                <span class="absolute right-3 top-3 text-xs font-bold text-slate-400 dark:text-slate-500 select-none pointer-events-none">${unit}</span>
               </div>
 
               <button 
                 type="button"
                 data-step-price="${p.id}"
                 data-delta="100"
-                class="btn-step-price w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition tap-feedback"
+                class="btn-step-price min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 font-black rounded-xl text-base transition tap-feedback touch-target shrink-0 border border-slate-200 dark:border-slate-700"
                 title="Subir $100"
+                aria-label="Subir $100"
               >
                 +
-              </button>
-
-              <!-- Botón Switch Activo / Pausado (44px min) -->
-              <button 
-                data-toggle-stock="${p.id}"
-                class="btn-stock-toggle min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold transition tap-feedback ${
-                  p.disponible
-                    ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
-                }"
-              >
-                ${p.disponible ? "Activo" : "Pausado"}
               </button>
             </div>
           </div>
@@ -3957,10 +3997,11 @@ class App {
             </span>
             <button 
               type="button"
-              class="theme-toggle-btn text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1"
-              title="Cambiar tema claro / oscuro"
+              class="theme-toggle-btn min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback touch-target inline-flex items-center justify-center gap-1.5"
+              title="${store.getTheme() === 'dark' ? 'Cambiar a tema claro (atajo: T)' : 'Cambiar a tema oscuro (atajo: T)'}"
+              aria-label="${store.getTheme() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}"
             >
-              <span>Tema:</span>
+              <span class="text-slate-400 dark:text-slate-500">Tema:</span>
               <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
             </button>
           </div>

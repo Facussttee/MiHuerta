@@ -18,9 +18,14 @@ const memoryFallback = {};
 function safeGet(key, def) {
   try {
     const val = localStorage.getItem(key);
-    return val ? JSON.parse(val) : (memoryFallback[key] || def);
+    if (val === null || val === undefined) return memoryFallback[key] !== undefined ? memoryFallback[key] : def;
+    try {
+      return JSON.parse(val);
+    } catch {
+      return val;
+    }
   } catch {
-    return memoryFallback[key] || def;
+    return memoryFallback[key] !== undefined ? memoryFallback[key] : def;
   }
 }
 function safeSet(key, val) {
@@ -46,7 +51,7 @@ class Store {
     // Sincronización en tiempo real entre pestañas
     if (typeof window !== "undefined") {
       window.addEventListener("storage", (e) => {
-        if (e.key === STORAGE_KEYS.THEME) {
+        if (e.key === "theme" || e.key === STORAGE_KEYS.THEME) {
           this.applyTheme(this.getTheme());
           this.notify("theme_changed");
         } else if (Object.values(STORAGE_KEYS).includes(e.key)) {
@@ -54,16 +59,22 @@ class Store {
         }
       });
 
-      // Escuchar cambios en la preferencia del sistema operativo
+      // Escuchar cambios reactivos en la preferencia del sistema operativo si no hay override explícito
       if (window.matchMedia) {
         try {
-          window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
-            const saved = safeGet(STORAGE_KEYS.THEME, null);
+          const mq = window.matchMedia("(prefers-color-scheme: dark)");
+          const handler = (e) => {
+            const saved = safeGet("theme", null) || safeGet(STORAGE_KEYS.THEME, null);
             if (!saved) {
               this.applyTheme(e.matches ? "dark" : "light");
               this.notify("theme_changed");
             }
-          });
+          };
+          if (mq.addEventListener) {
+            mq.addEventListener("change", handler);
+          } else if (mq.addListener) {
+            mq.addListener(handler);
+          }
         } catch {}
       }
     }
@@ -931,7 +942,7 @@ class Store {
   // GESTION DE MODO OSCURO / CLARO
   // ========================================================
   getTheme() {
-    const saved = safeGet(STORAGE_KEYS.THEME, null);
+    const saved = safeGet("theme", null) || safeGet(STORAGE_KEYS.THEME, null);
     if (saved === "dark" || saved === "light") {
       return saved;
     }
@@ -947,6 +958,7 @@ class Store {
 
   setTheme(theme) {
     const validTheme = theme === "dark" ? "dark" : "light";
+    safeSet("theme", validTheme);
     safeSet(STORAGE_KEYS.THEME, validTheme);
     this.applyTheme(validTheme);
     this.notify("theme_changed");
@@ -962,10 +974,12 @@ class Store {
   applyTheme(theme) {
     if (typeof document === "undefined") return;
     const isDark = theme === "dark";
+    const themeName = isDark ? "dark" : "light";
     document.documentElement.classList.toggle("dark", isDark);
     if (document.body) {
       document.body.classList.toggle("dark", isDark);
     }
+    document.documentElement.setAttribute("data-theme", themeName);
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
       metaThemeColor.setAttribute("content", isDark ? "#020617" : "#f8fafc");

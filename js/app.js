@@ -106,10 +106,11 @@ class App {
             </span>
             <button 
               type="button"
-              class="theme-toggle-btn text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1"
-              title="Cambiar tema claro / oscuro"
+              class="theme-toggle-btn min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback touch-target inline-flex items-center justify-center gap-1.5"
+              title="${store.getTheme() === 'dark' ? 'Cambiar a tema claro (atajo: T)' : 'Cambiar a tema oscuro (atajo: T)'}"
+              aria-label="${store.getTheme() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}"
             >
-              <span>Tema:</span>
+              <span class="text-slate-400 dark:text-slate-500">Tema:</span>
               <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
             </button>
           </div>
