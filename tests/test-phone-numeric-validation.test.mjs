@@ -48,10 +48,17 @@ assert.ok(inputHtml.includes('maxlength="15"'), "Input must constrain maxlength=
 assert.ok(inputHtml.includes('pattern="[0-9]'), "Input must declare pattern for digits");
 pass("1.2 #phone-input has type='tel', inputmode='numeric', pattern='[0-9]{8,15}', maxlength='15'");
 
-// 1.3 Phone error message element exists
+// 1.3 Phone and Name error message elements exist
 assert.ok(clientSrc.includes('id="phone-error"'), "#phone-error element must exist in client.js");
 assert.ok(bundleSrc.includes('id="phone-error"'), "#phone-error element must exist in bundle.js");
-pass("1.3 #phone-error validation alert exists in DOM template");
+assert.ok(clientSrc.includes('id="name-error"'), "#name-error element must exist in client.js");
+assert.ok(bundleSrc.includes('id="name-error"'), "#name-error element must exist in bundle.js");
+assert.ok(clientSrc.includes('id="name-input"'), "#name-input must exist in client.js");
+const nameInputMatch = clientSrc.match(/<input[^>]*id="name-input"[^>]*>/s);
+assert.ok(nameInputMatch, "#name-input markup found");
+assert.ok(nameInputMatch[0].includes("required"), "#name-input must have required attribute");
+assert.ok(nameInputMatch[0].includes('minlength="2"'), "#name-input must have minlength='2'");
+pass("1.3 #phone-error and #name-error validation alerts exist in DOM template, name-input is required");
 
 // ---------------------------------------------------------------------------
 // SUITE 2: KEYDOWN NON-NUMERIC BLOCKING
@@ -172,6 +179,22 @@ assert.strictEqual(validatePhoneSubmit("11 2345 6789").valid, true);
 assert.strictEqual(validatePhoneSubmit("11 2345 6789").cleanPhone, "1123456789");
 assert.strictEqual(validatePhoneSubmit("2211234567").cleanPhone, "2211234567");
 pass("4.2 Valid 8-15 digit phone submissions accepted with clean numeric string");
+
+// 4.3 Validación de Nombre Completo Requerido
+const validateNameSubmit = (nameVal) => {
+  const clean = String(nameVal || "").trim();
+  if (!clean || clean.length < 2) {
+    return { valid: false, error: "Por favor ingresá tu nombre para que podamos identificar tu pedido." };
+  }
+  return { valid: true, cleanName: clean };
+};
+
+assert.strictEqual(validateNameSubmit("").valid, false);
+assert.strictEqual(validateNameSubmit("   ").valid, false);
+assert.strictEqual(validateNameSubmit("A").valid, false); // Menos de 2 caracteres
+assert.strictEqual(validateNameSubmit("Facundo Gómez").valid, true);
+assert.strictEqual(validateNameSubmit("  Lucía  ").cleanName, "Lucía");
+pass("4.3 Customer name validation enforces non-empty string with >= 2 characters");
 
 // ---------------------------------------------------------------------------
 // SUITE 5: STORE DEFENSIVE GUARD

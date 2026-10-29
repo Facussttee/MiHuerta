@@ -1319,15 +1319,25 @@ function renderClientView(container) {
 
             <div id="new-user-fields" class="space-y-3 pt-1">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                  Nombre completo
-                </label>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label for="name-input" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Nombre completo
+                  </label>
+                  <span class="text-[10px] font-bold text-rose-500 dark:text-rose-400">Requerido</span>
+                </div>
                 <input 
                   type="text" 
                   id="name-input" 
+                  required
+                  minlength="2"
+                  maxlength="60"
+                  autocomplete="name"
                   placeholder="Ej: Facundo Gómez" 
                   class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white text-base font-medium outline-none transition"
                 />
+                <p id="name-error" class="hidden text-xs text-rose-500 dark:text-rose-400 font-semibold mt-1.5">
+                  Por favor ingresá tu nombre para que podamos identificar tu pedido.
+                </p>
               </div>
 
               <div>
@@ -1380,13 +1390,17 @@ function renderClientView(container) {
     const btnQuickDemo = container.querySelector("#btn-quick-demo-user");
 
     const phoneError = container.querySelector("#phone-error");
+    const nameError = container.querySelector("#name-error");
 
     function syncUserFields(phoneVal) {
       if (!phoneVal) return;
       const clean = String(phoneVal).replace(/\D/g, "");
       const match = store.getCustomer(clean);
       if (match) {
-        if (nameInput) nameInput.value = match.nombre || "";
+        if (nameInput) {
+          nameInput.value = match.nombre || "";
+          clearNameError();
+        }
         if (addressInput) addressInput.value = match.direccion || "";
       }
     }
@@ -1397,6 +1411,17 @@ function renderClientView(container) {
         phoneInput?.classList.remove("border-rose-500", "focus:ring-rose-500");
       }
     };
+
+    const clearNameError = () => {
+      if (nameError && !nameError.classList.contains("hidden")) {
+        nameError.classList.add("hidden");
+        nameInput?.classList.remove("border-rose-500", "focus:ring-rose-500");
+      }
+    };
+
+    nameInput?.addEventListener("input", () => {
+      clearNameError();
+    });
 
     // Bloquear teclas no numéricas en keydown para teclado físico
     phoneInput?.addEventListener("keydown", (e) => {
@@ -1478,7 +1503,17 @@ function renderClientView(container) {
         return;
       }
 
-      const name = nameInput.value.trim() || "Cliente";
+      const name = nameInput.value.trim();
+      if (!name || name.length < 2) {
+        if (nameError) {
+          nameError.textContent = "Por favor ingresá tu nombre para que podamos identificar tu pedido.";
+          nameError.classList.remove("hidden");
+        }
+        nameInput?.classList.add("border-rose-500", "focus:ring-rose-500");
+        nameInput?.focus();
+        return;
+      }
+
       const address = addressInput.value.trim();
 
       const user = store.saveCustomer({
