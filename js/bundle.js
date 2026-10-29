@@ -1562,7 +1562,7 @@ function renderClientView(container) {
     const savedDrawerScroll = prevScrollEl ? prevScrollEl.scrollTop : 0;
 
     container.innerHTML = `
-      <div class="max-w-md mx-auto pb-36 w-full overflow-x-hidden">
+      <div class="max-w-md mx-auto pb-32 sm:pb-36 w-full overflow-x-hidden safe-pb">
         
         <!-- Banner de Pedido Activo en Curso (si existe) -->
         ${
@@ -1571,7 +1571,7 @@ function renderClientView(container) {
           <div class="px-4 pt-3">
             <button 
               id="btn-banner-active-order"
-              class="w-full bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100 p-3 rounded-2xl text-left flex items-center justify-between transition tap-feedback shadow-xs"
+              class="w-full min-h-[48px] bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100 p-3 rounded-2xl text-left flex items-center justify-between transition tap-feedback shadow-xs touch-target"
             >
               <div>
                 <div class="flex items-center gap-2">
@@ -1598,24 +1598,22 @@ function renderClientView(container) {
 
         <!-- Header Móvil del Catálogo (Coordinado con clase sticky-header-offset) -->
         <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 pt-3 pb-2.5 shadow-xs">
+          <!-- Fila 1: Título y Estado + Botones de Acción -->
           <div class="flex items-center justify-between gap-2">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-black text-slate-900 dark:text-white tracking-tight uppercase">Catálogo del Día</span>
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Abierto</span>
-              </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400">
-                <span>Hola, <strong class="text-slate-800 dark:text-slate-200 font-semibold">${user.nombre}</strong></span>
-                <button id="btn-change-user" class="min-h-[44px] inline-flex items-center px-1.5 text-slate-400 dark:text-slate-500 underline ml-1 hover:text-slate-600 dark:hover:text-slate-300 text-[11px] touch-target">Cambiar</button>
-              </p>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-sm font-black text-slate-900 dark:text-white tracking-tight uppercase truncate">Catálogo del Día</span>
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Abierto
+              </span>
             </div>
             
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 shrink-0">
               <button 
                 type="button"
                 class="theme-toggle-btn min-h-[44px] px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
                 title="Cambiar tema claro / oscuro"
+                aria-label="Cambiar tema claro u oscuro"
               >
                 <span>Tema:</span>
                 <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
@@ -1624,6 +1622,8 @@ function renderClientView(container) {
               <button 
                 id="btn-header-cart" 
                 class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
+                title="Ver pedido"
+                aria-label="Ver pedido"
               >
                 <span>Pedido</span>
                 <span class="px-2 py-0.5 rounded-full ${totalItems > 0 ? "bg-emerald-600 text-white font-black" : "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold"} text-xs">
@@ -1633,14 +1633,24 @@ function renderClientView(container) {
             </div>
           </div>
 
+          <!-- Fila 2: Saludo de usuario con cambio de cuenta alineado -->
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <span class="truncate pr-2">Hola, <strong class="text-slate-800 dark:text-slate-200 font-semibold">${user.nombre}</strong></span>
+            <button id="btn-change-user" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-end px-2 text-slate-400 dark:text-slate-500 underline hover:text-slate-600 dark:hover:text-slate-300 text-[11px] touch-target shrink-0">Cambiar</button>
+          </div>
+
           <!-- Buscador con tamaño de fuente accesible para evitar zoom iOS -->
           <div class="mt-2.5 relative">
             <input 
               type="text" 
               id="search-input" 
-              placeholder="Buscar productos (papa, tomate, acelga)..." 
+              placeholder="Buscar productos (ej. tomate, papa)..." 
               value="${searchQuery}"
-              class="w-full pl-3.5 pr-14 py-2.5 bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-transparent focus:border-slate-300 dark:focus:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              class="w-full pl-3.5 pr-14 py-2.5 bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-slate-200/80 dark:border-slate-800 focus:border-emerald-500 dark:focus:border-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
             />
             ${
               searchQuery
@@ -1650,12 +1660,12 @@ function renderClientView(container) {
           </div>
 
           <!-- Píldoras de Categorías con conteo (Horizontal Scroll Táctil) -->
-          <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar overscroll-x-contain py-1">
+          <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar overscroll-x-contain py-1 -mx-4 px-4">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-category="${cat}"
-                class="category-pill whitespace-nowrap min-h-[44px] px-4 py-2.5 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
+                class="category-pill shrink-0 whitespace-nowrap min-h-[44px] px-4 py-2.5 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
                   selectedCategory === cat
                     ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
@@ -1674,7 +1684,7 @@ function renderClientView(container) {
         </header>
 
         <!-- Contenedor de Productos -->
-        <main id="products-list-container" class="p-4 space-y-2.5">
+        <main id="products-list-container" class="p-4 space-y-3.5">
           ${renderProductCardsHTML(filteredProducts, cart)}
         </main>
 
