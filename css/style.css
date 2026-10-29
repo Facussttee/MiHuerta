@@ -211,6 +211,9 @@ body {
   overscroll-behavior-y: none;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.2s ease, color 0.2s ease;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 html.dark body,
@@ -309,13 +312,20 @@ button, input, select, a {
 
 /* Áreas seguras en dispositivos con notch / Home Bar (iPhone / Android) */
 .safe-pb {
-  padding-bottom: max(1.25rem, calc(1rem + var(--sab)));
+  padding-bottom: max(1.25rem, calc(1.25rem + env(safe-area-inset-bottom, 0px)));
 }
 .safe-floating-bottom {
-  bottom: max(1rem, calc(1rem + var(--sab)));
+  bottom: max(1rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
 }
 .safe-mb {
-  margin-bottom: max(1rem, var(--sab));
+  margin-bottom: max(1rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
+}
+
+/* Píldoras de categorías con desplazamiento horizontal sin aplastamiento */
+.category-pill,
+.admin-cat-pill {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
 /* Altura mínima accesible para toques con pulgar (WCAG Touch Targets) */
@@ -331,3 +341,4 @@ button, input, select, a {
 .sticky-header-offset {
   top: var(--sim-bar-h, 0px);
 }
+

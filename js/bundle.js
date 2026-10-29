@@ -671,13 +671,17 @@ class Store {
   }
 
   getCustomer(phone) {
+    if (!phone) return null;
     const cleanPhone = String(phone).replace(/\D/g, "");
+    if (!cleanPhone) return null;
     const customers = this.getCustomers();
     return customers[cleanPhone] || null;
   }
 
   saveCustomer(customer) {
+    if (!customer || !customer.telefono) return null;
     const cleanPhone = String(customer.telefono).replace(/\D/g, "");
+    if (!cleanPhone) return null;
     const customers = this.getCustomers();
     customers[cleanPhone] = { ...customer, telefono: cleanPhone };
     safeSet(STORAGE_KEYS.CUSTOMERS, customers);
@@ -1297,11 +1301,17 @@ function renderClientView(container) {
                   id="phone-input" 
                   required 
                   inputmode="numeric" 
+                  pattern="[0-9]{8,15}"
+                  maxlength="15"
+                  autocomplete="tel"
                   placeholder="11 2345 6789" 
-                  value="${store.prefilledPhone || ""}"
+                  value="${(store.prefilledPhone || "").replace(/\D/g, "")}"
                   class="w-full pl-20 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white font-bold text-base outline-none transition"
                 />
               </div>
+              <p id="phone-error" class="hidden text-xs text-rose-500 dark:text-rose-400 font-semibold mt-1.5">
+                Ingresá un número de WhatsApp válido (sólo números, mín. 8 dígitos).
+              </p>
               <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
                 Usamos tu teléfono para enviarte el comprobante de pesaje real por WhatsApp.
               </p>
@@ -1309,15 +1319,25 @@ function renderClientView(container) {
 
             <div id="new-user-fields" class="space-y-3 pt-1">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                  Nombre completo
-                </label>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label for="name-input" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Nombre completo
+                  </label>
+                  <span class="text-[10px] font-bold text-rose-500 dark:text-rose-400">Requerido</span>
+                </div>
                 <input 
                   type="text" 
                   id="name-input" 
+                  required
+                  minlength="2"
+                  maxlength="60"
+                  autocomplete="name"
                   placeholder="Ej: Facundo Gómez" 
                   class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white text-base font-medium outline-none transition"
                 />
+                <p id="name-error" class="hidden text-xs text-rose-500 dark:text-rose-400 font-semibold mt-1.5">
+                  Por favor ingresá tu nombre para que podamos identificar tu pedido.
+                </p>
               </div>
 
               <div>
@@ -1369,19 +1389,92 @@ function renderClientView(container) {
     const addressInput = container.querySelector("#address-input");
     const btnQuickDemo = container.querySelector("#btn-quick-demo-user");
 
+    const phoneError = container.querySelector("#phone-error");
+    const nameError = container.querySelector("#name-error");
+
     function syncUserFields(phoneVal) {
-      const match = store.getCustomer(phoneVal);
+      if (!phoneVal) return;
+      const clean = String(phoneVal).replace(/\D/g, "");
+      const match = store.getCustomer(clean);
       if (match) {
-        if (nameInput) nameInput.value = match.nombre || "";
+        if (nameInput) {
+          nameInput.value = match.nombre || "";
+          clearNameError();
+        }
         if (addressInput) addressInput.value = match.direccion || "";
       }
     }
 
+    const clearPhoneError = () => {
+      if (phoneError && !phoneError.classList.contains("hidden")) {
+        phoneError.classList.add("hidden");
+        phoneInput?.classList.remove("border-rose-500", "focus:ring-rose-500");
+      }
+    };
+
+    const clearNameError = () => {
+      if (nameError && !nameError.classList.contains("hidden")) {
+        nameError.classList.add("hidden");
+        nameInput?.classList.remove("border-rose-500", "focus:ring-rose-500");
+      }
+    };
+
+    nameInput?.addEventListener("input", () => {
+      clearNameError();
+    });
+
+    // Bloquear teclas no numéricas en keydown para teclado físico
+    phoneInput?.addEventListener("keydown", (e) => {
+      const allowedKeys = [
+        "Backspace", "Tab", "Enter", "Escape", "Delete",
+        "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+        "Home", "End"
+      ];
+      if (allowedKeys.includes(e.key)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+
+    // Sanitizar en evento input (captura dictado, autocompletar y teclados virtuales móviles)
     phoneInput?.addEventListener("input", (e) => {
-      syncUserFields(e.target.value);
+      const raw = e.target.value;
+      const clean = raw.replace(/\D/g, "");
+      if (raw !== clean) {
+        const curPos = e.target.selectionStart || 0;
+        e.target.value = clean;
+        try {
+          const newPos = Math.max(0, curPos - (raw.length - clean.length));
+          e.target.setSelectionRange(newPos, newPos);
+        } catch {}
+      }
+      clearPhoneError();
+      syncUserFields(clean);
+    });
+
+    // Sanitizar en evento paste para admitir sólo dígitos
+    phoneInput?.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const pasteText = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+      const digits = pasteText.replace(/\D/g, "");
+      if (!digits) return;
+
+      const start = phoneInput.selectionStart || 0;
+      const end = phoneInput.selectionEnd || 0;
+      const current = phoneInput.value;
+      const updated = (current.slice(0, start) + digits + current.slice(end)).slice(0, 15);
+      phoneInput.value = updated;
+      const targetPos = Math.min(start + digits.length, updated.length);
+      try {
+        phoneInput.setSelectionRange(targetPos, targetPos);
+      } catch {}
+      clearPhoneError();
+      syncUserFields(updated);
     });
 
     if (phoneInput?.value) {
+      phoneInput.value = phoneInput.value.replace(/\D/g, "");
       syncUserFields(phoneInput.value);
     }
 
@@ -1398,8 +1491,29 @@ function renderClientView(container) {
 
     phoneForm?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const phone = phoneInput.value.trim();
-      const name = nameInput.value.trim() || "Cliente";
+      const phone = phoneInput.value.replace(/\D/g, "").trim();
+
+      if (!phone || phone.length < 8) {
+        if (phoneError) {
+          phoneError.textContent = "Ingresá un número de WhatsApp válido (sólo números, mín. 8 dígitos).";
+          phoneError.classList.remove("hidden");
+        }
+        phoneInput?.classList.add("border-rose-500", "focus:ring-rose-500");
+        phoneInput?.focus();
+        return;
+      }
+
+      const name = nameInput.value.trim();
+      if (!name || name.length < 2) {
+        if (nameError) {
+          nameError.textContent = "Por favor ingresá tu nombre para que podamos identificar tu pedido.";
+          nameError.classList.remove("hidden");
+        }
+        nameInput?.classList.add("border-rose-500", "focus:ring-rose-500");
+        nameInput?.focus();
+        return;
+      }
+
       const address = addressInput.value.trim();
 
       const user = store.saveCustomer({
@@ -1448,7 +1562,7 @@ function renderClientView(container) {
     const savedDrawerScroll = prevScrollEl ? prevScrollEl.scrollTop : 0;
 
     container.innerHTML = `
-      <div class="max-w-md mx-auto pb-36 w-full overflow-x-hidden">
+      <div class="max-w-md mx-auto pb-32 sm:pb-36 w-full overflow-x-hidden safe-pb">
         
         <!-- Banner de Pedido Activo en Curso (si existe) -->
         ${
@@ -1457,7 +1571,7 @@ function renderClientView(container) {
           <div class="px-4 pt-3">
             <button 
               id="btn-banner-active-order"
-              class="w-full bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100 p-3 rounded-2xl text-left flex items-center justify-between transition tap-feedback shadow-xs"
+              class="w-full min-h-[48px] bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100 p-3 rounded-2xl text-left flex items-center justify-between transition tap-feedback shadow-xs touch-target"
             >
               <div>
                 <div class="flex items-center gap-2">
@@ -1484,24 +1598,22 @@ function renderClientView(container) {
 
         <!-- Header Móvil del Catálogo (Coordinado con clase sticky-header-offset) -->
         <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 pt-3 pb-2.5 shadow-xs">
+          <!-- Fila 1: Título y Estado + Botones de Acción -->
           <div class="flex items-center justify-between gap-2">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-black text-slate-900 dark:text-white tracking-tight uppercase">Catálogo del Día</span>
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Abierto</span>
-              </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400">
-                <span>Hola, <strong class="text-slate-800 dark:text-slate-200 font-semibold">${user.nombre}</strong></span>
-                <button id="btn-change-user" class="min-h-[44px] inline-flex items-center px-1.5 text-slate-400 dark:text-slate-500 underline ml-1 hover:text-slate-600 dark:hover:text-slate-300 text-[11px] touch-target">Cambiar</button>
-              </p>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-sm font-black text-slate-900 dark:text-white tracking-tight uppercase truncate">Catálogo del Día</span>
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Abierto
+              </span>
             </div>
             
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 shrink-0">
               <button 
                 type="button"
                 class="theme-toggle-btn min-h-[44px] px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
                 title="Cambiar tema claro / oscuro"
+                aria-label="Cambiar tema claro u oscuro"
               >
                 <span>Tema:</span>
                 <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
@@ -1510,6 +1622,8 @@ function renderClientView(container) {
               <button 
                 id="btn-header-cart" 
                 class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
+                title="Ver pedido"
+                aria-label="Ver pedido"
               >
                 <span>Pedido</span>
                 <span class="px-2 py-0.5 rounded-full ${totalItems > 0 ? "bg-emerald-600 text-white font-black" : "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold"} text-xs">
@@ -1519,14 +1633,24 @@ function renderClientView(container) {
             </div>
           </div>
 
+          <!-- Fila 2: Saludo de usuario con cambio de cuenta alineado -->
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <span class="truncate pr-2">Hola, <strong class="text-slate-800 dark:text-slate-200 font-semibold">${user.nombre}</strong></span>
+            <button id="btn-change-user" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-end px-2 text-slate-400 dark:text-slate-500 underline hover:text-slate-600 dark:hover:text-slate-300 text-[11px] touch-target shrink-0">Cambiar</button>
+          </div>
+
           <!-- Buscador con tamaño de fuente accesible para evitar zoom iOS -->
           <div class="mt-2.5 relative">
             <input 
               type="text" 
               id="search-input" 
-              placeholder="Buscar productos (papa, tomate, acelga)..." 
+              placeholder="Buscar productos (ej. tomate, papa)..." 
               value="${searchQuery}"
-              class="w-full pl-3.5 pr-14 py-2.5 bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-transparent focus:border-slate-300 dark:focus:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              class="w-full pl-3.5 pr-14 py-2.5 bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-slate-200/80 dark:border-slate-800 focus:border-emerald-500 dark:focus:border-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
             />
             ${
               searchQuery
@@ -1536,12 +1660,12 @@ function renderClientView(container) {
           </div>
 
           <!-- Píldoras de Categorías con conteo (Horizontal Scroll Táctil) -->
-          <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar overscroll-x-contain py-1">
+          <div class="mt-2.5 flex gap-2 overflow-x-auto no-scrollbar overscroll-x-contain py-1 -mx-4 px-4">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-category="${cat}"
-                class="category-pill whitespace-nowrap min-h-[44px] px-4 py-2.5 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
+                class="category-pill shrink-0 whitespace-nowrap min-h-[44px] px-4 py-2.5 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
                   selectedCategory === cat
                     ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
@@ -1560,7 +1684,7 @@ function renderClientView(container) {
         </header>
 
         <!-- Contenedor de Productos -->
-        <main id="products-list-container" class="p-4 space-y-2.5">
+        <main id="products-list-container" class="p-4 space-y-3.5">
           ${renderProductCardsHTML(filteredProducts, cart)}
         </main>
 
@@ -1917,7 +2041,7 @@ function renderClientView(container) {
     return `
       <!-- Backdrop con cierre al tocar fondo -->
       <div id="cart-drawer-backdrop" class="fixed inset-0 z-40 bg-slate-950/70 dark:bg-black/80 backdrop-blur-xs flex items-end justify-center animate-fade-in">
-        <div id="cart-drawer-sheet" class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl ${
+        <div id="cart-drawer-sheet" class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl max-h-[85vh] max-h-[85dvh] flex flex-col shadow-2xl ${
           isDrawerFirstOpen ? "animate-slide-up" : ""
         } border-t border-slate-200 dark:border-slate-800">
           
@@ -1933,8 +2057,9 @@ function renderClientView(container) {
             <div class="flex items-center gap-1.5">
               <button 
                 type="button"
-                class="theme-toggle-btn min-h-[44px] px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1 text-xs font-bold"
+                class="theme-toggle-btn min-h-[44px] px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1 text-xs font-bold touch-target"
                 title="Cambiar tema claro / oscuro"
+                aria-label="Cambiar tema claro u oscuro"
               >
                 <span>Tema:</span>
                 <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
@@ -2281,21 +2406,22 @@ function renderClientView(container) {
     const waHelpLink = `https://wa.me/5491123456789?text=${waHelpText}`;
 
     container.innerHTML = `
-      <div class="max-w-md mx-auto p-4 pt-4 pb-28">
+      <div class="max-w-md mx-auto p-4 pt-4 pb-28 safe-pb">
         
         <!-- Botón para volver a ver catálogo sin perder el pedido y toggle de tema -->
         <div class="flex items-center justify-between mb-3">
           <button 
             id="btn-back-to-catalog" 
-            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
+            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5 touch-target"
           >
             <span>Volver al Catálogo</span>
           </button>
 
           <button 
             type="button"
-            class="theme-toggle-btn min-h-[44px] px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
+            class="theme-toggle-btn min-h-[44px] px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5 touch-target"
             title="Cambiar tema claro / oscuro"
+            aria-label="Cambiar tema claro u oscuro"
           >
             <span>Tema:</span>
             <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
@@ -2511,7 +2637,7 @@ function renderOperatorView(container) {
     };
 
     container.innerHTML = `
-      <div class="max-w-2xl mx-auto pb-24 overflow-x-hidden">
+      <div class="max-w-2xl mx-auto pb-24 overflow-x-hidden safe-pb">
         <!-- Header del Mostrador con sticky-header-offset -->
         <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md border-b border-slate-800">
           <div class="flex items-center justify-between">
@@ -3133,7 +3259,10 @@ function renderOperatorView(container) {
               <input 
                 type="tel" 
                 id="edit-phone" 
-                value="${order.cliente.telefono}" 
+                inputmode="numeric" 
+                pattern="[0-9]{8,15}"
+                maxlength="15"
+                value="${(order.cliente.telefono || "").replace(/\D/g, "")}" 
                 class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-800 dark:focus:border-emerald-500 text-slate-900 dark:text-white"
                 required
               />
@@ -3346,11 +3475,38 @@ Alias para transferir: mihuerta.verduras
         });
       });
 
+      const editPhoneInput = container.querySelector("#edit-phone");
+      editPhoneInput?.addEventListener("keydown", (e) => {
+        const allowedKeys = [
+          "Backspace", "Tab", "Enter", "Escape", "Delete",
+          "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+          "Home", "End"
+        ];
+        if (allowedKeys.includes(e.key)) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (!/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+        }
+      });
+      editPhoneInput?.addEventListener("input", (e) => {
+        e.target.value = e.target.value.replace(/\D/g, "");
+      });
+      editPhoneInput?.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+        const digits = text.replace(/\D/g, "");
+        if (!digits) return;
+        const start = editPhoneInput.selectionStart || 0;
+        const end = editPhoneInput.selectionEnd || 0;
+        const cur = editPhoneInput.value;
+        editPhoneInput.value = (cur.slice(0, start) + digits + cur.slice(end)).slice(0, 15);
+      });
+
       if (editForm) {
         editForm.addEventListener("submit", (e) => {
           e.preventDefault();
           const name = container.querySelector("#edit-name")?.value.trim() || "";
-          const phone = container.querySelector("#edit-phone")?.value.trim() || "";
+          const phone = (container.querySelector("#edit-phone")?.value || "").replace(/\D/g, "").trim();
           const modeRadio = container.querySelector('input[name="edit-delivery-mode"]:checked');
           const mode = modeRadio ? modeRadio.value : "RETIRO";
           const address = mode === "DELIVERY" ? container.querySelector("#edit-address")?.value.trim() || "" : "Retiro por mostrador";
@@ -3512,7 +3668,7 @@ function renderAdminView(container) {
     });
 
     container.innerHTML = `
-      <div class="max-w-xl mx-auto p-4 pb-32 overflow-x-hidden">
+      <div class="max-w-xl mx-auto p-4 pb-32 overflow-x-hidden safe-pb">
         <!-- Header del Panel -->
         <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 pt-3 pb-3 mb-4 -mx-4 px-4 shadow-xs">
           <div class="flex items-center justify-between">
@@ -3638,12 +3794,12 @@ function renderAdminView(container) {
           }
 
           <!-- Filtro de Categorías Táctil con conteo -->
-          <div class="mt-3.5 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <div class="mt-3.5 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-admin-cat="${cat}"
-                class="admin-cat-pill whitespace-nowrap min-h-[44px] px-4 py-2 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
+                class="admin-cat-pill shrink-0 whitespace-nowrap min-h-[44px] px-4 py-2 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
                   selectedCategory === cat
                     ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"

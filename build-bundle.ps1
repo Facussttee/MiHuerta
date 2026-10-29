@@ -114,9 +114,11 @@ if ($bundleContent.Length -lt 50000) {
   throw "Error de compilacion: El tamano del bundle es sospechosamente bajo ($($bundleContent.Length) caracteres)."
 }
 
-# 6. Escritura con UTF-8 Estricto SIN BOM
+# 6. Escritura con UTF-8 Estricto SIN BOM (escritura atomica via archivo temporal)
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::WriteAllText($bundlePath, $bundleContent, $utf8NoBom)
+$tempPath = "$bundlePath.tmp"
+[System.IO.File]::WriteAllText($tempPath, $bundleContent, $utf8NoBom)
+Move-Item -Path $tempPath -Destination $bundlePath -Force
 
 # 7. Verificación de firma de bytes (asegurar que los primeros bytes sean '(function' y NO 0xEF 0xBB 0xBF)
 $bytes = [System.IO.File]::ReadAllBytes($bundlePath)

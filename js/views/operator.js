@@ -35,7 +35,7 @@ export function renderOperatorView(container) {
     };
 
     container.innerHTML = `
-      <div class="max-w-2xl mx-auto pb-24 overflow-x-hidden">
+      <div class="max-w-2xl mx-auto pb-24 overflow-x-hidden safe-pb">
         <!-- Header del Mostrador con sticky-header-offset -->
         <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md border-b border-slate-800">
           <div class="flex items-center justify-between">
@@ -657,7 +657,10 @@ export function renderOperatorView(container) {
               <input 
                 type="tel" 
                 id="edit-phone" 
-                value="${order.cliente.telefono}" 
+                inputmode="numeric" 
+                pattern="[0-9]{8,15}"
+                maxlength="15"
+                value="${(order.cliente.telefono || "").replace(/\D/g, "")}" 
                 class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-800 dark:focus:border-emerald-500 text-slate-900 dark:text-white"
                 required
               />
@@ -870,11 +873,38 @@ Alias para transferir: mihuerta.verduras
         });
       });
 
+      const editPhoneInput = container.querySelector("#edit-phone");
+      editPhoneInput?.addEventListener("keydown", (e) => {
+        const allowedKeys = [
+          "Backspace", "Tab", "Enter", "Escape", "Delete",
+          "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+          "Home", "End"
+        ];
+        if (allowedKeys.includes(e.key)) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (!/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+        }
+      });
+      editPhoneInput?.addEventListener("input", (e) => {
+        e.target.value = e.target.value.replace(/\D/g, "");
+      });
+      editPhoneInput?.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+        const digits = text.replace(/\D/g, "");
+        if (!digits) return;
+        const start = editPhoneInput.selectionStart || 0;
+        const end = editPhoneInput.selectionEnd || 0;
+        const cur = editPhoneInput.value;
+        editPhoneInput.value = (cur.slice(0, start) + digits + cur.slice(end)).slice(0, 15);
+      });
+
       if (editForm) {
         editForm.addEventListener("submit", (e) => {
           e.preventDefault();
           const name = container.querySelector("#edit-name")?.value.trim() || "";
-          const phone = container.querySelector("#edit-phone")?.value.trim() || "";
+          const phone = (container.querySelector("#edit-phone")?.value || "").replace(/\D/g, "").trim();
           const modeRadio = container.querySelector('input[name="edit-delivery-mode"]:checked');
           const mode = modeRadio ? modeRadio.value : "RETIRO";
           const address = mode === "DELIVERY" ? container.querySelector("#edit-address")?.value.trim() || "" : "Retiro por mostrador";

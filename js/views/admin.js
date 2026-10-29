@@ -28,7 +28,7 @@ export function renderAdminView(container) {
     });
 
     container.innerHTML = `
-      <div class="max-w-xl mx-auto p-4 pb-32 overflow-x-hidden">
+      <div class="max-w-xl mx-auto p-4 pb-32 overflow-x-hidden safe-pb">
         <!-- Header del Panel -->
         <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 pt-3 pb-3 mb-4 -mx-4 px-4 shadow-xs">
           <div class="flex items-center justify-between">
@@ -154,12 +154,12 @@ export function renderAdminView(container) {
           }
 
           <!-- Filtro de Categorías Táctil con conteo -->
-          <div class="mt-3.5 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <div class="mt-3.5 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-admin-cat="${cat}"
-                class="admin-cat-pill whitespace-nowrap min-h-[44px] px-4 py-2 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
+                class="admin-cat-pill shrink-0 whitespace-nowrap min-h-[44px] px-4 py-2 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
                   selectedCategory === cat
                     ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
