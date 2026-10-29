@@ -155,7 +155,11 @@ export function renderClientView(container) {
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
               Precios del día
             </span>
-            <span>Pesaje transparente</span>
+            <div class="flex items-center gap-2">
+              <a href="#operator" class="hover:text-slate-600 dark:hover:text-slate-300 underline">Operario</a>
+              <span class="opacity-40">•</span>
+              <a href="#admin" class="hover:text-slate-600 dark:hover:text-slate-300 underline">Admin</a>
+            </div>
           </div>
         </div>
       </div>
@@ -469,9 +473,15 @@ export function renderClientView(container) {
         <!-- Footer discreto para acceso a personal del local -->
         <footer class="mt-8 mb-16 text-center text-xs text-slate-400 dark:text-slate-500">
           <p>Verdulería Mi Huerta <span class="opacity-40 font-light">|</span> Catálogo y Pesaje en Balanza</p>
-          <a href="?view=operario" class="min-h-[44px] inline-flex items-center justify-center py-2 px-3 mt-2 text-[11px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline touch-target">
-            Acceso Personal del Local
-          </a>
+          <div class="mt-2 flex items-center justify-center gap-3 text-[11px]">
+            <a href="#operator" class="min-h-[44px] inline-flex items-center justify-center py-2 px-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline touch-target">
+              Operario
+            </a>
+            <span class="opacity-30">•</span>
+            <a href="#admin" class="min-h-[44px] inline-flex items-center justify-center py-2 px-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline touch-target">
+              Admin
+            </a>
+          </div>
         </footer>
 
         <!-- Barra Flotante Inferior de Pedido (Safe Area Adaptable) -->
@@ -1339,6 +1349,11 @@ export function renderClientView(container) {
             >
               Realizar Otro Pedido
             </button>
+            <div class="pt-2 text-center text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-center gap-3">
+              <a href="#operator" class="hover:text-slate-600 dark:hover:text-slate-300 underline">Operario</a>
+              <span class="opacity-40">•</span>
+              <a href="#admin" class="hover:text-slate-600 dark:hover:text-slate-300 underline">Admin</a>
+            </div>
           </div>
         </div>
       </div>
