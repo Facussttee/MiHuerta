@@ -35,7 +35,7 @@ export function renderOperatorView(container) {
     };
 
     container.innerHTML = `
-      <div class="max-w-2xl mx-auto pb-24 overflow-x-hidden">
+      <div class="max-w-2xl mx-auto pb-24 overflow-x-hidden safe-pb">
         <!-- Header del Mostrador con sticky-header-offset -->
         <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md border-b border-slate-800">
           <div class="flex items-center justify-between">
