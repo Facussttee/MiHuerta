@@ -1589,6 +1589,7 @@ function renderClientView(container) {
         const unitLabel = isKg ? "kg" : "u.";
         const unitSubtitle = isKg ? "Por kilo" : "Por unidad";
         const inCart = currentQty > 0;
+        const itemSubtotal = inCart ? Math.round(currentQty * product.precio) : 0;
 
         return `
           <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border transition ${
@@ -1598,7 +1599,7 @@ function renderClientView(container) {
             <div class="flex items-start justify-between gap-3">
               <!-- Info Producto -->
               <div class="flex-1 min-w-0 pr-1">
-                <div class="flex items-center gap-1.5 mb-1">
+                <div class="flex items-center flex-wrap gap-1 mb-1">
                   <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                     ${product.categoria}
                   </span>
@@ -1608,12 +1609,12 @@ function renderClientView(container) {
                   </span>
                   ${
                     inCart
-                      ? `<span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 ml-1">En pedido (${currentQty} ${unitLabel})</span>`
+                      ? `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300">En pedido</span>`
                       : ""
                   }
                 </div>
 
-                <h3 class="font-extrabold text-slate-900 dark:text-white text-sm leading-tight truncate">
+                <h3 class="font-extrabold text-slate-900 dark:text-white text-sm leading-snug line-clamp-2">
                   ${product.nombre}
                 </h3>
 
@@ -1621,11 +1622,16 @@ function renderClientView(container) {
                   ${product.detalle || ""}
                 </p>
 
-                <div class="mt-1.5 flex items-baseline gap-1">
+                <div class="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
                   <span class="text-base font-black text-emerald-700 dark:text-emerald-400">
                     $${product.precio.toLocaleString("es-AR")}
                   </span>
                   <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">/ ${unitLabel}</span>
+                  ${
+                    inCart
+                      ? `<span class="text-xs font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">($${itemSubtotal.toLocaleString("es-AR")})</span>`
+                      : ""
+                  }
                 </div>
 
                 ${
@@ -1651,26 +1657,44 @@ function renderClientView(container) {
                       </button>
                     `
                       : `
-                      <div class="flex items-center bg-emerald-600 text-white rounded-xl p-0.5 shadow-xs">
+                      <div class="flex items-center gap-1.5">
                         <button 
-                          data-dec-id="${product.id}"
-                          data-step="${step}"
-                          class="btn-qty-dec w-9 h-9 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-sm font-black transition tap-feedback"
-                          title="Restar"
+                          type="button"
+                          data-remove-id="${product.id}"
+                          class="btn-remove-item min-h-[44px] min-w-[44px] w-11 h-11 flex items-center justify-center rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:active:bg-rose-900/80 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 transition tap-feedback shadow-xs shrink-0"
+                          title="Eliminar ${product.nombre} del pedido"
+                          aria-label="Eliminar ${product.nombre} del pedido"
                         >
-                          −
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
                         </button>
-                        <span class="px-2 text-xs font-black min-w-[46px] text-center tracking-tight select-none">
-                          ${currentQty} ${unitLabel}
-                        </span>
-                        <button 
-                          data-inc-id="${product.id}"
-                          data-step="${step}"
-                          class="btn-qty-inc w-9 h-9 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-sm font-black transition tap-feedback"
-                          title="Sumar"
-                        >
-                          +
-                        </button>
+
+                        <div class="flex items-center bg-emerald-600 text-white rounded-xl p-0.5 shadow-xs min-h-[44px]">
+                          <button 
+                            type="button"
+                            data-dec-id="${product.id}"
+                            data-step="${step}"
+                            class="btn-qty-dec w-9 h-10 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback"
+                            title="Restar"
+                            aria-label="Restar cantidad"
+                          >
+                            −
+                          </button>
+                          <span class="px-1.5 text-xs font-black min-w-[38px] text-center tracking-tight select-none">
+                            ${currentQty} ${unitLabel}
+                          </span>
+                          <button 
+                            type="button"
+                            data-inc-id="${product.id}"
+                            data-step="${step}"
+                            class="btn-qty-inc w-9 h-10 flex items-center justify-center rounded-lg hover:bg-emerald-700 active:scale-90 text-base font-black transition tap-feedback"
+                            title="Sumar"
+                            aria-label="Sumar cantidad"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     `
                     : ""
@@ -1808,6 +1832,15 @@ function renderClientView(container) {
       });
     });
 
+    container.querySelectorAll(".btn-remove-item").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
+        const id = btn.dataset.removeId;
+        store.removeFromCart(id);
+      });
+    });
+
     container.querySelectorAll(".btn-quick-weight").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (navigator.vibrate) { try { navigator.vibrate(15); } catch {} }
@@ -1919,10 +1952,16 @@ function renderClientView(container) {
                         $${item.subtotal_estimado.toLocaleString("es-AR")}
                       </span>
                       <button 
+                        type="button"
                         data-drawer-remove="${item.producto_id}"
-                        class="text-[11px] font-bold text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 underline"
+                        class="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 underline tap-feedback"
+                        title="Quitar ${item.nombre} del pedido"
+                        aria-label="Quitar ${item.nombre} del pedido"
                       >
-                        Quitar
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Quitar</span>
                       </button>
                     </div>
                   </div>
