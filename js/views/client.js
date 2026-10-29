@@ -1184,21 +1184,22 @@ export function renderClientView(container) {
     const waHelpLink = `https://wa.me/5491123456789?text=${waHelpText}`;
 
     container.innerHTML = `
-      <div class="max-w-md mx-auto p-4 pt-4 pb-28">
+      <div class="max-w-md mx-auto p-4 pt-4 pb-28 safe-pb">
         
         <!-- Botón para volver a ver catálogo sin perder el pedido y toggle de tema -->
         <div class="flex items-center justify-between mb-3">
           <button 
             id="btn-back-to-catalog" 
-            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
+            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5 touch-target"
           >
             <span>Volver al Catálogo</span>
           </button>
 
           <button 
             type="button"
-            class="theme-toggle-btn min-h-[44px] px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
+            class="theme-toggle-btn min-h-[44px] px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5 touch-target"
             title="Cambiar tema claro / oscuro"
+            aria-label="Cambiar tema claro u oscuro"
           >
             <span>Tema:</span>
             <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>

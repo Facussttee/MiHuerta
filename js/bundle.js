@@ -2041,7 +2041,7 @@ function renderClientView(container) {
     return `
       <!-- Backdrop con cierre al tocar fondo -->
       <div id="cart-drawer-backdrop" class="fixed inset-0 z-40 bg-slate-950/70 dark:bg-black/80 backdrop-blur-xs flex items-end justify-center animate-fade-in">
-        <div id="cart-drawer-sheet" class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl ${
+        <div id="cart-drawer-sheet" class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl max-h-[85vh] max-h-[85dvh] flex flex-col shadow-2xl ${
           isDrawerFirstOpen ? "animate-slide-up" : ""
         } border-t border-slate-200 dark:border-slate-800">
           
@@ -2057,8 +2057,9 @@ function renderClientView(container) {
             <div class="flex items-center gap-1.5">
               <button 
                 type="button"
-                class="theme-toggle-btn min-h-[44px] px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1 text-xs font-bold"
+                class="theme-toggle-btn min-h-[44px] px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1 text-xs font-bold touch-target"
                 title="Cambiar tema claro / oscuro"
+                aria-label="Cambiar tema claro u oscuro"
               >
                 <span>Tema:</span>
                 <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
@@ -2405,21 +2406,22 @@ function renderClientView(container) {
     const waHelpLink = `https://wa.me/5491123456789?text=${waHelpText}`;
 
     container.innerHTML = `
-      <div class="max-w-md mx-auto p-4 pt-4 pb-28">
+      <div class="max-w-md mx-auto p-4 pt-4 pb-28 safe-pb">
         
         <!-- Botón para volver a ver catálogo sin perder el pedido y toggle de tema -->
         <div class="flex items-center justify-between mb-3">
           <button 
             id="btn-back-to-catalog" 
-            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
+            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5 touch-target"
           >
             <span>Volver al Catálogo</span>
           </button>
 
           <button 
             type="button"
-            class="theme-toggle-btn min-h-[44px] px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
+            class="theme-toggle-btn min-h-[44px] px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5 touch-target"
             title="Cambiar tema claro / oscuro"
+            aria-label="Cambiar tema claro u oscuro"
           >
             <span>Tema:</span>
             <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
@@ -2635,7 +2637,7 @@ function renderOperatorView(container) {
     };
 
     container.innerHTML = `
-      <div class="max-w-2xl mx-auto pb-24 overflow-x-hidden">
+      <div class="max-w-2xl mx-auto pb-24 overflow-x-hidden safe-pb">
         <!-- Header del Mostrador con sticky-header-offset -->
         <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md border-b border-slate-800">
           <div class="flex items-center justify-between">
@@ -3666,7 +3668,7 @@ function renderAdminView(container) {
     });
 
     container.innerHTML = `
-      <div class="max-w-xl mx-auto p-4 pb-32 overflow-x-hidden">
+      <div class="max-w-xl mx-auto p-4 pb-32 overflow-x-hidden safe-pb">
         <!-- Header del Panel -->
         <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 pt-3 pb-3 mb-4 -mx-4 px-4 shadow-xs">
           <div class="flex items-center justify-between">
@@ -3792,12 +3794,12 @@ function renderAdminView(container) {
           }
 
           <!-- Filtro de Categorías Táctil con conteo -->
-          <div class="mt-3.5 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <div class="mt-3.5 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4">
             ${CATEGORIAS.map(
               (cat) => `
               <button 
                 data-admin-cat="${cat}"
-                class="admin-cat-pill whitespace-nowrap min-h-[44px] px-4 py-2 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
+                class="admin-cat-pill shrink-0 whitespace-nowrap min-h-[44px] px-4 py-2 rounded-full text-xs font-bold transition tap-feedback touch-target flex items-center gap-1.5 ${
                   selectedCategory === cat
                     ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
