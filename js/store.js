@@ -9,7 +9,8 @@ const STORAGE_KEYS = {
   CART: "mihuerta_cart_v3",
   ACTIVE_ORDER: "mihuerta_active_order_v3",
   CLOUD_CONFIG: "mihuerta_cloud_config_v3",
-  PIN_UNLOCKED: "mihuerta_pin_unlocked_v3"
+  PIN_UNLOCKED: "mihuerta_pin_unlocked_v3",
+  THEME: "mihuerta_theme_v3"
 };
 
 // Fallback en memoria en caso de bloqueo de localStorage en file:///
@@ -45,14 +46,33 @@ class Store {
     // Sincronización en tiempo real entre pestañas
     if (typeof window !== "undefined") {
       window.addEventListener("storage", (e) => {
-        if (Object.values(STORAGE_KEYS).includes(e.key)) {
+        if (e.key === STORAGE_KEYS.THEME) {
+          this.applyTheme(this.getTheme());
+          this.notify("theme_changed");
+        } else if (Object.values(STORAGE_KEYS).includes(e.key)) {
           this.notify("storage_sync");
         }
       });
+
+      // Escuchar cambios en la preferencia del sistema operativo
+      if (window.matchMedia) {
+        try {
+          window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+            const saved = safeGet(STORAGE_KEYS.THEME, null);
+            if (!saved) {
+              this.applyTheme(e.matches ? "dark" : "light");
+              this.notify("theme_changed");
+            }
+          });
+        } catch {}
+      }
     }
   }
 
   init() {
+    // 0. Aplicar tema visual (Claro / Oscuro)
+    this.applyTheme(this.getTheme());
+
     // 1. Cargar o inicializar productos
     if (!safeGet(STORAGE_KEYS.PRODUCTS, null)) {
       safeSet(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
@@ -857,6 +877,55 @@ class Store {
     safeSet(STORAGE_KEYS.ORDERS, orders);
     if (targetOrder) this.syncOrderToSupabase(targetOrder);
     this.notify("orders_changed");
+  }
+
+  // ========================================================
+  // GESTION DE MODO OSCURO / CLARO
+  // ========================================================
+  getTheme() {
+    const saved = safeGet(STORAGE_KEYS.THEME, null);
+    if (saved === "dark" || saved === "light") {
+      return saved;
+    }
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
+      return "dark";
+    }
+    return "light";
+  }
+
+  setTheme(theme) {
+    const validTheme = theme === "dark" ? "dark" : "light";
+    safeSet(STORAGE_KEYS.THEME, validTheme);
+    this.applyTheme(validTheme);
+    this.notify("theme_changed");
+    return validTheme;
+  }
+
+  toggleTheme() {
+    const current = this.getTheme();
+    const next = current === "dark" ? "light" : "dark";
+    return this.setTheme(next);
+  }
+
+  applyTheme(theme) {
+    if (typeof document === "undefined") return;
+    const isDark = theme === "dark";
+    document.documentElement.classList.toggle("dark", isDark);
+    if (document.body) {
+      document.body.classList.toggle("dark", isDark);
+    }
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute("content", isDark ? "#020617" : "#059669");
+    }
+    const labels = document.querySelectorAll(".theme-label");
+    labels.forEach((el) => {
+      el.textContent = isDark ? "Oscuro" : "Claro";
+    });
   }
 
   playAudioAlert() {

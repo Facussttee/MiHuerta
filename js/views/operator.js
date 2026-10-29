@@ -37,7 +37,7 @@ export function renderOperatorView(container) {
     container.innerHTML = `
       <div class="max-w-2xl mx-auto pb-24">
         <!-- Header del Mostrador con sticky-header-offset -->
-        <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md">
+        <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md border-b border-slate-800">
           <div class="flex items-center justify-between">
             <div>
               <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Puesto de Balanza</span>
@@ -50,6 +50,14 @@ export function renderOperatorView(container) {
 
             <!-- Botones de Acción de Cabecera -->
             <div class="flex items-center gap-1.5">
+              <button 
+                type="button"
+                class="theme-toggle-btn px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-700 transition tap-feedback"
+                title="Cambiar tema claro / oscuro"
+              >
+                <span>Tema:</span>
+                <span class="theme-label font-bold">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+              </button>
               <button 
                 id="btn-test-sound" 
                 title="Probar timbre de pedido" 
@@ -154,10 +162,10 @@ export function renderOperatorView(container) {
 
     if (tabOrders.length === 0) {
       return `
-        <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 p-6">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin órdenes</span>
-          <h3 class="font-bold text-slate-700 text-sm">No hay pedidos en esta columna</h3>
-          <p class="text-xs text-slate-400 mt-1">Los nuevos pedidos ingresarán automáticamente aquí en tiempo real.</p>
+        <div class="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 p-6">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">Sin órdenes</span>
+          <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm">No hay pedidos en esta columna</h3>
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Los nuevos pedidos ingresarán automáticamente aquí en tiempo real.</p>
         </div>
       `;
     }
@@ -173,31 +181,31 @@ export function renderOperatorView(container) {
                 .join(" · ");
 
               return `
-              <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs transition">
+              <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 shadow-xs transition">
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <div class="flex items-center gap-2">
-                      <span class="text-base font-black text-slate-900">#${order.id}</span>
+                      <span class="text-base font-black text-slate-900 dark:text-white">#${order.id}</span>
                       <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                         order.tipo_entrega === "DELIVERY"
-                          ? "bg-slate-900 text-white"
-                          : "bg-slate-100 text-slate-700"
+                          ? "bg-slate-900 dark:bg-slate-800 text-white"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                       }">
                         ${order.tipo_entrega === "DELIVERY" ? "Envío a Domicilio" : "Retiro en Local"}
                       </span>
                     </div>
-                    <h3 class="font-extrabold text-slate-900 text-sm mt-1.5">${order.cliente.nombre}</h3>
-                    <p class="text-xs text-slate-400">${order.cliente.telefono} · ${timeAgo(order.fecha)}</p>
+                    <h3 class="font-extrabold text-slate-900 dark:text-white text-sm mt-1.5">${order.cliente.nombre}</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">${order.cliente.telefono} · ${timeAgo(order.fecha)}</p>
                   </div>
                   <div class="text-right">
-                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Estimado</span>
-                    <span class="font-black text-base text-slate-900">$${order.total_estimado.toLocaleString("es-AR")}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider">Estimado</span>
+                    <span class="font-black text-base text-slate-900 dark:text-white">$${order.total_estimado.toLocaleString("es-AR")}</span>
                   </div>
                 </div>
 
                 <!-- Resumen de productos solicitados -->
-                <div class="mt-3 p-3 bg-slate-50 rounded-xl text-xs text-slate-600 border border-slate-100">
-                  <span class="font-bold text-slate-700 block mb-0.5 text-[11px] uppercase tracking-wider">Productos solicitados (${order.items.length}):</span>
+                <div class="mt-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800">
+                  <span class="font-bold text-slate-700 dark:text-slate-300 block mb-0.5 text-[11px] uppercase tracking-wider">Productos solicitados (${order.items.length}):</span>
                   <p class="leading-relaxed">${itemsList || "Sin productos"}</p>
                 </div>
 
@@ -213,13 +221,13 @@ export function renderOperatorView(container) {
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[40px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-open-edit min-h-[40px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-slate-700"
                     >
                       <span>Editar datos</span>
                     </button>
                     <button 
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[40px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-cancel-order min-h-[40px] bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-rose-900/50"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -248,20 +256,20 @@ export function renderOperatorView(container) {
               const isAddingProduct = addingProductOrderId === order.id;
 
               return `
-              <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-blue-200/80 shadow-md">
+              <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border-2 border-blue-200/80 dark:border-blue-900/60 shadow-md">
                 
                 <!-- Header de la tarjeta -->
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div>
-                    <span class="text-[10px] font-black text-blue-600 tracking-widest uppercase">Pesaje Activo</span>
-                    <h2 class="text-lg font-black text-slate-900">Pedido #${order.id} · ${order.cliente.nombre}</h2>
-                    <p class="text-xs text-slate-400">
+                    <span class="text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-widest uppercase">Pesaje Activo</span>
+                    <h2 class="text-lg font-black text-slate-900 dark:text-white">Pedido #${order.id} · ${order.cliente.nombre}</h2>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">
                       ${order.tipo_entrega === "DELIVERY" ? order.direccion_entrega : "Retiro por mostrador"}
                     </p>
                   </div>
                   <div class="text-right">
-                    <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Total en Balanza</span>
-                    <span id="order-balanza-total-${order.id}" class="text-2xl font-black text-emerald-700">$${Math.round(currentTotal).toLocaleString("es-AR")}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider block">Total en Balanza</span>
+                    <span id="order-balanza-total-${order.id}" class="text-2xl font-black text-emerald-700 dark:text-emerald-400">$${Math.round(currentTotal).toLocaleString("es-AR")}</span>
                   </div>
                 </div>
 
@@ -270,7 +278,7 @@ export function renderOperatorView(container) {
                   ${
                     order.items.length === 0
                       ? `
-                    <div class="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <div class="p-4 text-center text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                       No hay productos en este pedido. Podés agregar uno abajo.
                     </div>
                   `
@@ -284,21 +292,21 @@ export function renderOperatorView(container) {
                             return `
                       <div class="item-weigh-card p-3 rounded-2xl border transition ${
                         item.sin_stock
-                          ? "bg-rose-50 border-rose-200 opacity-60"
+                          ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 opacity-60"
                           : item.peso_real !== null
-                          ? "bg-emerald-50/50 border-emerald-300"
-                          : "bg-slate-50 border-slate-200"
+                          ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800"
+                          : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
                       }">
                         <div class="flex items-start justify-between gap-2">
                           <div class="flex-1 min-w-0">
-                            <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200">
+                            <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                               ${item.categoria || (isWeight ? "Por Kilo" : "Por Unidad")}
                             </span>
-                            <h4 class="font-extrabold text-slate-900 text-sm mt-1 truncate ${item.sin_stock ? "line-through text-rose-600" : ""}">
+                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm mt-1 truncate ${item.sin_stock ? "line-through text-rose-600 dark:text-rose-400" : ""}">
                               ${item.nombre}
                             </h4>
-                            <p class="text-xs text-slate-500 mt-0.5">
-                              Solicitó: <strong class="text-slate-800 font-bold">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              Solicitó: <strong class="text-slate-800 dark:text-slate-200 font-bold">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
                               · ($${item.precio_unitario.toLocaleString("es-AR")} / ${isWeight ? "kg" : "u"})
                             </p>
                           </div>
@@ -311,7 +319,7 @@ export function renderOperatorView(container) {
                               class="btn-toggle-stock min-h-[36px] text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition tap-feedback ${
                                 item.sin_stock
                                   ? "bg-rose-600 text-white border-rose-600"
-                                  : "bg-white text-slate-600 border-slate-300 hover:text-rose-600"
+                                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:text-rose-600 dark:hover:text-rose-400"
                               }"
                               title="Marcar sin disponibilidad en el cajón"
                             >
@@ -321,7 +329,7 @@ export function renderOperatorView(container) {
                             <button 
                               data-remove-item-order="${order.id}"
                               data-item-index="${idx}"
-                              class="btn-remove-item min-h-[36px] px-2.5 py-1 text-slate-400 hover:text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-50 transition tap-feedback"
+                              class="btn-remove-item min-h-[36px] px-2.5 py-1 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition tap-feedback"
                               title="Eliminar este ítem del pedido"
                             >
                               Quitar
@@ -332,9 +340,9 @@ export function renderOperatorView(container) {
                         ${
                           !item.sin_stock
                             ? `
-                          <div class="mt-3 pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-2">
+                          <div class="mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
                             <div class="flex items-center gap-1.5 flex-1 min-w-[200px]">
-                              <label class="text-xs font-bold text-slate-700 shrink-0">
+                              <label class="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">
                                 ${isWeight ? "Peso:" : "Cant:"}
                               </label>
 
@@ -344,7 +352,7 @@ export function renderOperatorView(container) {
                                 data-adjust-order="${order.id}"
                                 data-item-idx="${idx}"
                                 data-delta="${-stepFine}"
-                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-sm font-black transition tap-feedback shrink-0"
+                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg text-sm font-black transition tap-feedback shrink-0 border border-transparent dark:border-slate-700"
                                 title="Restar ${stepFine}"
                               >
                                 −
@@ -360,12 +368,14 @@ export function renderOperatorView(container) {
                                   data-price-unit="${item.precio_unitario}"
                                   value="${currentVal}"
                                   placeholder="${isWeight ? 'ej: 2150' : item.cantidad_solicitada}"
-                                  class="input-weight w-full text-center py-2 px-2 bg-white border-2 rounded-xl font-black text-base text-slate-900 outline-none focus:border-blue-600 transition ${
-                                    item.peso_real !== null ? "border-emerald-500 text-emerald-800 bg-emerald-50/20" : "border-slate-300"
+                                  class="input-weight w-full text-center py-2 px-2 border-2 rounded-xl font-black text-base outline-none focus:border-blue-600 transition ${
+                                    item.peso_real !== null
+                                      ? "border-emerald-500 text-emerald-800 dark:text-emerald-300 bg-emerald-50/20 dark:bg-emerald-950/40"
+                                      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                                   }"
                                   title="${isWeight ? 'Podés ingresar en gramos (ej: 2150) o con punto (2.15)' : 'Cantidad'}"
                                 />
-                                <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 pointer-events-none select-none">
+                                <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 dark:text-slate-500 pointer-events-none select-none">
                                   ${isWeight ? "kg" : "u."}
                                 </span>
                               </div>
@@ -375,7 +385,7 @@ export function renderOperatorView(container) {
                                 data-adjust-order="${order.id}"
                                 data-item-idx="${idx}"
                                 data-delta="${stepFine}"
-                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-sm font-black transition tap-feedback shrink-0"
+                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg text-sm font-black transition tap-feedback shrink-0 border border-transparent dark:border-slate-700"
                                 title="Sumar ${stepFine}"
                               >
                                 +
@@ -387,7 +397,7 @@ export function renderOperatorView(container) {
                                 data-copy-requested-order="${order.id}"
                                 data-item-idx="${idx}"
                                 data-requested-val="${item.cantidad_solicitada}"
-                                class="btn-copy-requested text-[10px] font-bold px-2 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-lg transition tap-feedback shrink-0"
+                                class="btn-copy-requested text-[10px] font-bold px-2 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition tap-feedback shrink-0 border border-transparent dark:border-slate-700"
                                 title="Copiar cantidad solicitada"
                               >
                                 = ${item.cantidad_solicitada}
@@ -395,8 +405,8 @@ export function renderOperatorView(container) {
                             </div>
 
                             <div class="text-right shrink-0">
-                              <span class="text-[9px] text-slate-400 block font-bold uppercase tracking-wider">Subtotal</span>
-                              <span id="item-subtotal-${order.id}-${idx}" class="font-black text-sm text-slate-900">$${subtotalItem.toLocaleString("es-AR")}</span>
+                              <span class="text-[9px] text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider">Subtotal</span>
+                              <span id="item-subtotal-${order.id}-${idx}" class="font-black text-sm text-slate-900 dark:text-white">$${subtotalItem.toLocaleString("es-AR")}</span>
                             </div>
                           </div>
                         `
@@ -414,16 +424,16 @@ export function renderOperatorView(container) {
                   ${
                     isAddingProduct
                       ? `
-                    <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <div class="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
                       <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">Sumar producto al pedido</span>
-                        <button id="btn-close-add-product" class="text-xs text-slate-400 hover:text-slate-700 font-bold px-2 py-1">Cerrar</button>
+                        <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Sumar producto al pedido</span>
+                        <button id="btn-close-add-product" class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-bold px-2 py-1">Cerrar</button>
                       </div>
 
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <label class="block text-[11px] font-bold text-slate-600 mb-1">Producto</label>
-                          <select id="select-new-product" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-base font-semibold outline-none focus:border-blue-600">
+                          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Producto</label>
+                          <select id="select-new-product" class="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:border-blue-600 text-slate-900 dark:text-white">
                             ${activeProducts
                               .map(
                                 (p) => `
@@ -437,7 +447,7 @@ export function renderOperatorView(container) {
                         </div>
 
                         <div>
-                          <label class="block text-[11px] font-bold text-slate-600 mb-1">Cantidad / Peso inicial</label>
+                          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Cantidad / Peso inicial</label>
                           <div class="flex gap-2">
                             <input 
                               type="number" 
@@ -445,7 +455,7 @@ export function renderOperatorView(container) {
                               value="1.0" 
                               step="0.5" 
                               min="0.1" 
-                              class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-base font-black text-center outline-none focus:border-blue-600"
+                              class="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-base font-black text-center outline-none focus:border-blue-600 text-slate-900 dark:text-white"
                             />
                             <button 
                               data-confirm-add-order="${order.id}"
@@ -461,7 +471,7 @@ export function renderOperatorView(container) {
                       : `
                     <button 
                       data-toggle-add-order="${order.id}"
-                      class="btn-open-add-product w-full py-2.5 px-3 border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 tap-feedback"
+                      class="btn-open-add-product w-full py-2.5 px-3 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 tap-feedback"
                     >
                       <span>Agregar producto que olvidó el cliente</span>
                     </button>
@@ -470,10 +480,10 @@ export function renderOperatorView(container) {
                 </div>
 
                 <!-- Cierre de Pesaje y Acciones Secundarias -->
-                <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
                   <button 
                     data-finish-order-id="${order.id}"
-                    class="btn-finish-weighing w-full min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-black py-3 px-4 rounded-xl shadow-lg shadow-slate-950/15 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback"
+                    class="btn-finish-weighing w-full min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black py-3 px-4 rounded-xl shadow-lg shadow-slate-950/15 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback"
                   >
                     <span>Finalizar Pesaje y Notificar al Cliente</span>
                   </button>
@@ -481,14 +491,14 @@ export function renderOperatorView(container) {
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[40px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-open-edit min-h-[40px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-slate-700"
                     >
                       <span>Cambiar entrega/datos</span>
                     </button>
 
                     <button 
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[40px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-cancel-order min-h-[40px] bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-rose-900/50"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -513,23 +523,23 @@ export function renderOperatorView(container) {
               const waLink = `https://wa.me/549${order.cliente.telefono}?text=${waMessage}`;
 
               return `
-              <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs">
-                <div class="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-xs">
+                <div class="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div>
-                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                       Pesaje Completo
                     </span>
-                    <h3 class="text-base font-black text-slate-900 mt-1">#${order.id} · ${order.cliente.nombre}</h3>
-                    <p class="text-xs text-slate-500">${order.cliente.telefono} · ${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"}</p>
+                    <h3 class="text-base font-black text-slate-900 dark:text-white mt-1">#${order.id} · ${order.cliente.nombre}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">${order.cliente.telefono} · ${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"}</p>
                   </div>
                   <div class="text-right">
-                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Total Exacto</span>
-                    <span class="font-black text-2xl text-emerald-700">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider">Total Exacto</span>
+                    <span class="font-black text-2xl text-emerald-700 dark:text-emerald-400">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
                   </div>
                 </div>
 
                 <!-- Vista previa del mensaje de WhatsApp -->
-                <div class="mt-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs text-slate-700 font-mono whitespace-pre-line leading-relaxed">
+                <div class="mt-3 p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs text-slate-700 dark:text-slate-300 font-mono whitespace-pre-line leading-relaxed">
                   ${waSummary}
                 </div>
 
@@ -543,7 +553,7 @@ export function renderOperatorView(container) {
                   </a>
                   <button 
                     data-deliver-order-id="${order.id}"
-                    class="btn-deliver-order min-h-[46px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-bold py-3 px-3 rounded-xl text-xs transition tap-feedback"
+                    class="btn-deliver-order min-h-[46px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold py-3 px-3 rounded-xl text-xs transition tap-feedback border border-transparent dark:border-slate-700"
                   >
                     Marcar Cobrado
                   </button>
@@ -553,7 +563,7 @@ export function renderOperatorView(container) {
                 <div class="mt-2 text-right">
                   <button 
                     data-delete-order-id="${order.id}"
-                    class="btn-cancel-order text-[11px] font-bold text-rose-600 hover:text-rose-800 p-1 transition"
+                    class="btn-cancel-order text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 p-1 transition"
                   >
                     Cancelar / Anular pedido
                   </button>
@@ -573,15 +583,15 @@ export function renderOperatorView(container) {
           ${tabOrders
             .map(
               (order) => `
-            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">#${order.id}</span>
-                <h4 class="font-extrabold text-slate-900 text-sm">${order.cliente.nombre}</h4>
-                <p class="text-xs text-slate-400">${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"} · ${timeAgo(order.fecha)}</p>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">#${order.id}</span>
+                <h4 class="font-extrabold text-slate-900 dark:text-white text-sm">${order.cliente.nombre}</h4>
+                <p class="text-xs text-slate-400 dark:text-slate-500">${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"} · ${timeAgo(order.fecha)}</p>
               </div>
               <div class="text-right">
-                <span class="font-black text-base text-slate-900">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
-                <span class="block text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Cobrado</span>
+                <span class="font-black text-base text-slate-900 dark:text-white">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
+                <span class="block text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider">Cobrado</span>
               </div>
             </div>
           `
@@ -598,62 +608,62 @@ export function renderOperatorView(container) {
 
     return `
       <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4 border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
-              <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Modificar</span>
-              <h3 class="font-black text-base text-slate-900">Pedido #${order.id}</h3>
+              <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Modificar</span>
+              <h3 class="font-black text-base text-slate-900 dark:text-white">Pedido #${order.id}</h3>
             </div>
-            <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold text-xs tap-feedback">
+            <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold text-xs tap-feedback border border-transparent dark:border-slate-700">
               Cerrar
             </button>
           </div>
 
           <form id="edit-order-form" class="space-y-3 text-left">
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Nombre del cliente</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Nombre del cliente</label>
               <input 
                 type="text" 
                 id="edit-name" 
                 value="${order.cliente.nombre}" 
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-800 dark:focus:border-emerald-500 text-slate-900 dark:text-white"
                 required
               />
             </div>
 
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Teléfono / WhatsApp</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Teléfono / WhatsApp</label>
               <input 
                 type="tel" 
                 id="edit-phone" 
                 value="${order.cliente.telefono}" 
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-800 dark:focus:border-emerald-500 text-slate-900 dark:text-white"
                 required
               />
             </div>
 
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Forma de entrega</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Forma de entrega</label>
               <div class="grid grid-cols-2 gap-2">
-                <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer has-[:checked]:border-slate-900 has-[:checked]:bg-slate-50">
-                  <input type="radio" name="edit-delivery-mode" value="RETIRO" ${order.tipo_entrega === "RETIRO" ? "checked" : ""} />
-                  <span class="text-xs font-bold text-slate-800">Retiro Local</span>
+                <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer has-[:checked]:border-slate-900 dark:has-[:checked]:border-emerald-500 has-[:checked]:bg-slate-50 dark:has-[:checked]:bg-slate-800">
+                  <input type="radio" name="edit-delivery-mode" value="RETIRO" ${order.tipo_entrega === "RETIRO" ? "checked" : ""} class="accent-emerald-500" />
+                  <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Retiro Local</span>
                 </label>
-                <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer has-[:checked]:border-slate-900 has-[:checked]:bg-slate-50">
-                  <input type="radio" name="edit-delivery-mode" value="DELIVERY" ${order.tipo_entrega === "DELIVERY" ? "checked" : ""} />
-                  <span class="text-xs font-bold text-slate-800">Envío Domicilio</span>
+                <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer has-[:checked]:border-slate-900 dark:has-[:checked]:border-emerald-500 has-[:checked]:bg-slate-50 dark:has-[:checked]:bg-slate-800">
+                  <input type="radio" name="edit-delivery-mode" value="DELIVERY" ${order.tipo_entrega === "DELIVERY" ? "checked" : ""} class="accent-emerald-500" />
+                  <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Envío Domicilio</span>
                 </label>
               </div>
             </div>
 
             <div id="edit-address-container" class="${order.tipo_entrega === "DELIVERY" ? "" : "hidden"}">
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Dirección de entrega</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Dirección de entrega</label>
               <input 
                 type="text" 
                 id="edit-address" 
                 value="${order.direccion_entrega || ""}" 
                 placeholder="Calle, altura, depto..."
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-800 dark:focus:border-emerald-500 text-slate-900 dark:text-white"
               />
             </div>
 
@@ -661,13 +671,13 @@ export function renderOperatorView(container) {
               <button 
                 type="button" 
                 id="btn-cancel-edit-modal"
-                class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition border border-transparent dark:border-slate-700"
               >
                 Volver
               </button>
               <button 
                 type="submit" 
-                class="flex-1 py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs transition shadow-md"
+                class="flex-1 py-3 bg-slate-900 hover:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-md"
               >
                 Guardar cambios
               </button>

@@ -202,7 +202,38 @@ function extractLocalPhone(jid) {
   return digits;
 }
 
-// Formatear teléfono local a JID de WhatsApp Argentina
+// Resolver el JID exacto y verificado en los servidores de WhatsApp (vital para Argentina 549 vs 54)
+async function resolveWhatsAppJid(sock, rawPhone) {
+  const digits = String(rawPhone).replace(/\D/g, "");
+  const candidates = [];
+
+  if (digits.startsWith("549")) {
+    candidates.push(`${digits}@s.whatsapp.net`);
+    candidates.push(`54${digits.slice(3)}@s.whatsapp.net`);
+  } else if (digits.startsWith("54")) {
+    candidates.push(`549${digits.slice(2)}@s.whatsapp.net`);
+    candidates.push(`${digits}@s.whatsapp.net`);
+  } else {
+    candidates.push(`549${digits}@s.whatsapp.net`);
+    candidates.push(`54${digits}@s.whatsapp.net`);
+    candidates.push(`${digits}@s.whatsapp.net`);
+  }
+
+  if (sock && typeof sock.onWhatsApp === "function") {
+    for (const cand of candidates) {
+      try {
+        const [result] = await sock.onWhatsApp(cand);
+        if (result && result.exists) {
+          return result.jid;
+        }
+      } catch {}
+    }
+  }
+
+  return candidates[0];
+}
+
+// Formatear teléfono local a JID de WhatsApp Argentina (fallback sincrónico)
 function toWhatsAppJid(phone) {
   const digits = String(phone).replace(/\D/g, "");
   if (digits.startsWith("549")) {
@@ -335,12 +366,16 @@ async function notifyOrderReady(sock, order) {
   const phone = order.cliente_telefono;
   if (!phone) return false;
 
-  const jid = toWhatsAppJid(phone);
+  const jid = await resolveWhatsAppJid(sock, phone);
   const summaryText = buildOrderReadyMessage(order);
 
   try {
     await sock.sendMessage(jid, { text: summaryText });
-    console.log(`[PEDIDO #${order.id} NOTIFICADO] Resumen de balanza enviado por WhatsApp a ${phone}`);
+    console.log(`\n========================================================`);
+    console.log(`[WHATSAPP ENVIADO] ✅ Resumen del Pedido #${order.id} enviado a ${order.cliente_nombre || phone}`);
+    console.log(`Destinatario: ${jid}`);
+    console.log(`Total en balanza: $${Number(order.total_real || order.total_estimado || 0).toLocaleString("es-AR")}`);
+    console.log(`========================================================\n`);
 
     if (supabase) {
       await supabase
@@ -401,16 +436,15 @@ function setupSupabaseRealtimeListener(sock) {
     .on(
       "postgres_changes",
       {
-        event: "UPDATE",
+        event: "*",
         schema: "public",
         table: "pedidos"
       },
       async (payload) => {
         const nuevo = payload.new;
-        const anterior = payload.old;
 
-        // Disparar mensaje cuando cambia a LISTO y aún no fue notificado
-        if (nuevo && nuevo.estado === "LISTO" && (!anterior || anterior.estado !== "LISTO") && !nuevo.notificado_whatsapp) {
+        // Disparar mensaje cuando el estado es LISTO y aún no fue notificado por WhatsApp
+        if (nuevo && nuevo.estado === "LISTO" && !nuevo.notificado_whatsapp) {
           await notifyOrderReady(sock, nuevo);
         }
       }

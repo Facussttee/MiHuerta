@@ -58,6 +58,36 @@ class App {
       });
     });
 
+    // Delegación global para botones de cambio de tema en cualquier vista
+    document.addEventListener("click", (e) => {
+      const toggleBtn = e.target.closest(".theme-toggle-btn");
+      if (toggleBtn) {
+        e.preventDefault();
+        if (navigator.vibrate) { try { navigator.vibrate(10); } catch {} }
+        store.toggleTheme();
+      }
+    });
+
+    // Atajo de teclado 'T' para alternar tema rápidamente en escritorio
+    window.addEventListener("keydown", (e) => {
+      if (
+        (e.key === "t" || e.key === "T") &&
+        !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)
+      ) {
+        store.toggleTheme();
+      }
+    });
+
+    // Actualización reactiva de etiquetas de tema
+    store.subscribe((event) => {
+      if (event === "theme_changed") {
+        const isDark = store.getTheme() === "dark";
+        document.querySelectorAll(".theme-label").forEach((el) => {
+          el.textContent = isDark ? "Oscuro" : "Claro";
+        });
+      }
+    });
+
     const initialView = urlParams.get("view") || window.location.hash.replace("#", "") || "client";
     this.navigate(initialView);
   }
@@ -67,12 +97,22 @@ class App {
     const roleLabel = isOperario ? "Puesto de Balanza (Operario)" : "Panel de Precios (Dueño)";
     this.container.innerHTML = `
       <div class="max-w-sm mx-auto p-4 pt-16">
-        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-xl text-center">
-          <span class="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-100 text-slate-700 mb-3">
-            Acceso Personal del Local
-          </span>
-          <h2 class="text-xl font-black text-slate-900">${roleLabel}</h2>
-          <p class="text-xs text-slate-500 mt-1 mb-5">Ingresá el PIN numérico de 4 dígitos del comercio (Por defecto: <strong>1234</strong>)</p>
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-xl text-center">
+          <div class="flex items-center justify-between mb-3">
+            <span class="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              Acceso Personal del Local
+            </span>
+            <button 
+              type="button"
+              class="theme-toggle-btn text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1"
+              title="Cambiar tema claro / oscuro"
+            >
+              <span>Tema:</span>
+              <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+            </button>
+          </div>
+          <h2 class="text-xl font-black text-slate-900 dark:text-white">${roleLabel}</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5">Ingresá el PIN numérico de 4 dígitos del comercio (Por defecto: <strong>1234</strong>)</p>
 
           <form id="pin-gate-form" class="space-y-4">
             <input 
@@ -82,20 +122,20 @@ class App {
               maxlength="8" 
               placeholder="••••" 
               required
-              class="w-40 mx-auto block text-center tracking-[0.5em] py-3 px-4 bg-slate-50 border-2 border-slate-300 rounded-2xl font-black text-2xl text-slate-900 outline-none focus:border-slate-900 focus:bg-white transition"
+              class="w-40 mx-auto block text-center tracking-[0.5em] py-3 px-4 bg-slate-50 dark:bg-slate-950 border-2 border-slate-300 dark:border-slate-700 rounded-2xl font-black text-2xl text-slate-900 dark:text-white outline-none focus:border-slate-900 dark:focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition"
             />
-            <p id="pin-error" class="hidden text-xs font-bold text-rose-600">PIN incorrecto. Intentá nuevamente.</p>
+            <p id="pin-error" class="hidden text-xs font-bold text-rose-600 dark:text-rose-400">PIN incorrecto. Intentá nuevamente.</p>
             <div class="flex gap-2 pt-1">
               <button 
                 type="button" 
                 id="btn-pin-back"
-                class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition"
               >
                 Volver al Catálogo
               </button>
               <button 
                 type="submit" 
-                class="flex-1 py-3 bg-slate-950 hover:bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+                class="flex-1 py-3 bg-slate-950 hover:bg-slate-900 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md"
               >
                 Ingresar
               </button>

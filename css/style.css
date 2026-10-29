@@ -27,6 +27,18 @@ body {
   color: #0f172a;
   overscroll-behavior-y: none;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html.dark body {
+  background-color: #020617;
+  color: #f1f5f9;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
 }
 
 /* Prevenir auto-zoom intrusivo en iOS Safari (requiere font-size >= 16px en inputs) */
@@ -67,6 +79,11 @@ body {
   100% { border-color: #cbd5e1; background-color: #ffffff; }
 }
 
+@keyframes flashSuccessDark {
+  0% { border-color: #10b981; background-color: #064e3b; }
+  100% { border-color: #334155; background-color: #0f172a; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -81,6 +98,10 @@ body {
 
 .flash-saved {
   animation: flashSuccess 1.2s ease forwards;
+}
+
+html.dark .flash-saved {
+  animation: flashSuccessDark 1.2s ease forwards;
 }
 
 /* Deshabilitar zoom accidental de doble toque */

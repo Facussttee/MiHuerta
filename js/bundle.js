@@ -209,7 +209,8 @@ const STORAGE_KEYS = {
   CART: "mihuerta_cart_v3",
   ACTIVE_ORDER: "mihuerta_active_order_v3",
   CLOUD_CONFIG: "mihuerta_cloud_config_v3",
-  PIN_UNLOCKED: "mihuerta_pin_unlocked_v3"
+  PIN_UNLOCKED: "mihuerta_pin_unlocked_v3",
+  THEME: "mihuerta_theme_v3"
 };
 
 // Fallback en memoria en caso de bloqueo de localStorage en file:///
@@ -245,14 +246,33 @@ class Store {
     // Sincronización en tiempo real entre pestañas
     if (typeof window !== "undefined") {
       window.addEventListener("storage", (e) => {
-        if (Object.values(STORAGE_KEYS).includes(e.key)) {
+        if (e.key === STORAGE_KEYS.THEME) {
+          this.applyTheme(this.getTheme());
+          this.notify("theme_changed");
+        } else if (Object.values(STORAGE_KEYS).includes(e.key)) {
           this.notify("storage_sync");
         }
       });
+
+      // Escuchar cambios en la preferencia del sistema operativo
+      if (window.matchMedia) {
+        try {
+          window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+            const saved = safeGet(STORAGE_KEYS.THEME, null);
+            if (!saved) {
+              this.applyTheme(e.matches ? "dark" : "light");
+              this.notify("theme_changed");
+            }
+          });
+        } catch {}
+      }
     }
   }
 
   init() {
+    // 0. Aplicar tema visual (Claro / Oscuro)
+    this.applyTheme(this.getTheme());
+
     // 1. Cargar o inicializar productos
     if (!safeGet(STORAGE_KEYS.PRODUCTS, null)) {
       safeSet(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
@@ -1059,6 +1079,55 @@ class Store {
     this.notify("orders_changed");
   }
 
+  // ========================================================
+  // GESTION DE MODO OSCURO / CLARO
+  // ========================================================
+  getTheme() {
+    const saved = safeGet(STORAGE_KEYS.THEME, null);
+    if (saved === "dark" || saved === "light") {
+      return saved;
+    }
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
+      return "dark";
+    }
+    return "light";
+  }
+
+  setTheme(theme) {
+    const validTheme = theme === "dark" ? "dark" : "light";
+    safeSet(STORAGE_KEYS.THEME, validTheme);
+    this.applyTheme(validTheme);
+    this.notify("theme_changed");
+    return validTheme;
+  }
+
+  toggleTheme() {
+    const current = this.getTheme();
+    const next = current === "dark" ? "light" : "dark";
+    return this.setTheme(next);
+  }
+
+  applyTheme(theme) {
+    if (typeof document === "undefined") return;
+    const isDark = theme === "dark";
+    document.documentElement.classList.toggle("dark", isDark);
+    if (document.body) {
+      document.body.classList.toggle("dark", isDark);
+    }
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute("content", isDark ? "#020617" : "#059669");
+    }
+    const labels = document.querySelectorAll(".theme-label");
+    labels.forEach((el) => {
+      el.textContent = isDark ? "Oscuro" : "Claro";
+    });
+  }
+
   playAudioAlert() {
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -1134,88 +1203,98 @@ function renderClientView(container) {
   function renderPhoneGate() {
     container.innerHTML = `
       <div class="max-w-md mx-auto p-4 pt-8 pb-16 min-h-[85vh] flex flex-col justify-center">
-        <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/80 text-left">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 dark:shadow-black/40 border border-slate-200/80 dark:border-slate-800 text-left">
           
-          <div class="mb-6">
-            <span class="inline-block text-[11px] font-bold tracking-widest uppercase px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 mb-3">
-              Verdulería Digital
-            </span>
-            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Mi Huerta</h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
-              Catálogo fresco del día, pedidos directos desde tu celular y pesaje transparente en balanza.
-            </p>
+          <div class="mb-6 flex items-start justify-between gap-2">
+            <div>
+              <span class="inline-block text-[11px] font-bold tracking-widest uppercase px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 mb-2">
+                Verdulería Digital
+              </span>
+              <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Mi Huerta</h1>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                Catálogo fresco del día, pedidos directos desde tu celular y pesaje transparente en balanza.
+              </p>
+            </div>
+            <button 
+              type="button"
+              class="theme-toggle-btn shrink-0 text-[11px] font-bold tracking-wider px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1.5"
+              title="Cambiar tema claro / oscuro"
+            >
+              <span>Tema:</span>
+              <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+            </button>
           </div>
 
           <form id="phone-form" class="space-y-4">
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                 Número de WhatsApp
               </label>
               <div class="relative flex items-center">
-                <span class="absolute left-4 text-slate-400 font-semibold text-base select-none pointer-events-none">
+                <span class="absolute left-4 text-slate-400 dark:text-slate-500 font-semibold text-base select-none pointer-events-none">
                   +54 9
                 </span>
                 <input 
                   type="tel" 
                   id="phone-input" 
                   required 
-                  inputmode="numeric"
+                  inputmode="numeric" 
                   placeholder="11 2345 6789" 
                   value="${store.prefilledPhone || ""}"
-                  class="w-full pl-20 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 font-bold text-base outline-none transition"
+                  class="w-full pl-20 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white font-bold text-base outline-none transition"
                 />
               </div>
-              <p class="text-[11px] text-slate-400 mt-1.5">
+              <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
                 Usamos tu teléfono para enviarte el comprobante de pesaje real por WhatsApp.
               </p>
             </div>
 
             <div id="new-user-fields" class="space-y-3 pt-1">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                   Nombre completo
                 </label>
                 <input 
                   type="text" 
                   id="name-input" 
                   placeholder="Ej: Facundo Gómez" 
-                  class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 text-base font-medium outline-none transition"
+                  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white text-base font-medium outline-none transition"
                 />
               </div>
 
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                   Dirección de entrega (opcional)
                 </label>
                 <input 
                   type="text" 
                   id="address-input" 
                   placeholder="Ej: Av. Rivadavia 4520, Piso 3 B" 
-                  class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-900 text-base font-medium outline-none transition"
+                  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white text-base font-medium outline-none transition"
                 />
               </div>
             </div>
 
             <button 
               type="submit" 
-              class="w-full mt-2 min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-slate-950/15 transition tap-feedback text-sm flex items-center justify-center gap-2"
+              class="w-full mt-2 min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-slate-950/15 dark:shadow-emerald-950/30 transition tap-feedback text-sm flex items-center justify-center gap-2"
             >
               <span>Ingresar al Catálogo</span>
             </button>
           </form>
 
           <!-- Acceso rápido demo -->
-          <div class="mt-4 pt-3 border-t border-slate-100">
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button 
               id="btn-quick-demo-user"
               type="button"
-              class="w-full min-h-[44px] bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-3 rounded-xl transition tap-feedback text-center"
+              class="w-full min-h-[44px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-2.5 px-3 rounded-xl transition tap-feedback text-center border border-transparent dark:border-slate-700"
             >
               Probar como Facundo Gómez (Cliente demo)
             </button>
           </div>
 
-          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
             <span class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
               Precios del día
@@ -1320,23 +1399,23 @@ function renderClientView(container) {
           <div class="px-4 pt-3">
             <button 
               id="btn-banner-active-order"
-              class="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 p-3 rounded-2xl text-left flex items-center justify-between transition tap-feedback shadow-xs"
+              class="w-full bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100 p-3 rounded-2xl text-left flex items-center justify-between transition tap-feedback shadow-xs"
             >
               <div>
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                  <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                  <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
                     Pedido #${activeOrder.id} en curso
                   </span>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white text-emerald-800 border border-emerald-200">
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                     ${activeOrder.estado}
                   </span>
                 </div>
-                <p class="text-xs text-emerald-900 font-semibold mt-0.5">
+                <p class="text-xs text-emerald-900 dark:text-emerald-200 font-semibold mt-0.5">
                   Tocá aquí para ver el pesaje en balanza en tiempo real
                 </p>
               </div>
-              <span class="text-xs font-bold text-emerald-800 bg-white px-2.5 py-1 rounded-lg border border-emerald-200">
+              <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
                 Ver
               </span>
             </button>
@@ -1346,29 +1425,40 @@ function renderClientView(container) {
         }
 
         <!-- Header Móvil del Catálogo (Coordinado con clase sticky-header-offset) -->
-        <header class="sticky sticky-header-offset z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 pt-3 pb-2.5 shadow-xs">
+        <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 pt-3 pb-2.5 shadow-xs">
           <div class="flex items-center justify-between gap-2">
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-sm font-black text-slate-900 tracking-tight uppercase">Catálogo del Día</span>
+                <span class="text-sm font-black text-slate-900 dark:text-white tracking-tight uppercase">Catálogo del Día</span>
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-[11px] font-bold text-emerald-700">Abierto</span>
+                <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Abierto</span>
               </div>
-              <p class="text-xs text-slate-500">
-                <span>Hola, <strong class="text-slate-800 font-semibold">${user.nombre}</strong></span>
-                <button id="btn-change-user" class="text-slate-400 underline ml-1 hover:text-slate-600 text-[11px]">Cambiar</button>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                <span>Hola, <strong class="text-slate-800 dark:text-slate-200 font-semibold">${user.nombre}</strong></span>
+                <button id="btn-change-user" class="text-slate-400 dark:text-slate-500 underline ml-1 hover:text-slate-600 dark:hover:text-slate-300 text-[11px]">Cambiar</button>
               </p>
             </div>
             
-            <button 
-              id="btn-header-cart" 
-              class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-2 tap-feedback"
-            >
-              <span>Pedido</span>
-              <span class="px-2 py-0.5 rounded-full ${totalItems > 0 ? "bg-emerald-600 text-white font-black" : "bg-slate-300 text-slate-700 font-bold"} text-xs">
-                ${totalItems}
-              </span>
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button 
+                type="button"
+                class="theme-toggle-btn min-h-[44px] px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 tap-feedback"
+                title="Cambiar tema claro / oscuro"
+              >
+                <span>Tema:</span>
+                <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+              </button>
+
+              <button 
+                id="btn-header-cart" 
+                class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 tap-feedback"
+              >
+                <span>Pedido</span>
+                <span class="px-2 py-0.5 rounded-full ${totalItems > 0 ? "bg-emerald-600 text-white font-black" : "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold"} text-xs">
+                  ${totalItems}
+                </span>
+              </button>
+            </div>
           </div>
 
           <!-- Buscador con tamaño de fuente accesible para evitar zoom iOS -->
@@ -1378,11 +1468,11 @@ function renderClientView(container) {
               id="search-input" 
               placeholder="Buscar productos (papa, tomate, acelga)..." 
               value="${searchQuery}"
-              class="w-full pl-3.5 pr-14 py-2.5 bg-slate-100 focus:bg-white border border-transparent focus:border-slate-300 rounded-xl text-base font-medium outline-none transition"
+              class="w-full pl-3.5 pr-14 py-2.5 bg-slate-100 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 border border-transparent focus:border-slate-300 dark:focus:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-base font-medium outline-none transition"
             />
             ${
               searchQuery
-                ? `<button id="btn-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 hover:text-slate-700 text-xs font-bold tap-feedback">Borrar</button>`
+                ? `<button id="btn-clear-search" class="absolute right-1 top-1 h-9 px-3 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-bold tap-feedback">Borrar</button>`
                 : ""
             }
           </div>
@@ -1395,13 +1485,13 @@ function renderClientView(container) {
                 data-category="${cat}"
                 class="category-pill whitespace-nowrap min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition tap-feedback flex items-center gap-1.5 ${
                   selectedCategory === cat
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-xs"
+                    : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800"
                 }"
               >
                 <span>${cat}</span>
                 <span class="text-[10px] px-1.5 py-0.5 rounded-full ${
-                  selectedCategory === cat ? "bg-slate-800 text-slate-200 font-black" : "bg-slate-200 text-slate-600"
+                  selectedCategory === cat ? "bg-slate-800 dark:bg-emerald-800 text-slate-200 dark:text-white font-black" : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                 }">
                   ${categoryCounts[cat] || 0}
                 </span>
@@ -1417,9 +1507,9 @@ function renderClientView(container) {
         </main>
 
         <!-- Footer discreto para acceso a personal del local -->
-        <footer class="mt-8 mb-16 text-center text-xs text-slate-400">
+        <footer class="mt-8 mb-16 text-center text-xs text-slate-400 dark:text-slate-500">
           <p>Verdulería Mi Huerta • Catálogo y Pesaje en Balanza</p>
-          <a href="?view=operario" class="inline-block mt-2 text-[11px] text-slate-400 hover:text-slate-600 underline">
+          <a href="?view=operario" class="inline-block mt-2 text-[11px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline">
             Acceso Personal del Local
           </a>
         </footer>
@@ -1431,7 +1521,7 @@ function renderClientView(container) {
           <div class="fixed left-4 right-4 z-30 max-w-md mx-auto pointer-events-auto safe-floating-bottom">
             <button 
               id="btn-open-cart"
-              class="w-full min-h-[52px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white p-3.5 px-4 rounded-2xl shadow-xl shadow-slate-950/30 flex items-center justify-between transition tap-feedback border border-slate-800"
+              class="w-full min-h-[52px] bg-slate-950 dark:bg-slate-900 hover:bg-slate-900 dark:hover:bg-slate-800 active:bg-black text-white p-3.5 px-4 rounded-2xl shadow-xl shadow-slate-950/30 flex items-center justify-between transition tap-feedback border border-slate-800 dark:border-slate-700"
             >
               <div class="flex items-center gap-3">
                 <span class="bg-emerald-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded-full">
@@ -1442,7 +1532,7 @@ function renderClientView(container) {
                   <span class="font-black text-base leading-none text-white">$${totalEstimado.toLocaleString("es-AR")}</span>
                 </div>
               </div>
-              <div class="flex items-center gap-1.5 font-bold text-xs bg-slate-800 hover:bg-slate-700 px-3.5 py-2.5 rounded-xl text-emerald-400 transition">
+              <div class="flex items-center gap-1.5 font-bold text-xs bg-slate-800 dark:bg-slate-800 hover:bg-slate-700 dark:hover:bg-slate-700 px-3.5 py-2.5 rounded-xl text-emerald-400 transition">
                 <span>Ver Pedido</span>
               </div>
             </button>
@@ -1475,10 +1565,10 @@ function renderClientView(container) {
   function renderProductCardsHTML(products, cart) {
     if (products.length === 0) {
       return `
-        <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 p-6">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin coincidencias</span>
-          <p class="text-sm font-semibold text-slate-700">No encontramos productos con ese nombre</p>
-          <button id="btn-reset-filter" class="mt-3 min-h-[44px] px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200 tap-feedback">
+        <div class="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 p-6">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">Sin coincidencias</span>
+          <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">No encontramos productos con ese nombre</p>
+          <button id="btn-reset-filter" class="mt-3 min-h-[44px] px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 tap-feedback border border-transparent dark:border-slate-700">
             Limpiar búsqueda
           </button>
         </div>
@@ -1496,46 +1586,46 @@ function renderClientView(container) {
         const inCart = currentQty > 0;
 
         return `
-          <div class="bg-white rounded-2xl p-4 border transition ${
-            inCart ? "border-emerald-500/50 bg-emerald-50/10 shadow-xs" : "border-slate-200/80 shadow-xs"
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border transition ${
+            inCart ? "border-emerald-500/50 bg-emerald-50/10 dark:bg-emerald-950/20 shadow-xs" : "border-slate-200/80 dark:border-slate-800 shadow-xs"
           } ${!product.disponible ? "opacity-40 grayscale pointer-events-none" : ""}">
             
             <div class="flex items-start justify-between gap-3">
               <!-- Info Producto -->
               <div class="flex-1 min-w-0 pr-1">
                 <div class="flex items-center gap-1.5 mb-1">
-                  <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                  <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                     ${product.categoria}
                   </span>
-                  <span class="text-[10px] text-slate-300">·</span>
-                  <span class="text-[10px] font-semibold text-slate-400">
+                  <span class="text-[10px] text-slate-300 dark:text-slate-600">·</span>
+                  <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
                     ${unitSubtitle}
                   </span>
                   ${
                     inCart
-                      ? `<span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 ml-1">En pedido (${currentQty} ${unitLabel})</span>`
+                      ? `<span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 ml-1">En pedido (${currentQty} ${unitLabel})</span>`
                       : ""
                   }
                 </div>
 
-                <h3 class="font-extrabold text-slate-900 text-sm leading-tight truncate">
+                <h3 class="font-extrabold text-slate-900 dark:text-white text-sm leading-tight truncate">
                   ${product.nombre}
                 </h3>
 
-                <p class="text-[11px] text-slate-400 truncate mt-0.5">
+                <p class="text-[11px] text-slate-400 dark:text-slate-400 truncate mt-0.5">
                   ${product.detalle || ""}
                 </p>
 
                 <div class="mt-1.5 flex items-baseline gap-1">
-                  <span class="text-base font-black text-emerald-700">
+                  <span class="text-base font-black text-emerald-700 dark:text-emerald-400">
                     $${product.precio.toLocaleString("es-AR")}
                   </span>
-                  <span class="text-xs text-slate-400 font-medium">/ ${unitLabel}</span>
+                  <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">/ ${unitLabel}</span>
                 </div>
 
                 ${
                   !product.disponible
-                    ? `<span class="inline-block text-[10px] font-bold text-rose-600 uppercase tracking-wider mt-1">Sin Stock</span>`
+                    ? `<span class="inline-block text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mt-1">Sin Stock</span>`
                     : ""
                 }
               </div>
@@ -1549,7 +1639,7 @@ function renderClientView(container) {
                       <button 
                         data-add-id="${product.id}"
                         data-step="${step}"
-                        class="btn-add-initial min-h-[44px] min-w-[96px] bg-slate-900 hover:bg-slate-800 text-white font-bold px-3 py-2.5 rounded-xl text-xs transition tap-feedback flex items-center justify-center gap-1.5 shadow-xs"
+                        class="btn-add-initial min-h-[44px] min-w-[96px] bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border dark:border-slate-700 text-white font-bold px-3 py-2.5 rounded-xl text-xs transition tap-feedback flex items-center justify-center gap-1.5 shadow-xs"
                       >
                         <span>Agregar</span>
                         <span class="text-xs font-bold">+</span>
@@ -1587,14 +1677,14 @@ function renderClientView(container) {
             ${
               product.disponible && isKg
                 ? `
-              <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ajuste rápido:</span>
+              <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Ajuste rápido:</span>
                 <div class="flex items-center gap-1.5">
                   <button 
                     data-quick-weight-id="${product.id}" 
                     data-weight="0.5" 
                     class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
-                      currentQty === 0.5 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      currentQty === 0.5 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
                     500g
@@ -1603,7 +1693,7 @@ function renderClientView(container) {
                     data-quick-weight-id="${product.id}" 
                     data-weight="1" 
                     class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
-                      currentQty === 1 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      currentQty === 1 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
                     1 kg
@@ -1612,7 +1702,7 @@ function renderClientView(container) {
                     data-quick-weight-id="${product.id}" 
                     data-weight="2" 
                     class="btn-quick-weight min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition tap-feedback ${
-                      currentQty === 2 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      currentQty === 2 ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700/60"
                     }"
                   >
                     2 kg
@@ -1732,23 +1822,23 @@ function renderClientView(container) {
 
     return `
       <!-- Backdrop con cierre al tocar fondo -->
-      <div id="cart-drawer-backdrop" class="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-xs flex items-end justify-center animate-fade-in">
-        <div id="cart-drawer-sheet" class="bg-white w-full max-w-md rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl ${
+      <div id="cart-drawer-backdrop" class="fixed inset-0 z-40 bg-slate-950/70 dark:bg-black/80 backdrop-blur-xs flex items-end justify-center animate-fade-in">
+        <div id="cart-drawer-sheet" class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl ${
           isDrawerFirstOpen ? "animate-slide-up" : ""
-        } border-t border-slate-200">
+        } border-t border-slate-200 dark:border-slate-800">
           
           <!-- Handle bar táctil -->
-          <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mt-3"></div>
+          <div class="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-3"></div>
 
           <!-- Header Carrito con botón de cierre accesible (44x44px) -->
-          <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+          <div class="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <h2 class="font-black text-slate-900 text-lg tracking-tight">Tu Pedido</h2>
-              <p class="text-[11px] text-slate-400 font-medium">Revisá las cantidades antes de confirmar</p>
+              <h2 class="font-black text-slate-900 dark:text-white text-lg tracking-tight">Tu Pedido</h2>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Revisá las cantidades antes de confirmar</p>
             </div>
             <button 
               id="btn-close-cart" 
-              class="min-h-[44px] px-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300 flex items-center justify-center font-bold text-xs tap-feedback touch-target"
+              class="min-h-[44px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 flex items-center justify-center font-bold text-xs tap-feedback touch-target border border-transparent dark:border-slate-700"
               title="Cerrar pedido"
             >
               Cerrar
@@ -1761,13 +1851,13 @@ function renderClientView(container) {
               isEmpty
                 ? `
                 <div class="text-center py-12 px-4">
-                  <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 mb-2">Pedido Vacío</span>
-                  <h4 class="font-extrabold text-slate-800 text-sm">Tu pedido no tiene productos</h4>
-                  <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Seleccioná frutas y verduras del catálogo para coordinar el pesaje en balanza.</p>
+                  <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 mb-2">Pedido Vacío</span>
+                  <h4 class="font-extrabold text-slate-800 dark:text-slate-200 text-sm">Tu pedido no tiene productos</h4>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">Seleccioná frutas y verduras del catálogo para coordinar el pesaje en balanza.</p>
                   <button 
                     id="btn-drawer-empty-back" 
                     type="button"
-                    class="mt-4 min-h-[44px] px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl transition tap-feedback"
+                    class="mt-4 min-h-[44px] px-5 py-2.5 bg-slate-900 dark:bg-emerald-600 text-white text-xs font-bold rounded-xl transition tap-feedback shadow-sm"
                   >
                     Volver al Catálogo
                   </button>
@@ -1776,33 +1866,33 @@ function renderClientView(container) {
                 : items
                     .map(
                       (item) => `
-                <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70 flex items-center justify-between gap-3">
+                <div class="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3">
                   <div class="flex-1 min-w-0">
-                    <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-200/80 text-slate-600">
+                    <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                       ${item.categoria || "Producto"}
                     </span>
-                    <h4 class="font-extrabold text-slate-900 text-sm truncate mt-0.5">${item.nombre}</h4>
-                    <p class="text-xs text-slate-400 mt-0.5">
+                    <h4 class="font-extrabold text-slate-900 dark:text-white text-sm truncate mt-0.5">${item.nombre}</h4>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                       $${item.precio_unitario.toLocaleString("es-AR")} / ${item.unidad_medida === "KG" ? "kg" : "u."}
                     </p>
                   </div>
 
                   <!-- Stepper en Carrito con botones cómodos (36px) y botón eliminar -->
                   <div class="flex items-center gap-2">
-                    <div class="flex items-center bg-white border border-slate-200 rounded-xl p-0.5 shadow-xs">
+                    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 shadow-xs">
                       <button 
                         data-drawer-dec="${item.producto_id}" 
-                        class="w-8 h-8 flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-95 rounded-lg font-black text-sm tap-feedback"
+                        class="w-8 h-8 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-sm tap-feedback"
                         title="Restar"
                       >
                         −
                       </button>
-                      <span class="px-2 text-xs font-black min-w-[38px] text-center text-slate-900 select-none">
+                      <span class="px-2 text-xs font-black min-w-[38px] text-center text-slate-900 dark:text-white select-none">
                         ${item.cantidad}
                       </span>
                       <button 
                         data-drawer-inc="${item.producto_id}" 
-                        class="w-8 h-8 flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-95 rounded-lg font-black text-sm tap-feedback"
+                        class="w-8 h-8 flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 rounded-lg font-black text-sm tap-feedback"
                         title="Sumar"
                       >
                         +
@@ -1810,12 +1900,12 @@ function renderClientView(container) {
                     </div>
 
                     <div class="text-right min-w-[65px]">
-                      <span class="font-black text-sm text-slate-900 block">
+                      <span class="font-black text-sm text-slate-900 dark:text-white block">
                         $${item.subtotal_estimado.toLocaleString("es-AR")}
                       </span>
                       <button 
                         data-drawer-remove="${item.producto_id}"
-                        class="text-[11px] font-bold text-rose-500 hover:text-rose-700 underline"
+                        class="text-[11px] font-bold text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 underline"
                       >
                         Quitar
                       </button>
@@ -1832,12 +1922,14 @@ function renderClientView(container) {
                 ? `
             <!-- Selector de Forma de Entrega Segmentado -->
             <div class="pt-3">
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
                 Método de Entrega
               </label>
               <div class="grid grid-cols-2 gap-2">
                 <label id="delivery-card-retiro" class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
-                  !isDelivery ? "border-slate-900 bg-slate-900 text-white shadow-xs" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                  !isDelivery
+                    ? "border-slate-900 dark:border-emerald-500 bg-slate-900 dark:bg-slate-800 text-white shadow-xs"
+                    : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900"
                 }">
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-black">Retiro en Local</span>
@@ -1847,7 +1939,9 @@ function renderClientView(container) {
                 </label>
 
                 <label id="delivery-card-delivery" class="flex flex-col p-3.5 border rounded-2xl cursor-pointer transition tap-feedback ${
-                  isDelivery ? "border-slate-900 bg-slate-900 text-white shadow-xs" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                  isDelivery
+                    ? "border-slate-900 dark:border-emerald-500 bg-slate-900 dark:bg-slate-800 text-white shadow-xs"
+                    : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900"
                 }">
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-black">Envío a Domicilio</span>
@@ -1860,7 +1954,7 @@ function renderClientView(container) {
 
             <!-- Campo Dirección de Envío -->
             <div id="delivery-address-container" class="${isDelivery ? "" : "hidden"} pt-1">
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                 Dirección exacta de entrega
               </label>
               <input 
@@ -1868,15 +1962,15 @@ function renderClientView(container) {
                 id="delivery-address-input" 
                 value="${deliveryAddress}" 
                 placeholder="Calle, número, piso y departamento"
-                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base font-medium outline-none focus:bg-white focus:ring-2 focus:ring-slate-900 transition"
+                class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-base font-medium outline-none focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-900 dark:focus:ring-emerald-500 transition"
               />
             </div>
 
             <!-- Explicación de Pesaje Real Transparente -->
-            <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-950 mt-2">
+            <div class="bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-3.5 text-xs text-amber-950 dark:text-amber-200 mt-2">
               <div class="flex items-center gap-1.5 mb-1">
                 <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                <span class="font-bold text-[11px] uppercase tracking-wider text-amber-900">Pesaje en Balanza</span>
+                <span class="font-bold text-[11px] uppercase tracking-wider text-amber-900 dark:text-amber-300">Pesaje en Balanza</span>
               </div>
               <p class="text-[11px] leading-relaxed opacity-90">
                 El total indicado es una estimación. En el mostrador se pesan las unidades reales y te notificaremos el comprobante con los gramos exactos y el importe final.
@@ -1888,13 +1982,13 @@ function renderClientView(container) {
           </div>
 
           <!-- Footer con Confirmación y Safe Area Pad -->
-          <div class="p-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl space-y-3 safe-pb">
+          <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-b-3xl space-y-3 safe-pb">
             <div class="flex items-center justify-between">
               <div>
-                <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Total Estimado</span>
-                <span class="text-xs text-slate-500 font-medium">Sujeto a balanza</span>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 block uppercase font-bold tracking-wider">Total Estimado</span>
+                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Sujeto a balanza</span>
               </div>
-              <span class="font-black text-2xl text-slate-900">$${totalEstimado.toLocaleString("es-AR")}</span>
+              <span class="font-black text-2xl text-slate-900 dark:text-white">$${totalEstimado.toLocaleString("es-AR")}</span>
             </div>
 
             ${
@@ -1903,7 +1997,7 @@ function renderClientView(container) {
               <button 
                 id="btn-confirm-order"
                 disabled
-                class="w-full min-h-[50px] bg-slate-200 text-slate-400 font-black py-4 rounded-2xl text-sm cursor-not-allowed opacity-60 text-center"
+                class="w-full min-h-[50px] bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 font-black py-4 rounded-2xl text-sm cursor-not-allowed opacity-60 text-center"
               >
                 Pedido Vacío
               </button>
@@ -1911,7 +2005,7 @@ function renderClientView(container) {
                 : `
               <button 
                 id="btn-confirm-order"
-                class="w-full min-h-[50px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-950/20 text-sm transition tap-feedback flex items-center justify-center gap-2"
+                class="w-full min-h-[50px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-950/20 text-sm transition tap-feedback flex items-center justify-center gap-2"
               >
                 <span>Confirmar Pedido</span>
               </button>
@@ -1954,23 +2048,26 @@ function renderClientView(container) {
     const addressContainer = container.querySelector("#delivery-address-container");
     const radios = container.querySelectorAll('input[name="delivery-mode"]');
 
+    const selClasses = ["border-slate-900", "dark:border-emerald-500", "bg-slate-900", "dark:bg-slate-800", "text-white", "shadow-xs"];
+    const unselClasses = ["border-slate-200", "dark:border-slate-800", "bg-slate-50", "dark:bg-slate-950", "text-slate-700", "dark:text-slate-300"];
+
     radios.forEach((radio) => {
       radio.addEventListener("change", (e) => {
         deliveryMode = e.target.value;
         const isDel = deliveryMode === "DELIVERY";
 
         if (isDel) {
-          cardDelivery?.classList.add("border-slate-900", "bg-slate-900", "text-white", "shadow-xs");
-          cardDelivery?.classList.remove("border-slate-200", "bg-slate-50", "text-slate-700");
-          cardRetiro?.classList.remove("border-slate-900", "bg-slate-900", "text-white", "shadow-xs");
-          cardRetiro?.classList.add("border-slate-200", "bg-slate-50", "text-slate-700");
+          cardDelivery?.classList.add(...selClasses);
+          cardDelivery?.classList.remove(...unselClasses);
+          cardRetiro?.classList.remove(...selClasses);
+          cardRetiro?.classList.add(...unselClasses);
           addressContainer?.classList.remove("hidden");
           addressInput?.focus();
         } else {
-          cardRetiro?.classList.add("border-slate-900", "bg-slate-900", "text-white", "shadow-xs");
-          cardRetiro?.classList.remove("border-slate-200", "bg-slate-50", "text-slate-700");
-          cardDelivery?.classList.remove("border-slate-900", "bg-slate-900", "text-white", "shadow-xs");
-          cardDelivery?.classList.add("border-slate-200", "bg-slate-50", "text-slate-700");
+          cardRetiro?.classList.add(...selClasses);
+          cardRetiro?.classList.remove(...unselClasses);
+          cardDelivery?.classList.remove(...selClasses);
+          cardDelivery?.classList.add(...unselClasses);
           addressContainer?.classList.add("hidden");
         }
       });
@@ -2077,32 +2174,41 @@ function renderClientView(container) {
     container.innerHTML = `
       <div class="max-w-md mx-auto p-4 pt-4 pb-28">
         
-        <!-- Botón para volver a ver catálogo sin perder el pedido -->
-        <div class="mb-3">
+        <!-- Botón para volver a ver catálogo sin perder el pedido y toggle de tema -->
+        <div class="flex items-center justify-between mb-3">
           <button 
             id="btn-back-to-catalog" 
-            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
+            class="min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
           >
             <span>Volver al Catálogo</span>
           </button>
+
+          <button 
+            type="button"
+            class="theme-toggle-btn min-h-[44px] px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition tap-feedback flex items-center gap-1.5"
+            title="Cambiar tema claro / oscuro"
+          >
+            <span>Tema:</span>
+            <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+          </button>
         </div>
 
-        <div class="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/50 border border-slate-200/80 text-left">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-black/40 border border-slate-200/80 dark:border-slate-800 text-left">
           
           <!-- Encabezado de la Orden -->
-          <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Comprobante Digital</span>
-              <h2 class="text-xl font-black text-slate-900 tracking-tight">Pedido #${currentOrder.id}</h2>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Comprobante Digital</span>
+              <h2 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Pedido #${currentOrder.id}</h2>
             </div>
             <span class="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full ${
               isDelivered
-                ? "bg-slate-100 text-slate-800 border border-slate-300"
+                ? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
                 : isReady
-                ? "bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pulse"
+                ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 animate-pulse"
                 : isWeighing
-                ? "bg-blue-100 text-blue-800 border border-blue-300 animate-pulse"
-                : "bg-amber-100 text-amber-800 border border-amber-300"
+                ? "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800 animate-pulse"
+                : "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
             }">
               ${currentOrder.estado}
             </span>
@@ -2111,29 +2217,29 @@ function renderClientView(container) {
           <!-- Línea de Progreso (Timeline Minimalista de 4 Pasos) -->
           <div class="my-5">
             <div class="grid grid-cols-4 gap-1.5 text-center">
-              <div class="h-1.5 rounded-full ${stepNumber >= 1 ? "bg-slate-900" : "bg-slate-200"}"></div>
-              <div class="h-1.5 rounded-full ${stepNumber >= 2 ? (stepNumber > 2 ? "bg-slate-900" : "bg-blue-600") : "bg-slate-200"}"></div>
-              <div class="h-1.5 rounded-full ${stepNumber >= 3 ? (stepNumber > 3 ? "bg-slate-900" : "bg-emerald-600") : "bg-slate-200"}"></div>
-              <div class="h-1.5 rounded-full ${stepNumber >= 4 ? "bg-slate-900" : "bg-slate-200"}"></div>
+              <div class="h-1.5 rounded-full ${stepNumber >= 1 ? "bg-slate-900 dark:bg-emerald-500" : "bg-slate-200 dark:bg-slate-800"}"></div>
+              <div class="h-1.5 rounded-full ${stepNumber >= 2 ? (stepNumber > 2 ? "bg-slate-900 dark:bg-emerald-500" : "bg-blue-600") : "bg-slate-200 dark:bg-slate-800"}"></div>
+              <div class="h-1.5 rounded-full ${stepNumber >= 3 ? (stepNumber > 3 ? "bg-slate-900 dark:bg-emerald-500" : "bg-emerald-600") : "bg-slate-200 dark:bg-slate-800"}"></div>
+              <div class="h-1.5 rounded-full ${stepNumber >= 4 ? "bg-slate-900 dark:bg-emerald-500" : "bg-slate-200 dark:bg-slate-800"}"></div>
             </div>
             <div class="mt-3">
               <div class="flex items-center gap-2">
-                <h3 class="text-sm font-extrabold text-slate-900">${stepTitle}</h3>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">${stepTitle}</h3>
                 ${
                   isWeighing || (isReady && !isDelivered)
                     ? `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>`
                     : ""
                 }
               </div>
-              <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">${stepDesc}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">${stepDesc}</p>
             </div>
           </div>
 
           <!-- Resumen Financiero -->
-          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-2.5">
-            <div class="flex justify-between text-xs text-slate-500">
+          <div class="bg-slate-50 dark:bg-slate-950 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 space-y-2.5">
+            <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>Entrega:</span>
-              <strong class="text-slate-800 font-semibold">
+              <strong class="text-slate-800 dark:text-slate-200 font-semibold">
                 ${currentOrder.tipo_entrega === "DELIVERY" ? "Envío a Domicilio" : "Retiro en Mostrador"}
               </strong>
             </div>
@@ -2141,9 +2247,9 @@ function renderClientView(container) {
             ${
               currentOrder.tipo_entrega === "DELIVERY"
                 ? `
-              <div class="flex justify-between text-xs text-slate-500">
+              <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                 <span>Destino:</span>
-                <span class="text-slate-800 font-medium text-right">${currentOrder.direccion_entrega}</span>
+                <span class="text-slate-800 dark:text-slate-200 font-medium text-right">${currentOrder.direccion_entrega}</span>
               </div>
             `
                 : ""
@@ -2152,21 +2258,21 @@ function renderClientView(container) {
             ${
               isReady && currentOrder.total_real !== null
                 ? `
-              <div class="pt-2.5 border-t border-slate-200">
-                <div class="flex justify-between items-center text-xs text-slate-400">
+              <div class="pt-2.5 border-t border-slate-200 dark:border-slate-800">
+                <div class="flex justify-between items-center text-xs text-slate-400 dark:text-slate-500">
                   <span>Estimado inicial:</span>
                   <span class="line-through">$${currentOrder.total_estimado.toLocaleString("es-AR")}</span>
                 </div>
                 <div class="flex justify-between items-center mt-1">
-                  <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Total Final en Balanza:</span>
-                  <span class="font-black text-2xl text-emerald-700">$${currentOrder.total_real.toLocaleString("es-AR")}</span>
+                  <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Total Final en Balanza:</span>
+                  <span class="font-black text-2xl text-emerald-700 dark:text-emerald-400">$${currentOrder.total_real.toLocaleString("es-AR")}</span>
                 </div>
               </div>
             `
                 : `
-              <div class="pt-2.5 border-t border-slate-200 flex justify-between items-center">
-                <span class="text-xs font-semibold text-slate-600">Total Estimado:</span>
-                <span class="font-black text-xl text-slate-900">$${currentOrder.total_estimado.toLocaleString("es-AR")}</span>
+              <div class="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Estimado:</span>
+                <span class="font-black text-xl text-slate-900 dark:text-white">$${currentOrder.total_estimado.toLocaleString("es-AR")}</span>
               </div>
             `
             }
@@ -2174,8 +2280,8 @@ function renderClientView(container) {
 
           <!-- Desglose Ítems Pesados -->
           <div class="mt-5">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Detalle de Productos</h4>
-            <div class="divide-y divide-slate-100 text-xs">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Detalle de Productos</h4>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               ${currentOrder.items
                 .map((item) => {
                   const pesoTexto =
@@ -2186,12 +2292,12 @@ function renderClientView(container) {
                   <div class="py-2.5 flex items-center justify-between gap-2 ${item.sin_stock ? "opacity-40 line-through" : ""}">
                     <div>
                       <div class="flex items-center gap-1.5">
-                        <span class="font-bold text-slate-800 text-xs">${item.nombre}</span>
-                        ${item.sin_stock ? `<span class="text-[9px] font-bold text-rose-600 uppercase">Sin Stock</span>` : ""}
+                        <span class="font-bold text-slate-800 dark:text-slate-200 text-xs">${item.nombre}</span>
+                        ${item.sin_stock ? `<span class="text-[9px] font-bold text-rose-600 dark:text-rose-400 uppercase">Sin Stock</span>` : ""}
                       </div>
-                      <span class="text-[11px] text-slate-400 block">${pesoTexto}</span>
+                      <span class="text-[11px] text-slate-400 dark:text-slate-500 block">${pesoTexto}</span>
                     </div>
-                    <strong class="text-slate-900 font-bold text-xs">
+                    <strong class="text-slate-900 dark:text-white font-bold text-xs">
                       $${(item.subtotal || 0).toLocaleString("es-AR")}
                     </strong>
                   </div>
@@ -2202,21 +2308,21 @@ function renderClientView(container) {
           </div>
 
           <!-- Botón de consulta al local por WhatsApp -->
-          <div class="mt-5 pt-3 border-t border-slate-100">
+          <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
             <a 
-              href="${waHelpLink}"
+              href="${waHelpLink}" 
               target="_blank"
-              class="w-full min-h-[44px] bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-900 border border-emerald-300 font-bold py-2.5 px-3 rounded-xl text-xs transition tap-feedback flex items-center justify-center gap-1.5"
+              class="w-full min-h-[44px] bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 active:bg-emerald-200 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-bold py-2.5 px-3 rounded-xl text-xs transition tap-feedback flex items-center justify-center gap-1.5"
             >
               <span>Consultar al local por WhatsApp</span>
             </a>
           </div>
 
           <!-- Acciones de Seguimiento -->
-          <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
             <button 
               id="btn-new-order" 
-              class="w-full min-h-[46px] py-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition tap-feedback"
+              class="w-full min-h-[46px] py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 border border-transparent dark:border-slate-700 font-bold rounded-xl text-xs transition tap-feedback"
             >
               Realizar Otro Pedido
             </button>
@@ -2301,7 +2407,7 @@ function renderOperatorView(container) {
     container.innerHTML = `
       <div class="max-w-2xl mx-auto pb-24">
         <!-- Header del Mostrador con sticky-header-offset -->
-        <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md">
+        <header class="sticky sticky-header-offset z-20 bg-slate-900 text-white px-4 py-3 shadow-md border-b border-slate-800">
           <div class="flex items-center justify-between">
             <div>
               <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Puesto de Balanza</span>
@@ -2314,6 +2420,14 @@ function renderOperatorView(container) {
 
             <!-- Botones de Acción de Cabecera -->
             <div class="flex items-center gap-1.5">
+              <button 
+                type="button"
+                class="theme-toggle-btn px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-700 transition tap-feedback"
+                title="Cambiar tema claro / oscuro"
+              >
+                <span>Tema:</span>
+                <span class="theme-label font-bold">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+              </button>
               <button 
                 id="btn-test-sound" 
                 title="Probar timbre de pedido" 
@@ -2418,10 +2532,10 @@ function renderOperatorView(container) {
 
     if (tabOrders.length === 0) {
       return `
-        <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 p-6">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Sin órdenes</span>
-          <h3 class="font-bold text-slate-700 text-sm">No hay pedidos en esta columna</h3>
-          <p class="text-xs text-slate-400 mt-1">Los nuevos pedidos ingresarán automáticamente aquí en tiempo real.</p>
+        <div class="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 p-6">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">Sin órdenes</span>
+          <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm">No hay pedidos en esta columna</h3>
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Los nuevos pedidos ingresarán automáticamente aquí en tiempo real.</p>
         </div>
       `;
     }
@@ -2437,31 +2551,31 @@ function renderOperatorView(container) {
                 .join(" · ");
 
               return `
-              <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs transition">
+              <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 shadow-xs transition">
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <div class="flex items-center gap-2">
-                      <span class="text-base font-black text-slate-900">#${order.id}</span>
+                      <span class="text-base font-black text-slate-900 dark:text-white">#${order.id}</span>
                       <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                         order.tipo_entrega === "DELIVERY"
-                          ? "bg-slate-900 text-white"
-                          : "bg-slate-100 text-slate-700"
+                          ? "bg-slate-900 dark:bg-slate-800 text-white"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                       }">
                         ${order.tipo_entrega === "DELIVERY" ? "Envío a Domicilio" : "Retiro en Local"}
                       </span>
                     </div>
-                    <h3 class="font-extrabold text-slate-900 text-sm mt-1.5">${order.cliente.nombre}</h3>
-                    <p class="text-xs text-slate-400">${order.cliente.telefono} · ${timeAgo(order.fecha)}</p>
+                    <h3 class="font-extrabold text-slate-900 dark:text-white text-sm mt-1.5">${order.cliente.nombre}</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">${order.cliente.telefono} · ${timeAgo(order.fecha)}</p>
                   </div>
                   <div class="text-right">
-                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Estimado</span>
-                    <span class="font-black text-base text-slate-900">$${order.total_estimado.toLocaleString("es-AR")}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider">Estimado</span>
+                    <span class="font-black text-base text-slate-900 dark:text-white">$${order.total_estimado.toLocaleString("es-AR")}</span>
                   </div>
                 </div>
 
                 <!-- Resumen de productos solicitados -->
-                <div class="mt-3 p-3 bg-slate-50 rounded-xl text-xs text-slate-600 border border-slate-100">
-                  <span class="font-bold text-slate-700 block mb-0.5 text-[11px] uppercase tracking-wider">Productos solicitados (${order.items.length}):</span>
+                <div class="mt-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800">
+                  <span class="font-bold text-slate-700 dark:text-slate-300 block mb-0.5 text-[11px] uppercase tracking-wider">Productos solicitados (${order.items.length}):</span>
                   <p class="leading-relaxed">${itemsList || "Sin productos"}</p>
                 </div>
 
@@ -2477,13 +2591,13 @@ function renderOperatorView(container) {
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[40px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-open-edit min-h-[40px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-slate-700"
                     >
                       <span>Editar datos</span>
                     </button>
                     <button 
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[40px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-cancel-order min-h-[40px] bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-rose-900/50"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -2512,20 +2626,20 @@ function renderOperatorView(container) {
               const isAddingProduct = addingProductOrderId === order.id;
 
               return `
-              <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-blue-200/80 shadow-md">
+              <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border-2 border-blue-200/80 dark:border-blue-900/60 shadow-md">
                 
                 <!-- Header de la tarjeta -->
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div>
-                    <span class="text-[10px] font-black text-blue-600 tracking-widest uppercase">Pesaje Activo</span>
-                    <h2 class="text-lg font-black text-slate-900">Pedido #${order.id} · ${order.cliente.nombre}</h2>
-                    <p class="text-xs text-slate-400">
+                    <span class="text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-widest uppercase">Pesaje Activo</span>
+                    <h2 class="text-lg font-black text-slate-900 dark:text-white">Pedido #${order.id} · ${order.cliente.nombre}</h2>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">
                       ${order.tipo_entrega === "DELIVERY" ? order.direccion_entrega : "Retiro por mostrador"}
                     </p>
                   </div>
                   <div class="text-right">
-                    <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Total en Balanza</span>
-                    <span id="order-balanza-total-${order.id}" class="text-2xl font-black text-emerald-700">$${Math.round(currentTotal).toLocaleString("es-AR")}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider block">Total en Balanza</span>
+                    <span id="order-balanza-total-${order.id}" class="text-2xl font-black text-emerald-700 dark:text-emerald-400">$${Math.round(currentTotal).toLocaleString("es-AR")}</span>
                   </div>
                 </div>
 
@@ -2534,7 +2648,7 @@ function renderOperatorView(container) {
                   ${
                     order.items.length === 0
                       ? `
-                    <div class="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <div class="p-4 text-center text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                       No hay productos en este pedido. Podés agregar uno abajo.
                     </div>
                   `
@@ -2548,21 +2662,21 @@ function renderOperatorView(container) {
                             return `
                       <div class="item-weigh-card p-3 rounded-2xl border transition ${
                         item.sin_stock
-                          ? "bg-rose-50 border-rose-200 opacity-60"
+                          ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 opacity-60"
                           : item.peso_real !== null
-                          ? "bg-emerald-50/50 border-emerald-300"
-                          : "bg-slate-50 border-slate-200"
+                          ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800"
+                          : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
                       }">
                         <div class="flex items-start justify-between gap-2">
                           <div class="flex-1 min-w-0">
-                            <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200">
+                            <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                               ${item.categoria || (isWeight ? "Por Kilo" : "Por Unidad")}
                             </span>
-                            <h4 class="font-extrabold text-slate-900 text-sm mt-1 truncate ${item.sin_stock ? "line-through text-rose-600" : ""}">
+                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm mt-1 truncate ${item.sin_stock ? "line-through text-rose-600 dark:text-rose-400" : ""}">
                               ${item.nombre}
                             </h4>
-                            <p class="text-xs text-slate-500 mt-0.5">
-                              Solicitó: <strong class="text-slate-800 font-bold">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              Solicitó: <strong class="text-slate-800 dark:text-slate-200 font-bold">${item.cantidad_solicitada} ${isWeight ? "kg" : "u."}</strong>
                               · ($${item.precio_unitario.toLocaleString("es-AR")} / ${isWeight ? "kg" : "u"})
                             </p>
                           </div>
@@ -2575,7 +2689,7 @@ function renderOperatorView(container) {
                               class="btn-toggle-stock min-h-[36px] text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition tap-feedback ${
                                 item.sin_stock
                                   ? "bg-rose-600 text-white border-rose-600"
-                                  : "bg-white text-slate-600 border-slate-300 hover:text-rose-600"
+                                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:text-rose-600 dark:hover:text-rose-400"
                               }"
                               title="Marcar sin disponibilidad en el cajón"
                             >
@@ -2585,7 +2699,7 @@ function renderOperatorView(container) {
                             <button 
                               data-remove-item-order="${order.id}"
                               data-item-index="${idx}"
-                              class="btn-remove-item min-h-[36px] px-2.5 py-1 text-slate-400 hover:text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-50 transition tap-feedback"
+                              class="btn-remove-item min-h-[36px] px-2.5 py-1 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition tap-feedback"
                               title="Eliminar este ítem del pedido"
                             >
                               Quitar
@@ -2596,9 +2710,9 @@ function renderOperatorView(container) {
                         ${
                           !item.sin_stock
                             ? `
-                          <div class="mt-3 pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-2">
+                          <div class="mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
                             <div class="flex items-center gap-1.5 flex-1 min-w-[200px]">
-                              <label class="text-xs font-bold text-slate-700 shrink-0">
+                              <label class="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">
                                 ${isWeight ? "Peso:" : "Cant:"}
                               </label>
 
@@ -2608,7 +2722,7 @@ function renderOperatorView(container) {
                                 data-adjust-order="${order.id}"
                                 data-item-idx="${idx}"
                                 data-delta="${-stepFine}"
-                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-sm font-black transition tap-feedback shrink-0"
+                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg text-sm font-black transition tap-feedback shrink-0 border border-transparent dark:border-slate-700"
                                 title="Restar ${stepFine}"
                               >
                                 −
@@ -2624,12 +2738,14 @@ function renderOperatorView(container) {
                                   data-price-unit="${item.precio_unitario}"
                                   value="${currentVal}"
                                   placeholder="${isWeight ? 'ej: 2150' : item.cantidad_solicitada}"
-                                  class="input-weight w-full text-center py-2 px-2 bg-white border-2 rounded-xl font-black text-base text-slate-900 outline-none focus:border-blue-600 transition ${
-                                    item.peso_real !== null ? "border-emerald-500 text-emerald-800 bg-emerald-50/20" : "border-slate-300"
+                                  class="input-weight w-full text-center py-2 px-2 border-2 rounded-xl font-black text-base outline-none focus:border-blue-600 transition ${
+                                    item.peso_real !== null
+                                      ? "border-emerald-500 text-emerald-800 dark:text-emerald-300 bg-emerald-50/20 dark:bg-emerald-950/40"
+                                      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                                   }"
                                   title="${isWeight ? 'Podés ingresar en gramos (ej: 2150) o con punto (2.15)' : 'Cantidad'}"
                                 />
-                                <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 pointer-events-none select-none">
+                                <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 dark:text-slate-500 pointer-events-none select-none">
                                   ${isWeight ? "kg" : "u."}
                                 </span>
                               </div>
@@ -2639,7 +2755,7 @@ function renderOperatorView(container) {
                                 data-adjust-order="${order.id}"
                                 data-item-idx="${idx}"
                                 data-delta="${stepFine}"
-                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-sm font-black transition tap-feedback shrink-0"
+                                class="btn-adjust-weight w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg text-sm font-black transition tap-feedback shrink-0 border border-transparent dark:border-slate-700"
                                 title="Sumar ${stepFine}"
                               >
                                 +
@@ -2651,7 +2767,7 @@ function renderOperatorView(container) {
                                 data-copy-requested-order="${order.id}"
                                 data-item-idx="${idx}"
                                 data-requested-val="${item.cantidad_solicitada}"
-                                class="btn-copy-requested text-[10px] font-bold px-2 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-lg transition tap-feedback shrink-0"
+                                class="btn-copy-requested text-[10px] font-bold px-2 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition tap-feedback shrink-0 border border-transparent dark:border-slate-700"
                                 title="Copiar cantidad solicitada"
                               >
                                 = ${item.cantidad_solicitada}
@@ -2659,8 +2775,8 @@ function renderOperatorView(container) {
                             </div>
 
                             <div class="text-right shrink-0">
-                              <span class="text-[9px] text-slate-400 block font-bold uppercase tracking-wider">Subtotal</span>
-                              <span id="item-subtotal-${order.id}-${idx}" class="font-black text-sm text-slate-900">$${subtotalItem.toLocaleString("es-AR")}</span>
+                              <span class="text-[9px] text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider">Subtotal</span>
+                              <span id="item-subtotal-${order.id}-${idx}" class="font-black text-sm text-slate-900 dark:text-white">$${subtotalItem.toLocaleString("es-AR")}</span>
                             </div>
                           </div>
                         `
@@ -2678,16 +2794,16 @@ function renderOperatorView(container) {
                   ${
                     isAddingProduct
                       ? `
-                    <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <div class="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
                       <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">Sumar producto al pedido</span>
-                        <button id="btn-close-add-product" class="text-xs text-slate-400 hover:text-slate-700 font-bold px-2 py-1">Cerrar</button>
+                        <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Sumar producto al pedido</span>
+                        <button id="btn-close-add-product" class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-bold px-2 py-1">Cerrar</button>
                       </div>
 
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <label class="block text-[11px] font-bold text-slate-600 mb-1">Producto</label>
-                          <select id="select-new-product" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-base font-semibold outline-none focus:border-blue-600">
+                          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Producto</label>
+                          <select id="select-new-product" class="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:border-blue-600 text-slate-900 dark:text-white">
                             ${activeProducts
                               .map(
                                 (p) => `
@@ -2701,7 +2817,7 @@ function renderOperatorView(container) {
                         </div>
 
                         <div>
-                          <label class="block text-[11px] font-bold text-slate-600 mb-1">Cantidad / Peso inicial</label>
+                          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Cantidad / Peso inicial</label>
                           <div class="flex gap-2">
                             <input 
                               type="number" 
@@ -2709,7 +2825,7 @@ function renderOperatorView(container) {
                               value="1.0" 
                               step="0.5" 
                               min="0.1" 
-                              class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-base font-black text-center outline-none focus:border-blue-600"
+                              class="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-base font-black text-center outline-none focus:border-blue-600 text-slate-900 dark:text-white"
                             />
                             <button 
                               data-confirm-add-order="${order.id}"
@@ -2725,7 +2841,7 @@ function renderOperatorView(container) {
                       : `
                     <button 
                       data-toggle-add-order="${order.id}"
-                      class="btn-open-add-product w-full py-2.5 px-3 border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 tap-feedback"
+                      class="btn-open-add-product w-full py-2.5 px-3 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 tap-feedback"
                     >
                       <span>Agregar producto que olvidó el cliente</span>
                     </button>
@@ -2734,10 +2850,10 @@ function renderOperatorView(container) {
                 </div>
 
                 <!-- Cierre de Pesaje y Acciones Secundarias -->
-                <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
                   <button 
                     data-finish-order-id="${order.id}"
-                    class="btn-finish-weighing w-full min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-black py-3 px-4 rounded-xl shadow-lg shadow-slate-950/15 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback"
+                    class="btn-finish-weighing w-full min-h-[48px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black py-3 px-4 rounded-xl shadow-lg shadow-slate-950/15 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition tap-feedback"
                   >
                     <span>Finalizar Pesaje y Notificar al Cliente</span>
                   </button>
@@ -2745,14 +2861,14 @@ function renderOperatorView(container) {
                   <div class="grid grid-cols-2 gap-2">
                     <button 
                       data-edit-order-id="${order.id}"
-                      class="btn-open-edit min-h-[40px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-open-edit min-h-[40px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-slate-700"
                     >
                       <span>Cambiar entrega/datos</span>
                     </button>
 
                     <button 
                       data-delete-order-id="${order.id}"
-                      class="btn-cancel-order min-h-[40px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback"
+                      class="btn-cancel-order min-h-[40px] bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition tap-feedback border border-transparent dark:border-rose-900/50"
                     >
                       <span>Cancelar pedido</span>
                     </button>
@@ -2777,23 +2893,23 @@ function renderOperatorView(container) {
               const waLink = `https://wa.me/549${order.cliente.telefono}?text=${waMessage}`;
 
               return `
-              <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs">
-                <div class="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-xs">
+                <div class="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div>
-                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                       Pesaje Completo
                     </span>
-                    <h3 class="text-base font-black text-slate-900 mt-1">#${order.id} · ${order.cliente.nombre}</h3>
-                    <p class="text-xs text-slate-500">${order.cliente.telefono} · ${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"}</p>
+                    <h3 class="text-base font-black text-slate-900 dark:text-white mt-1">#${order.id} · ${order.cliente.nombre}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">${order.cliente.telefono} · ${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"}</p>
                   </div>
                   <div class="text-right">
-                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Total Exacto</span>
-                    <span class="font-black text-2xl text-emerald-700">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider">Total Exacto</span>
+                    <span class="font-black text-2xl text-emerald-700 dark:text-emerald-400">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
                   </div>
                 </div>
 
                 <!-- Vista previa del mensaje de WhatsApp -->
-                <div class="mt-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs text-slate-700 font-mono whitespace-pre-line leading-relaxed">
+                <div class="mt-3 p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs text-slate-700 dark:text-slate-300 font-mono whitespace-pre-line leading-relaxed">
                   ${waSummary}
                 </div>
 
@@ -2807,7 +2923,7 @@ function renderOperatorView(container) {
                   </a>
                   <button 
                     data-deliver-order-id="${order.id}"
-                    class="btn-deliver-order min-h-[46px] bg-slate-950 hover:bg-slate-900 active:bg-black text-white font-bold py-3 px-3 rounded-xl text-xs transition tap-feedback"
+                    class="btn-deliver-order min-h-[46px] bg-slate-950 hover:bg-slate-900 active:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold py-3 px-3 rounded-xl text-xs transition tap-feedback border border-transparent dark:border-slate-700"
                   >
                     Marcar Cobrado
                   </button>
@@ -2817,7 +2933,7 @@ function renderOperatorView(container) {
                 <div class="mt-2 text-right">
                   <button 
                     data-delete-order-id="${order.id}"
-                    class="btn-cancel-order text-[11px] font-bold text-rose-600 hover:text-rose-800 p-1 transition"
+                    class="btn-cancel-order text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 p-1 transition"
                   >
                     Cancelar / Anular pedido
                   </button>
@@ -2837,15 +2953,15 @@ function renderOperatorView(container) {
           ${tabOrders
             .map(
               (order) => `
-            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">#${order.id}</span>
-                <h4 class="font-extrabold text-slate-900 text-sm">${order.cliente.nombre}</h4>
-                <p class="text-xs text-slate-400">${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"} · ${timeAgo(order.fecha)}</p>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">#${order.id}</span>
+                <h4 class="font-extrabold text-slate-900 dark:text-white text-sm">${order.cliente.nombre}</h4>
+                <p class="text-xs text-slate-400 dark:text-slate-500">${order.tipo_entrega === "DELIVERY" ? "Envío" : "Retiro"} · ${timeAgo(order.fecha)}</p>
               </div>
               <div class="text-right">
-                <span class="font-black text-base text-slate-900">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
-                <span class="block text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Cobrado</span>
+                <span class="font-black text-base text-slate-900 dark:text-white">$${(order.total_real || order.total_estimado).toLocaleString("es-AR")}</span>
+                <span class="block text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider">Cobrado</span>
               </div>
             </div>
           `
@@ -2862,62 +2978,62 @@ function renderOperatorView(container) {
 
     return `
       <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4 border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
-              <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Modificar</span>
-              <h3 class="font-black text-base text-slate-900">Pedido #${order.id}</h3>
+              <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Modificar</span>
+              <h3 class="font-black text-base text-slate-900 dark:text-white">Pedido #${order.id}</h3>
             </div>
-            <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold text-xs tap-feedback">
+            <button id="btn-close-edit-modal" class="min-h-[36px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold text-xs tap-feedback border border-transparent dark:border-slate-700">
               Cerrar
             </button>
           </div>
 
           <form id="edit-order-form" class="space-y-3 text-left">
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Nombre del cliente</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Nombre del cliente</label>
               <input 
                 type="text" 
                 id="edit-name" 
                 value="${order.cliente.nombre}" 
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-800 dark:focus:border-emerald-500 text-slate-900 dark:text-white"
                 required
               />
             </div>
 
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Teléfono / WhatsApp</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Teléfono / WhatsApp</label>
               <input 
                 type="tel" 
                 id="edit-phone" 
                 value="${order.cliente.telefono}" 
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-800 dark:focus:border-emerald-500 text-slate-900 dark:text-white"
                 required
               />
             </div>
 
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Forma de entrega</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Forma de entrega</label>
               <div class="grid grid-cols-2 gap-2">
-                <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer has-[:checked]:border-slate-900 has-[:checked]:bg-slate-50">
-                  <input type="radio" name="edit-delivery-mode" value="RETIRO" ${order.tipo_entrega === "RETIRO" ? "checked" : ""} />
-                  <span class="text-xs font-bold text-slate-800">Retiro Local</span>
+                <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer has-[:checked]:border-slate-900 dark:has-[:checked]:border-emerald-500 has-[:checked]:bg-slate-50 dark:has-[:checked]:bg-slate-800">
+                  <input type="radio" name="edit-delivery-mode" value="RETIRO" ${order.tipo_entrega === "RETIRO" ? "checked" : ""} class="accent-emerald-500" />
+                  <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Retiro Local</span>
                 </label>
-                <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer has-[:checked]:border-slate-900 has-[:checked]:bg-slate-50">
-                  <input type="radio" name="edit-delivery-mode" value="DELIVERY" ${order.tipo_entrega === "DELIVERY" ? "checked" : ""} />
-                  <span class="text-xs font-bold text-slate-800">Envío Domicilio</span>
+                <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer has-[:checked]:border-slate-900 dark:has-[:checked]:border-emerald-500 has-[:checked]:bg-slate-50 dark:has-[:checked]:bg-slate-800">
+                  <input type="radio" name="edit-delivery-mode" value="DELIVERY" ${order.tipo_entrega === "DELIVERY" ? "checked" : ""} class="accent-emerald-500" />
+                  <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Envío Domicilio</span>
                 </label>
               </div>
             </div>
 
             <div id="edit-address-container" class="${order.tipo_entrega === "DELIVERY" ? "" : "hidden"}">
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Dirección de entrega</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Dirección de entrega</label>
               <input 
                 type="text" 
                 id="edit-address" 
                 value="${order.direccion_entrega || ""}" 
                 placeholder="Calle, altura, depto..."
-                class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-slate-800"
+                class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-800 dark:focus:border-emerald-500 text-slate-900 dark:text-white"
               />
             </div>
 
@@ -2925,13 +3041,13 @@ function renderOperatorView(container) {
               <button 
                 type="button" 
                 id="btn-cancel-edit-modal"
-                class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition border border-transparent dark:border-slate-700"
               >
                 Volver
               </button>
               <button 
                 type="submit" 
-                class="flex-1 py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs transition shadow-md"
+                class="flex-1 py-3 bg-slate-900 hover:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-md"
               >
                 Guardar cambios
               </button>
@@ -3688,6 +3804,36 @@ class App {
       });
     });
 
+    // Delegación global para botones de cambio de tema en cualquier vista
+    document.addEventListener("click", (e) => {
+      const toggleBtn = e.target.closest(".theme-toggle-btn");
+      if (toggleBtn) {
+        e.preventDefault();
+        if (navigator.vibrate) { try { navigator.vibrate(10); } catch {} }
+        store.toggleTheme();
+      }
+    });
+
+    // Atajo de teclado 'T' para alternar tema rápidamente en escritorio
+    window.addEventListener("keydown", (e) => {
+      if (
+        (e.key === "t" || e.key === "T") &&
+        !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)
+      ) {
+        store.toggleTheme();
+      }
+    });
+
+    // Actualización reactiva de etiquetas de tema
+    store.subscribe((event) => {
+      if (event === "theme_changed") {
+        const isDark = store.getTheme() === "dark";
+        document.querySelectorAll(".theme-label").forEach((el) => {
+          el.textContent = isDark ? "Oscuro" : "Claro";
+        });
+      }
+    });
+
     const initialView = urlParams.get("view") || window.location.hash.replace("#", "") || "client";
     this.navigate(initialView);
   }
@@ -3697,12 +3843,22 @@ class App {
     const roleLabel = isOperario ? "Puesto de Balanza (Operario)" : "Panel de Precios (Dueño)";
     this.container.innerHTML = `
       <div class="max-w-sm mx-auto p-4 pt-16">
-        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-xl text-center">
-          <span class="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-100 text-slate-700 mb-3">
-            Acceso Personal del Local
-          </span>
-          <h2 class="text-xl font-black text-slate-900">${roleLabel}</h2>
-          <p class="text-xs text-slate-500 mt-1 mb-5">Ingresá el PIN numérico de 4 dígitos del comercio (Por defecto: <strong>1234</strong>)</p>
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-xl text-center">
+          <div class="flex items-center justify-between mb-3">
+            <span class="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              Acceso Personal del Local
+            </span>
+            <button 
+              type="button"
+              class="theme-toggle-btn text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition tap-feedback flex items-center gap-1"
+              title="Cambiar tema claro / oscuro"
+            >
+              <span>Tema:</span>
+              <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+            </button>
+          </div>
+          <h2 class="text-xl font-black text-slate-900 dark:text-white">${roleLabel}</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5">Ingresá el PIN numérico de 4 dígitos del comercio (Por defecto: <strong>1234</strong>)</p>
 
           <form id="pin-gate-form" class="space-y-4">
             <input 
@@ -3712,20 +3868,20 @@ class App {
               maxlength="8" 
               placeholder="••••" 
               required
-              class="w-40 mx-auto block text-center tracking-[0.5em] py-3 px-4 bg-slate-50 border-2 border-slate-300 rounded-2xl font-black text-2xl text-slate-900 outline-none focus:border-slate-900 focus:bg-white transition"
+              class="w-40 mx-auto block text-center tracking-[0.5em] py-3 px-4 bg-slate-50 dark:bg-slate-950 border-2 border-slate-300 dark:border-slate-700 rounded-2xl font-black text-2xl text-slate-900 dark:text-white outline-none focus:border-slate-900 dark:focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition"
             />
-            <p id="pin-error" class="hidden text-xs font-bold text-rose-600">PIN incorrecto. Intentá nuevamente.</p>
+            <p id="pin-error" class="hidden text-xs font-bold text-rose-600 dark:text-rose-400">PIN incorrecto. Intentá nuevamente.</p>
             <div class="flex gap-2 pt-1">
               <button 
                 type="button" 
                 id="btn-pin-back"
-                class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition"
               >
                 Volver al Catálogo
               </button>
               <button 
                 type="submit" 
-                class="flex-1 py-3 bg-slate-950 hover:bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+                class="flex-1 py-3 bg-slate-950 hover:bg-slate-900 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md"
               >
                 Ingresar
               </button>
