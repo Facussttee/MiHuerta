@@ -92,6 +92,13 @@ class App {
 
     const initialView = urlParams.get("view") || window.location.hash.replace("#", "") || "client";
     this.navigate(initialView);
+
+    window.addEventListener("hashchange", () => {
+      const hashView = window.location.hash.replace("#", "");
+      if (hashView && hashView !== this.currentView) {
+        this.navigate(hashView);
+      }
+    });
   }
 
   renderPinGate(targetView) {
