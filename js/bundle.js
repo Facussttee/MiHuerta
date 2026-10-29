@@ -1493,7 +1493,7 @@ function renderClientView(container) {
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">
                 <span>Hola, <strong class="text-slate-800 dark:text-slate-200 font-semibold">${user.nombre}</strong></span>
-                <button id="btn-change-user" class="text-slate-400 dark:text-slate-500 underline ml-1 hover:text-slate-600 dark:hover:text-slate-300 text-[11px]">Cambiar</button>
+                <button id="btn-change-user" class="min-h-[44px] inline-flex items-center px-1.5 text-slate-400 dark:text-slate-500 underline ml-1 hover:text-slate-600 dark:hover:text-slate-300 text-[11px] touch-target">Cambiar</button>
               </p>
             </div>
             
@@ -1567,7 +1567,7 @@ function renderClientView(container) {
         <!-- Footer discreto para acceso a personal del local -->
         <footer class="mt-8 mb-16 text-center text-xs text-slate-400 dark:text-slate-500">
           <p>Verdulería Mi Huerta <span class="opacity-40 font-light">|</span> Catálogo y Pesaje en Balanza</p>
-          <a href="?view=operario" class="inline-block mt-2 text-[11px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline">
+          <a href="?view=operario" class="min-h-[44px] inline-flex items-center justify-center py-2 px-3 mt-2 text-[11px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline touch-target">
             Acceso Personal del Local
           </a>
         </footer>
@@ -4023,13 +4023,13 @@ class App {
               <button 
                 type="button" 
                 id="btn-pin-back"
-                class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition"
+                class="flex-1 min-h-[48px] py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition touch-target"
               >
                 Volver al Catálogo
               </button>
               <button 
                 type="submit" 
-                class="flex-1 py-3 bg-slate-950 hover:bg-slate-900 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+                class="flex-1 min-h-[48px] py-3 bg-slate-950 hover:bg-slate-900 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md touch-target"
               >
                 Ingresar
               </button>

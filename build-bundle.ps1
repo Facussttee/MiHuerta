@@ -124,7 +124,7 @@ if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $by
   throw "Error de codificacion: El archivo bundle.js contiene un BOM no deseado."
 }
 
-Write-Host "✅ Bundle generado exitosamente con UTF-8 estricto SIN BOM." -ForegroundColor Green
+Write-Host "[OK] Bundle generado exitosamente con UTF-8 estricto SIN BOM." -ForegroundColor Green
 Write-Host "   Ruta: $bundlePath"
 Write-Host "   Tamano: $($bytes.Length) bytes ($($bundleContent.Length) caracteres)"
 Write-Host "   Primeros bytes: $([System.Text.Encoding]::ASCII.GetString($bytes[0..15]))"
