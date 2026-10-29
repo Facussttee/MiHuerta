@@ -123,11 +123,11 @@ function startLocalWebServer() {
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`\n========================================================`);
     console.log(`[SERVIDOR WEB LOCAL ACTIVO]`);
-    console.log(`👉 En tu PC: http://localhost:${PORT}`);
+    console.log(`* En tu PC: http://localhost:${PORT}`);
     if (localIp !== "localhost") {
-      console.log(`👉 En celulares en la misma red Wi-Fi: http://${localIp}:${PORT}`);
+      console.log(`* En celulares en la misma red Wi-Fi: http://${localIp}:${PORT}`);
     }
-    console.log(`👉 Link que enviará el Bot: ${CATALOG_WEB_URL}`);
+    console.log(`* Link que enviará el Bot: ${CATALOG_WEB_URL}`);
     console.log(`========================================================\n`);
   });
 
@@ -372,7 +372,7 @@ async function notifyOrderReady(sock, order) {
   try {
     await sock.sendMessage(jid, { text: summaryText });
     console.log(`\n========================================================`);
-    console.log(`[WHATSAPP ENVIADO] ✅ Resumen del Pedido #${order.id} enviado a ${order.cliente_nombre || phone}`);
+    console.log(`[WHATSAPP ENVIADO] [OK] Resumen del Pedido #${order.id} enviado a ${order.cliente_nombre || phone}`);
     console.log(`Destinatario: ${jid}`);
     console.log(`Total en balanza: $${Number(order.total_real || order.total_estimado || 0).toLocaleString("es-AR")}`);
     console.log(`========================================================\n`);

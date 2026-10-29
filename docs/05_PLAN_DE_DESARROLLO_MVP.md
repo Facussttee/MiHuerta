@@ -62,12 +62,12 @@ Para dar por finalizado el proyecto técnico y operar en vivo en el comercio min
 
 ```mermaid
 flowchart TD
-    T1["1. Ajuste Front: Botón Cruz (✕) en Carrito\n(Vaciar ítem en 1 toque)"] --> T2["2. Deploy Web Público ($0/mes)\n(Activar GitHub Pages o Vercel)"]
+    T1["1. Ajuste Front: Boton Quitar en Carrito\n(Vaciar item en 1 toque)"] --> T2["2. Deploy Web Público ($0/mes)\n(Activar GitHub Pages o Vercel)"]
     T2 --> T3["3. Configuración Final y Salida al Local\n(Cargar Alias de Pago y Precios Reales)"]
 ```
 
 ### Tarea 1: Ajuste UX de Frontend (En chat de Front)
-* **Botón Eliminar Ítem (✕):** Agregar en el Drawer de Carrito ([`js/views/client.js`](file:///d:/Escritorio/miHuerta/js/views/client.js)) un botón con cruz o tacho para quitar un producto entero de una sola vez, sin requerir restar de a $250\text{ g}$ repetidamente.
+* **Botón Eliminar Ítem (Quitar):** Agregar en el Drawer de Carrito ([`js/views/client.js`](file:///d:/Escritorio/miHuerta/js/views/client.js)) un botón con texto claro 'Quitar' para quitar un producto entero de una sola vez, sin requerir restar de a $250\text{ g}$ repetidamente.
 
 ### Tarea 2: Publicación Web Permanente a Costo \$0
 Para que los clientes compren desde la calle con datos móviles 4G/5G:
