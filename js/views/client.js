@@ -376,7 +376,7 @@ export function renderClientView(container) {
 
         <!-- Header Móvil del Catálogo (Coordinado con clase sticky-header-offset) -->
         <header class="sticky sticky-header-offset z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 pt-3 pb-2.5 shadow-xs">
-          <!-- Fila 1: Título y Estado + Botones de Acción -->
+          <!-- Fila 1: Título y Estado (Izq) + Carrito de Pedido (Der) -->
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
               <span class="text-sm font-black text-slate-900 dark:text-white tracking-tight uppercase truncate">Catálogo del Día</span>
@@ -386,17 +386,7 @@ export function renderClientView(container) {
               </span>
             </div>
             
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button 
-                type="button"
-                class="theme-toggle-btn min-h-[44px] px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
-                title="Cambiar tema claro / oscuro"
-                aria-label="Cambiar tema claro u oscuro"
-              >
-                <span>Tema:</span>
-                <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
-              </button>
-
+            <div class="flex items-center shrink-0">
               <button 
                 id="btn-header-cart" 
                 class="relative min-h-[44px] px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
@@ -411,10 +401,23 @@ export function renderClientView(container) {
             </div>
           </div>
 
-          <!-- Fila 2: Saludo de usuario con cambio de cuenta alineado -->
-          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
-            <span class="truncate pr-2">Hola, <strong class="text-slate-800 dark:text-slate-200 font-semibold">${user.nombre}</strong></span>
-            <button id="btn-change-user" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-end px-2 text-slate-400 dark:text-slate-500 underline hover:text-slate-600 dark:hover:text-slate-300 text-[11px] touch-target shrink-0">Cambiar</button>
+          <!-- Fila 2: Saludo de usuario (Izq) + Conmutador de Tema (Der) -->
+          <div class="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="truncate">Hola, <strong class="text-slate-800 dark:text-slate-200 font-semibold">${user.nombre}</strong></span>
+              <button id="btn-change-user" class="min-h-[44px] min-w-[44px] inline-flex items-center px-1 text-slate-400 dark:text-slate-500 underline hover:text-slate-600 dark:hover:text-slate-300 text-[11px] touch-target shrink-0">Cambiar</button>
+            </div>
+            <div class="flex items-center shrink-0">
+              <button 
+                type="button"
+                class="theme-toggle-btn min-h-[44px] px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 dark:border-slate-700 tap-feedback touch-target"
+                title="Cambiar tema claro / oscuro"
+                aria-label="Cambiar tema claro u oscuro"
+              >
+                <span>Tema:</span>
+                <span class="theme-label font-black">${store.getTheme() === "dark" ? "Oscuro" : "Claro"}</span>
+              </button>
+            </div>
           </div>
 
           <!-- Buscador con tamaño de fuente accesible para evitar zoom iOS -->
@@ -422,7 +425,7 @@ export function renderClientView(container) {
             <input 
               type="text" 
               id="search-input" 
-              placeholder="Buscar productos (ej. tomate, papa)..." 
+              placeholder="Buscar productos..." 
               value="${searchQuery}"
               autocomplete="off"
               autocorrect="off"
@@ -458,11 +461,12 @@ export function renderClientView(container) {
               </button>
             `
             ).join("")}
+            <div class="w-2 shrink-0 select-none pointer-events-none" aria-hidden="true"></div>
           </div>
         </header>
 
         <!-- Contenedor de Productos -->
-        <main id="products-list-container" class="p-4 space-y-3.5">
+        <main id="products-list-container" class="p-4 space-y-4">
           ${renderProductCardsHTML(filteredProducts, cart)}
         </main>
 
@@ -759,6 +763,10 @@ export function renderClientView(container) {
       btn.addEventListener("click", () => {
         selectedCategory = btn.dataset.category;
         renderCatalog();
+        const activePill = container.querySelector(`.category-pill[data-category="${selectedCategory}"]`);
+        if (activePill && typeof activePill.scrollIntoView === "function") {
+          activePill.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
+        }
       });
     });
 
