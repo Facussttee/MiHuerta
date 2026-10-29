@@ -11,8 +11,9 @@ export function renderClientView(container) {
   let deliveryAddress = "";
 
   // Determinar si debemos mostrar el seguimiento de pedido automáticamente al iniciar
-  const initialActive = store.getActiveOrder();
-  if (initialActive && initialActive.estado !== "ENTREGADO") {
+  const initialUser = store.getCurrentUser();
+  const initialActive = initialUser ? store.getActiveOrder(initialUser.telefono) : null;
+  if (initialActive && initialActive.estado !== "ENTREGADO" && initialActive.estado !== "CANCELADO") {
     viewingActiveOrder = true;
   }
 
@@ -24,7 +25,7 @@ export function renderClientView(container) {
     }
 
     if (viewingActiveOrder) {
-      const activeOrder = store.getActiveOrder();
+      const activeOrder = store.getActiveOrder(user.telefono);
       if (activeOrder) {
         renderOrderTracking(activeOrder);
         return;
@@ -193,7 +194,7 @@ export function renderClientView(container) {
     const products = store.getProducts();
     const cart = store.getCart();
     const { items: cartItems, totalEstimado, totalItems } = store.getCartSummary();
-    const activeOrder = store.getActiveOrder();
+    const activeOrder = store.getActiveOrder(user.telefono);
 
     if (!deliveryAddress && user.direccion) {
       deliveryAddress = user.direccion;

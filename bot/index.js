@@ -23,6 +23,8 @@ import pino from "pino";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import http from "http";
+import os from "os";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,12 +32,116 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
+// Detectar IP local (priorizando Wi-Fi real) para permitir acceso desde celulares en la misma red
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  let candidate = null;
+  for (const name of Object.keys(interfaces)) {
+    if (/virtualbox|vbox|vmware|wsl|vEthernet/i.test(name)) continue;
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        if (/wi-fi|wireless|wlan|ethernet/i.test(name) && !iface.address.startsWith("192.168.56.")) {
+          return iface.address;
+        }
+        if (!candidate && !iface.address.startsWith("192.168.56.")) {
+          candidate = iface.address;
+        }
+      }
+    }
+  }
+  return candidate || "localhost";
+}
+
+const localIp = getLocalIp();
+const PORT = Number(process.env.PORT || 3000);
+
 // Configuración desde variables de entorno (.env)
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
-const CATALOG_WEB_URL = (process.env.CATALOG_WEB_URL || "http://localhost:3000").replace(/\/$/, "");
+const RAW_CATALOG_URL = (process.env.CATALOG_WEB_URL || "").replace(/\/$/, "");
+
+// Si la URL es localhost o está vacía, usar la IP local para que cualquier celular en la red Wi-Fi pueda abrir el link
+const CATALOG_WEB_URL =
+  !RAW_CATALOG_URL || RAW_CATALOG_URL.includes("localhost")
+    ? `http://${localIp}:${PORT}`
+    : RAW_CATALOG_URL;
+
 const COOLDOWN_MINUTES = Number(process.env.COOLDOWN_MINUTES || 180);
 const PAYMENT_ALIAS = process.env.PAYMENT_ALIAS || "mihuerta.verduras";
+
+// Servidor Web Local Integrado para servir el catálogo a PCs y celulares
+function startLocalWebServer() {
+  const rootDir = path.resolve(__dirname, "..");
+  const mimeTypes = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon"
+  };
+
+  const server = http.createServer((req, res) => {
+    let reqPath = decodeURI(req.url.split("?")[0]);
+    if (reqPath === "/" || reqPath === "") {
+      reqPath = "/index.html";
+    }
+
+    const safePath = path.normalize(path.join(rootDir, reqPath));
+    if (!safePath.startsWith(rootDir)) {
+      res.writeHead(403);
+      return res.end("Forbidden");
+    }
+
+    fs.stat(safePath, (err, stats) => {
+      let targetFile = safePath;
+      if (err || stats.isDirectory()) {
+        targetFile = path.join(rootDir, "index.html");
+      }
+
+      const ext = path.extname(targetFile).toLowerCase();
+      const contentType = mimeTypes[ext] || "application/octet-stream";
+
+      fs.readFile(targetFile, (readErr, content) => {
+        if (readErr) {
+          res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+          res.end("404 Not Found");
+        } else {
+          res.writeHead(200, {
+            "Content-Type": contentType,
+            "Access-Control-Allow-Origin": "*"
+          });
+          res.end(content);
+        }
+      });
+    });
+  });
+
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`\n========================================================`);
+    console.log(`[SERVIDOR WEB LOCAL ACTIVO]`);
+    console.log(`👉 En tu PC: http://localhost:${PORT}`);
+    if (localIp !== "localhost") {
+      console.log(`👉 En celulares en la misma red Wi-Fi: http://${localIp}:${PORT}`);
+    }
+    console.log(`👉 Link que enviará el Bot: ${CATALOG_WEB_URL}`);
+    console.log(`========================================================\n`);
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.warn(`[AVISO] El puerto ${PORT} ya está ocupado. Usando servidor web existente.`);
+    } else {
+      console.error("[ERROR] Falló servidor web local:", err.message);
+    }
+  });
+}
+
+// Iniciar servidor web local
+startLocalWebServer();
 
 // Persistencia de la ventana de silencio (Cooldown) para sobrevivir reinicios
 const COOLDOWN_FILE = path.join(__dirname, ".cooldowns.json");

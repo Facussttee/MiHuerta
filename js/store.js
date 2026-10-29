@@ -570,11 +570,51 @@ class Store {
     this.notify("active_order_changed", orderId);
   }
 
-  getActiveOrder() {
-    const activeId = this.getActiveOrderId();
-    if (!activeId) return null;
+  isSameCustomer(phoneA, phoneB) {
+    if (!phoneA || !phoneB) return false;
+    const a = String(phoneA).replace(/\D/g, "");
+    const b = String(phoneB).replace(/\D/g, "");
+    if (a === b) return true;
+    // Manejo de prefijos internacionales y locales (ej: 54911 vs 11)
+    if (a.length >= 8 && b.length >= 8) {
+      return a.slice(-8) === b.slice(-8);
+    }
+    return false;
+  }
+
+  getActiveOrder(userPhone = null) {
     const orders = this.getOrders();
-    return orders.find((o) => o.id === activeId) || null;
+    const targetPhone = userPhone || this.getCurrentUser()?.telefono;
+    if (!targetPhone) return null;
+
+    const activeId = this.getActiveOrderId();
+    if (activeId) {
+      const active = orders.find((o) => o.id === activeId);
+      if (active && this.isSameCustomer(active.cliente?.telefono, targetPhone)) {
+        if (active.estado !== "ENTREGADO" && active.estado !== "CANCELADO") {
+          return active;
+        }
+      }
+    }
+
+    // Si el ID guardado no pertenece a este cliente o ya fue entregado, buscar su pedido activo más reciente
+    const latestUserOrder = orders.find((o) => {
+      const isOwner = this.isSameCustomer(o.cliente?.telefono, targetPhone);
+      const isOngoing = o.estado !== "ENTREGADO" && o.estado !== "CANCELADO";
+      return isOwner && isOngoing;
+    });
+
+    if (latestUserOrder) {
+      this.setActiveOrderId(latestUserOrder.id);
+      return latestUserOrder;
+    }
+
+    return null;
+  }
+
+  getOrdersByCustomer(phone) {
+    if (!phone) return [];
+    return this.getOrders().filter((o) => this.isSameCustomer(o.cliente?.telefono, phone));
   }
 
   createOrder({ cliente, tipo_entrega, direccion_entrega }) {
